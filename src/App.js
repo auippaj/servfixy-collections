@@ -9,14 +9,14 @@ function Login({ onLogin }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
+  const doLogin = async (emailVal, passwordVal) => {
     setError('');
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: emailVal, password: passwordVal })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');
@@ -31,6 +31,16 @@ function Login({ onLogin }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLogin = () => doLogin(email, password);
+
+  const handleDemoLogin = () => {
+    const demoEmail = 'james@servfixy.com';
+    const demoPass = 'password';
+    setEmail(demoEmail);
+    setPassword(demoPass);
+    doLogin(demoEmail, demoPass);
   };
 
   return (
@@ -61,6 +71,18 @@ function Login({ onLogin }) {
           style={{ width: '100%', padding: '13px', borderRadius: '8px', border: 'none', background: loading ? '#1e40af' : '#1d4ed8', color: '#fff', fontSize: '15px', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer', letterSpacing: '0.02em' }}>
           {loading ? 'Signing in...' : 'Sign In'}
         </button>
+        <div style={{ margin: '20px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }} />
+          <span style={{ color: '#94a3b8', fontSize: '12px', whiteSpace: 'nowrap' }}>or</span>
+          <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }} />
+        </div>
+        <button onClick={handleDemoLogin} disabled={loading}
+          style={{ width: '100%', padding: '13px', borderRadius: '8px', border: '2px solid #14B8A6', background: 'transparent', color: '#0f766e', fontSize: '14px', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '16px' }}>▶</span> Investor Demo Login
+        </button>
+        <div style={{ marginTop: '10px', textAlign: 'center', fontSize: '11px', color: '#94a3b8' }}>
+          Pre-loaded with 200 real-scenario cases across 3 properties
+        </div>
       </div>
     </div>
   );
@@ -220,6 +242,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
 
   const kpis = [
     { label: 'Total Delinquent Balance', value: fmtCurrency(s.total_balance), color: '#dc2626', sub: `${s.total_cases || 0} total cases`, onClick: () => navigate('Collections Cases', { status: '', property_id: selectedProperty, aging_bucket: '' }) },
+    { label: 'Amount Recovered', value: fmtCurrency(s.amount_recovered), color: '#15803d', sub: 'Closed paid cases', onClick: () => navigate('Collections Cases', { status: 'closed_paid', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'Active Cases', value: s.active_cases || 0, color: '#1d4ed8', sub: 'Not yet closed', onClick: () => navigate('Collections Cases', { status: 'active', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'In Legal Pipeline', value: s.legal_cases || 0, color: '#ea580c', sub: 'Attorney thru Possession', onClick: () => navigate('Collections Cases', { status: 'filed_with_attorney', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'Possession Granted', value: s.possession_count || 0, color: '#dc2626', sub: 'This portfolio', onClick: () => navigate('Collections Cases', { status: 'possession_granted', property_id: selectedProperty, aging_bucket: '' }) },
