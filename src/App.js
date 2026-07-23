@@ -87,6 +87,10 @@ const NAV_ITEMS = [
   { group: 'RISK', items: [
     { label: 'Risk Register',        icon: '🛡️', tab: 'Collections Risk' },
   ]},
+  { group: 'ADMIN', items: [
+    { label: 'Integrations',         icon: '🔗', tab: 'Integrations' },
+    { label: 'Compliance',           icon: '✅', tab: 'Compliance' },
+  ]},
 ];
 
 function Sidebar({ activeTab, setActiveTab, user, onLogout }) {
@@ -5426,6 +5430,8 @@ function App() {
         {activeTab === 'Owner Summary' && <CollectionsOwnerSummaryTab token={token} />}
         {activeTab === 'Onboarding' && <CollectionsOnboardingTab token={token} />}
         {activeTab === 'Collections Risk' && <CollectionsRiskTab token={token} />}
+        {activeTab === 'Integrations' && <IntegrationsTab token={token} />}
+        {activeTab === 'Compliance' && <ComplianceTab token={token} />}
       </div>
     </div>
   );
