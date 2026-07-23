@@ -84,6 +84,9 @@ const NAV_ITEMS = [
     { label: 'Owner Summary',        icon: '🏢', tab: 'Owner Summary' },
     { label: 'Onboarding',           icon: '🚀', tab: 'Onboarding' },
   ]},
+  { group: 'RISK', items: [
+    { label: 'Risk Register',        icon: '🛡️', tab: 'Collections Risk' },
+  ]},
 ];
 
 function Sidebar({ activeTab, setActiveTab, user, onLogout }) {
@@ -4187,6 +4190,458 @@ function CollectionsOnboardingTab({ token }) {
 }
 // ── End Collections Onboarding Checklist ──────────────────────────────────────
 
+
+// ── Collections Risk Tab ───────────────────────────────────────────────────────
+function CollectionsRiskTab({ token }) {
+  const [subView, setSubView] = useState('dashboard');
+  const [dashboard, setDashboard] = useState(null);
+  const [flags, setFlags] = useState([]);
+  const [predictive, setPredictive] = useState(null);
+  const [rules, setRules] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [scoring, setScoring] = useState(false);
+  const [flagFilter, setFlagFilter] = useState({ status: 'open', severity: '', dimension: '' });
+  const [showManualFlag, setShowManualFlag] = useState(false);
+  const [manualForm, setManualForm] = useState({ case_id: '', flag_type: '', dimension: 'financial', severity: 'medium', description: '' });
+  const [cases, setCases] = useState([]);
+  const [seeding, setSeeding] = useState(false);
+
+  const API_URL = process.env.REACT_APP_API_URL || 'https://servfixy-production.up.railway.app';
+  const h = { Authorization: `Bearer ${token}` };
+
+  const fetchDashboard = async () => {
+    try {
+      const r = await fetch(`${API_URL}/api/collections/risk/dashboard`, { headers: h });
+      const d = await r.json();
+      setDashboard(d);
+    } catch (err) { console.error(err); }
+  };
+
+  const fetchFlags = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (flagFilter.status)    params.set('status', flagFilter.status);
+      if (flagFilter.severity)  params.set('severity', flagFilter.severity);
+      if (flagFilter.dimension) params.set('dimension', flagFilter.dimension);
+      const r = await fetch(`${API_URL}/api/collections/risk/flags?${params}`, { headers: h });
+      setFlags(await r.json());
+    } catch (err) { console.error(err); }
+  };
+
+  const fetchPredictive = async () => {
+    try {
+      const r = await fetch(`${API_URL}/api/collections/risk/predictive`, { headers: h });
+      setPredictive(await r.json());
+    } catch (err) { console.error(err); }
+  };
+
+  const fetchRules = async () => {
+    try {
+      const r = await fetch(`${API_URL}/api/collections/risk/rules`, { headers: h });
+      setRules(await r.json());
+    } catch (err) { console.error(err); }
+  };
+
+  const fetchCases = async () => {
+    try {
+      const r = await fetch(`${API_URL}/api/collections/cases`, { headers: h });
+      const d = await r.json();
+      setCases(Array.isArray(d) ? d : []);
+    } catch (err) { console.error(err); }
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([fetchDashboard(), fetchRules(), fetchCases()]).finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (subView === 'register') fetchFlags();
+    if (subView === 'predictive') fetchPredictive();
+  }, [subView, flagFilter]);
+
+  const handleScoreAll = async () => {
+    setScoring(true);
+    try {
+      await fetch(`${API_URL}/api/collections/risk/score-all`, { method: 'POST', headers: h });
+      await fetchDashboard();
+      alert('All cases rescored.');
+    } catch (err) { console.error(err); }
+    setScoring(false);
+  };
+
+  const handleSeedRules = async () => {
+    setSeeding(true);
+    try {
+      await fetch(`${API_URL}/api/collections/risk/rules/seed`, { method: 'POST', headers: h });
+      await fetchRules();
+      alert('Default rules seeded.');
+    } catch (err) { console.error(err); }
+    setSeeding(false);
+  };
+
+  const handleToggleRule = async (ruleId, enabled) => {
+    await fetch(`${API_URL}/api/collections/risk/rules/${ruleId}`, {
+      method: 'PATCH', headers: { ...h, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled })
+    });
+    fetchRules();
+  };
+
+  const handleUpdateFlag = async (flagId, status) => {
+    await fetch(`${API_URL}/api/collections/risk/flags/${flagId}`, {
+      method: 'PATCH', headers: { ...h, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    fetchFlags();
+    fetchDashboard();
+  };
+
+  const handleManualFlag = async () => {
+    if (!manualForm.case_id || !manualForm.flag_type || !manualForm.description) {
+      alert('Case, flag type, and description are required.'); return;
+    }
+    await fetch(`${API_URL}/api/collections/risk/flags`, {
+      method: 'POST', headers: { ...h, 'Content-Type': 'application/json' },
+      body: JSON.stringify(manualForm)
+    });
+    setShowManualFlag(false);
+    setManualForm({ case_id: '', flag_type: '', dimension: 'financial', severity: 'medium', description: '' });
+    fetchFlags(); fetchDashboard();
+  };
+
+  const scoreColor = (s) => {
+    if (s >= 70) return '#f87171';
+    if (s >= 40) return '#fb923c';
+    return '#4ade80';
+  };
+
+  const severityColor = (s) => ({
+    critical: '#f87171', high: '#fb923c', medium: '#fbbf24', low: '#4ade80'
+  }[s] || '#94a3b8');
+
+  const dimensionLabel = (d) => ({
+    financial: '💰 Financial', legal: '⚖️ Legal', recovery: '🔍 Recovery', escalation: '⚡ Escalation'
+  }[d] || d);
+
+  const fmtCurrency = (v) => `$${parseFloat(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+
+  const panelStyle = { backgroundColor: '#1a1030', border: '1px solid #2d1a5e', borderRadius: '10px', padding: '20px', marginBottom: '16px' };
+  const inputStyle = { backgroundColor: '#120c24', border: '1px solid #3b1f6e', borderRadius: '6px', color: '#f1f5f9', padding: '8px 10px', fontSize: '13px', width: '100%', boxSizing: 'border-box' };
+  const btnPrimary = { background: 'linear-gradient(135deg,#7c3aed,#a855f7)', border: 'none', borderRadius: '6px', color: '#fff', padding: '8px 16px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' };
+  const btnGhost = { backgroundColor: 'transparent', border: '1px solid #3b1f6e', borderRadius: '6px', color: '#94a3b8', padding: '7px 14px', fontSize: '12px', cursor: 'pointer' };
+
+  const subTabs = [
+    { id: 'dashboard',  label: '📊 Dashboard' },
+    { id: 'register',   label: '🚩 Risk Register' },
+    { id: 'predictive', label: '🔮 Predictive Alerts' },
+    { id: 'rules',      label: '⚙️ Rules Engine' },
+  ];
+
+  return (
+    <div style={{ padding: '28px', maxWidth: '1200px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#f1f5f9' }}>Collections Risk</h1>
+          <div style={{ fontSize: '13px', color: '#6d28d9', marginTop: '3px' }}>Risk scoring, flags, and predictive analysis</div>
+        </div>
+        <button onClick={handleScoreAll} disabled={scoring} style={btnPrimary}>
+          {scoring ? 'Scoring...' : '↻ Rescore All Cases'}
+        </button>
+      </div>
+
+      {/* Sub-tabs */}
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '24px', borderBottom: '1px solid #2d1a5e', paddingBottom: '0' }}>
+        {subTabs.map(t => (
+          <div key={t.id} onClick={() => setSubView(t.id)}
+            style={{ padding: '9px 16px', cursor: 'pointer', fontSize: '13px', fontWeight: subView === t.id ? '700' : '400',
+              color: subView === t.id ? '#d8b4fe' : '#64748b',
+              borderBottom: subView === t.id ? '2px solid #a855f7' : '2px solid transparent',
+              marginBottom: '-1px' }}>
+            {t.label}
+          </div>
+        ))}
+      </div>
+
+      {loading && <div style={{ color: '#64748b', fontSize: '14px' }}>Loading...</div>}
+
+      {/* ── DASHBOARD ── */}
+      {subView === 'dashboard' && dashboard && (
+        <div>
+          {/* KPI Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: '14px', marginBottom: '24px' }}>
+            {[
+              { label: 'Total Cases Scored', value: dashboard.summary?.total_cases || 0, color: '#c084fc' },
+              { label: 'Critical Risk (70+)', value: dashboard.summary?.critical_cases || 0, color: '#f87171' },
+              { label: 'Medium Risk (40-69)', value: dashboard.summary?.medium_cases || 0, color: '#fb923c' },
+              { label: 'Low Risk (<40)', value: dashboard.summary?.low_cases || 0, color: '#4ade80' },
+              { label: 'Avg Risk Score', value: dashboard.summary?.avg_risk_score || '—', color: '#fbbf24' },
+              { label: 'Open Flags', value: dashboard.summary?.open_flags || 0, color: '#f87171' },
+            ].map((k, i) => (
+              <div key={i} style={{ ...panelStyle, padding: '16px', textAlign: 'center', marginBottom: 0 }}>
+                <div style={{ fontSize: '26px', fontWeight: '800', color: k.color }}>{k.value}</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>{k.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Top Risk Cases */}
+          <div style={panelStyle}>
+            <div style={{ fontSize: '14px', fontWeight: '700', color: '#f1f5f9', marginBottom: '16px' }}>🔴 Highest Risk Cases</div>
+            {!dashboard.top_cases?.length && <div style={{ color: '#64748b', fontSize: '13px' }}>No scored cases yet. Click "Rescore All Cases" to generate scores.</div>}
+            {dashboard.top_cases?.map((c, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 0', borderBottom: '1px solid #1e1040' }}>
+                {/* Risk badge */}
+                <div style={{ minWidth: '48px', textAlign: 'center', background: scoreColor(c.total_score) + '22', border: `1px solid ${scoreColor(c.total_score)}`, borderRadius: '8px', padding: '6px 4px' }}>
+                  <div style={{ fontSize: '16px', fontWeight: '800', color: scoreColor(c.total_score) }}>{c.total_score ?? '—'}</div>
+                  <div style={{ fontSize: '9px', color: '#64748b' }}>SCORE</div>
+                </div>
+                {/* Case info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#f1f5f9' }}>{c.resident_name}</div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>Unit {c.unit_number} · {c.property_name}</div>
+                </div>
+                <div style={{ fontSize: '13px', color: '#fb923c', fontWeight: '600' }}>{fmtCurrency(c.balance_owed)}</div>
+                {/* Dimension bars */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '140px' }}>
+                  {[['F', c.financial_score,'#c084fc'],['L', c.legal_score,'#f87171'],['R', c.recovery_score,'#fb923c'],['E', c.escalation_score,'#fbbf24']].map(([lbl,val,col]) => (
+                    <div key={lbl} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <div style={{ width: '10px', fontSize: '9px', color: '#64748b' }}>{lbl}</div>
+                      <div style={{ flex: 1, height: '5px', backgroundColor: '#1e1040', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ width: `${val || 0}%`, height: '100%', backgroundColor: col, borderRadius: '3px' }} />
+                      </div>
+                      <div style={{ width: '22px', fontSize: '9px', color: col, textAlign: 'right' }}>{val ?? '—'}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Upcoming Deadlines */}
+          {dashboard.upcoming_deadlines?.length > 0 && (
+            <div style={panelStyle}>
+              <div style={{ fontSize: '14px', fontWeight: '700', color: '#f87171', marginBottom: '14px' }}>⏰ Deadlines This Week</div>
+              {dashboard.upcoming_deadlines.map((d, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #1e1040' }}>
+                  <div>
+                    <div style={{ fontSize: '13px', color: '#f1f5f9', fontWeight: '600' }}>{d.resident_name} · Unit {d.unit_number}</div>
+                    <div style={{ fontSize: '11px', color: '#64748b' }}>{d.property_name}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    {d.possession_date && <div style={{ fontSize: '12px', color: '#f87171' }}>Possession: {fmtDate(d.possession_date)}</div>}
+                    {d.court_date && <div style={{ fontSize: '12px', color: '#fb923c' }}>Court: {fmtDate(d.court_date)}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── RISK REGISTER ── */}
+      {subView === 'register' && (
+        <div>
+          {/* Filters + Add Flag */}
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <select value={flagFilter.status} onChange={e => setFlagFilter(f => ({...f, status: e.target.value}))} style={{ ...inputStyle, width: 'auto' }}>
+              <option value="">All Statuses</option>
+              <option value="open">Open</option>
+              <option value="mitigated">Mitigated</option>
+              <option value="accepted">Accepted</option>
+              <option value="resolved">Resolved</option>
+            </select>
+            <select value={flagFilter.severity} onChange={e => setFlagFilter(f => ({...f, severity: e.target.value}))} style={{ ...inputStyle, width: 'auto' }}>
+              <option value="">All Severities</option>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+            <select value={flagFilter.dimension} onChange={e => setFlagFilter(f => ({...f, dimension: e.target.value}))} style={{ ...inputStyle, width: 'auto' }}>
+              <option value="">All Dimensions</option>
+              <option value="financial">Financial</option>
+              <option value="legal">Legal</option>
+              <option value="recovery">Recovery</option>
+              <option value="escalation">Escalation</option>
+            </select>
+            <div style={{ flex: 1 }} />
+            <button onClick={() => setShowManualFlag(true)} style={btnPrimary}>+ Manual Flag</button>
+          </div>
+
+          {/* Manual Flag Modal */}
+          {showManualFlag && (
+            <div style={{ ...panelStyle, border: '1px solid #6d28d9', marginBottom: '20px' }}>
+              <div style={{ fontSize: '14px', fontWeight: '700', color: '#f1f5f9', marginBottom: '14px' }}>Add Manual Flag</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>Case</div>
+                  <select value={manualForm.case_id} onChange={e => setManualForm(f => ({...f, case_id: e.target.value}))} style={inputStyle}>
+                    <option value="">Select case...</option>
+                    {cases.map(c => <option key={c.id} value={c.id}>{c.resident_name} — Unit {c.unit_number}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>Flag Type</div>
+                  <input value={manualForm.flag_type} onChange={e => setManualForm(f => ({...f, flag_type: e.target.value}))} placeholder="e.g. fdcpa_risk" style={inputStyle} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>Dimension</div>
+                  <select value={manualForm.dimension} onChange={e => setManualForm(f => ({...f, dimension: e.target.value}))} style={inputStyle}>
+                    <option value="financial">Financial</option>
+                    <option value="legal">Legal</option>
+                    <option value="recovery">Recovery</option>
+                    <option value="escalation">Escalation</option>
+                  </select>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>Severity</div>
+                  <select value={manualForm.severity} onChange={e => setManualForm(f => ({...f, severity: e.target.value}))} style={inputStyle}>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ marginBottom: '12px' }}>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>Description</div>
+                <textarea value={manualForm.description} onChange={e => setManualForm(f => ({...f, description: e.target.value}))}
+                  rows={2} placeholder="Describe the risk..." style={{ ...inputStyle, resize: 'vertical' }} />
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={handleManualFlag} style={btnPrimary}>Submit Flag</button>
+                <button onClick={() => setShowManualFlag(false)} style={btnGhost}>Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {/* Flags Table */}
+          {!flags.length && <div style={{ color: '#64748b', fontSize: '13px' }}>No flags found for selected filters.</div>}
+          {flags.map((f, i) => (
+            <div key={i} style={{ ...panelStyle, padding: '14px 18px', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+              {/* Severity badge */}
+              <div style={{ minWidth: '70px', textAlign: 'center', background: severityColor(f.severity) + '22', border: `1px solid ${severityColor(f.severity)}`, borderRadius: '6px', padding: '5px 4px' }}>
+                <div style={{ fontSize: '10px', fontWeight: '700', color: severityColor(f.severity), textTransform: 'uppercase' }}>{f.severity}</div>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '3px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#f1f5f9' }}>{f.flag_type.replace(/_/g,' ')}</span>
+                  <span style={{ fontSize: '10px', color: '#6d28d9', backgroundColor: '#1e1040', borderRadius: '4px', padding: '2px 6px' }}>{dimensionLabel(f.dimension)}</span>
+                  <span style={{ fontSize: '10px', color: '#64748b', backgroundColor: f.triggered_by === 'auto' ? '#1e1040' : '#1a1030', borderRadius: '4px', padding: '2px 6px' }}>{f.triggered_by === 'auto' ? '🤖 Auto' : '✍️ Manual'}</span>
+                </div>
+                <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>{f.description}</div>
+                <div style={{ fontSize: '11px', color: '#475569' }}>{f.resident_name} · Unit {f.unit_number} · {f.property_name} · {fmtDate(f.created_at)}</div>
+              </div>
+              {/* Actions */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', minWidth: '100px' }}>
+                {f.status === 'open' && (
+                  <>
+                    <button onClick={() => handleUpdateFlag(f.id, 'mitigated')} style={{ ...btnGhost, fontSize: '11px', padding: '5px 8px', color: '#4ade80', borderColor: '#4ade80' }}>Mitigate</button>
+                    <button onClick={() => handleUpdateFlag(f.id, 'accepted')} style={{ ...btnGhost, fontSize: '11px', padding: '5px 8px', color: '#fbbf24', borderColor: '#fbbf24' }}>Accept Risk</button>
+                  </>
+                )}
+                {f.status !== 'open' && (
+                  <span style={{ fontSize: '11px', color: '#4ade80', textAlign: 'center' }}>✓ {f.status}</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── PREDICTIVE ALERTS ── */}
+      {subView === 'predictive' && predictive && (
+        <div>
+          {/* Payment Plan Break Risk */}
+          <div style={panelStyle}>
+            <div style={{ fontSize: '14px', fontWeight: '700', color: '#f87171', marginBottom: '14px' }}>💳 Payment Plan Break Risk</div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '14px' }}>Cases with an active payment plan and at least one prior broken plan — statistically high re-break probability.</div>
+            {!predictive.payment_plan_risk?.length && <div style={{ color: '#64748b', fontSize: '13px' }}>No cases flagged.</div>}
+            {predictive.payment_plan_risk?.map((c, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #1e1040' }}>
+                <div>
+                  <div style={{ fontSize: '13px', color: '#f1f5f9', fontWeight: '600' }}>{c.resident_name} · Unit {c.unit_number}</div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>{c.property_name} · {c.broken_count} prior broken plan(s)</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '13px', color: '#fb923c', fontWeight: '600' }}>{fmtCurrency(c.balance_owed)}</div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>Next payment: {fmtDate(c.next_payment_date)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Stalled Cases */}
+          <div style={panelStyle}>
+            <div style={{ fontSize: '14px', fontWeight: '700', color: '#fbbf24', marginBottom: '14px' }}>⏸ Stalled Cases</div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '14px' }}>Active cases open 45+ days with fewer than 3 touchpoints — at risk of falling through the cracks.</div>
+            {!predictive.stalled_cases?.length && <div style={{ color: '#64748b', fontSize: '13px' }}>No stalled cases.</div>}
+            {predictive.stalled_cases?.map((c, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #1e1040' }}>
+                <div>
+                  <div style={{ fontSize: '13px', color: '#f1f5f9', fontWeight: '600' }}>{c.resident_name} · Unit {c.unit_number}</div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>{c.property_name} · {Math.round(c.days_open)} days open · {c.touchpoint_count} touchpoints</div>
+                </div>
+                <div style={{ fontSize: '13px', color: '#fbbf24', fontWeight: '600' }}>{fmtCurrency(c.balance_owed)}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* No Contact Risk */}
+          <div style={panelStyle}>
+            <div style={{ fontSize: '14px', fontWeight: '700', color: '#c084fc', marginBottom: '14px' }}>📵 No Contact Risk</div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '14px' }}>Open cases with no successful contact in 14+ days — recovery probability drops significantly beyond 21 days.</div>
+            {!predictive.no_contact_risk?.length && <div style={{ color: '#64748b', fontSize: '13px' }}>No cases flagged.</div>}
+            {predictive.no_contact_risk?.map((c, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #1e1040' }}>
+                <div>
+                  <div style={{ fontSize: '13px', color: '#f1f5f9', fontWeight: '600' }}>{c.resident_name} · Unit {c.unit_number}</div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>{c.property_name}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '13px', color: '#c084fc', fontWeight: '600' }}>{fmtCurrency(c.balance_owed)}</div>
+                  <div style={{ fontSize: '11px', color: '#f87171' }}>{c.days_since_contact ? `${Math.round(c.days_since_contact)}d no contact` : 'Never contacted'}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── RULES ENGINE ── */}
+      {subView === 'rules' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginBottom: '16px' }}>
+            <button onClick={handleSeedRules} disabled={seeding} style={btnGhost}>{seeding ? 'Seeding...' : '↻ Seed Default Rules'}</button>
+          </div>
+          {!rules.length && <div style={{ color: '#64748b', fontSize: '13px' }}>No rules yet. Click "Seed Default Rules" to load the 6 built-in rules.</div>}
+          {rules.map((r, i) => (
+            <div key={i} style={{ ...panelStyle, display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#f1f5f9' }}>{r.rule_name.replace(/_/g,' ')}</span>
+                  <span style={{ fontSize: '10px', color: '#6d28d9', backgroundColor: '#1e1040', borderRadius: '4px', padding: '2px 6px' }}>{dimensionLabel(r.dimension)}</span>
+                  <span style={{ fontSize: '10px', color: severityColor(r.severity), backgroundColor: severityColor(r.severity) + '22', borderRadius: '4px', padding: '2px 6px', textTransform: 'uppercase' }}>{r.severity}</span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>Score impact: +{r.score_impact} pts</div>
+              </div>
+              {/* Toggle */}
+              <div onClick={() => handleToggleRule(r.id, !r.enabled)}
+                style={{ width: '40px', height: '22px', borderRadius: '11px', backgroundColor: r.enabled ? '#7c3aed' : '#1e293b', position: 'relative', cursor: 'pointer', transition: 'background 0.2s', border: '1px solid #3b1f6e' }}>
+                <div style={{ position: 'absolute', top: '2px', left: r.enabled ? '18px' : '2px', width: '16px', height: '16px', borderRadius: '50%', backgroundColor: r.enabled ? '#fff' : '#475569', transition: 'left 0.2s' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+// ── End Collections Risk Tab ───────────────────────────────────────────────────
+
 // ── Root App ───────────────────────────────────────────────────────────────────
 function App() {
   const [user, setUser] = useState(() => {
@@ -4219,6 +4674,7 @@ function App() {
         {activeTab === 'Court Calendar' && <CollectionsCalendarTab token={token} />}
         {activeTab === 'Owner Summary' && <CollectionsOwnerSummaryTab token={token} />}
         {activeTab === 'Onboarding' && <CollectionsOnboardingTab token={token} />}
+        {activeTab === 'Collections Risk' && <CollectionsRiskTab token={token} />}
       </div>
     </div>
   );
