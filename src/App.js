@@ -376,7 +376,6 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
 function CoordinatorAssignField({ caseId, currentCoordinator, token, onAssigned }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(currentCoordinator || '');
-  const [saving, setSaving] = useState(false);
   const KNOWN_COORDINATORS = JSON.parse(localStorage.getItem('collections_known_coordinators') || '[]');
 
   const handleSave = async () => {
@@ -2352,7 +2351,6 @@ function CollectionsWorkspaceTab({ token }) {
 function CollectionsEscalationTab({ token }) {
   const [rules, setRules] = useState([]);
   const [alerts, setAlerts] = useState([]);
-  const [supervisorEmail, setSupervisorEmail] = useState(localStorage.getItem('collections_supervisor_email') || '');
   const [emailConfigStatus, setEmailConfigStatus] = useState(null);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -2361,7 +2359,6 @@ function CollectionsEscalationTab({ token }) {
   const [loading, setLoading] = useState(true);
   const [alertsLoading, setAlertsLoading] = useState(true);
   const [showNewRule, setShowNewRule] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
   const [form, setForm] = useState({
     rule_name: '', property_id: '', trigger_type: 'aging_bucket', trigger_value: '120+',
@@ -3762,7 +3759,6 @@ function CollectionsOwnerSummaryTab({ token }) {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [ownerName, setOwnerName] = useState('');
-  const [shareMode, setShareMode] = useState(false);
 
   const fmtCurrency = (v) => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
   const fmtStatus   = (s) => (s || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -3797,7 +3793,7 @@ function CollectionsOwnerSummaryTab({ token }) {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { loadData('all'); }, [token]);
+  useEffect(() => { loadData('all'); }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePropertyChange = (e) => {
     setSelectedProperty(e.target.value);
@@ -3970,11 +3966,9 @@ function CollectionsOnboardingTab({ token }) {
   const [selectedProperty, setSelectedProperty] = useState('');
   const [propData, setPropData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [billingStatus, setBillingStatus] = useState(null);
   const [caseCount, setCaseCount] = useState(0);
   const [ruleCount, setRuleCount] = useState(0);
-  const [supervisorEmail, setSupervisorEmail] = useState(localStorage.getItem('collections_supervisor_email') || '');
 
   // Checklist state — persisted per property in localStorage
   const getChecklist = (propId) => {
@@ -4252,12 +4246,12 @@ function CollectionsRiskTab({ token }) {
   useEffect(() => {
     setLoading(true);
     Promise.all([fetchDashboard(), fetchRules(), fetchCases()]).finally(() => setLoading(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (subView === 'register') fetchFlags();
     if (subView === 'predictive') fetchPredictive();
-  }, [subView, flagFilter]);
+  }, [subView, flagFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleScoreAll = async () => {
     setScoring(true);
@@ -4664,7 +4658,7 @@ function App() {
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} onLogout={handleLogout} />
       <div style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
         {activeTab === 'Collections Analytics' && <CollectionsAnalyticsTab token={token} onNavigate={(tab, filters) => { if (filters) setCollectionsCaseFilter(f => ({...f, ...filters})); setActiveTab(tab); }} />}
-        {activeTab === 'Collections Cases' && <CollectionsCasesTab token={token} initialFilters={collectionsCaseFilter} onBack={collectionsCaseFilter?.status !== undefined && collectionsCaseFilter?.status !== '' || collectionsCaseFilter?.aging_bucket ? () => { setCollectionsCaseFilter({ status: '', property_id: '', aging_bucket: '' }); setActiveTab('Collections Analytics'); } : null} />}
+        {activeTab === 'Collections Cases' && <CollectionsCasesTab token={token} initialFilters={collectionsCaseFilter} onBack={((collectionsCaseFilter?.status !== undefined && collectionsCaseFilter?.status !== '') || collectionsCaseFilter?.aging_bucket) ? () => { setCollectionsCaseFilter({ status: '', property_id: '', aging_bucket: '' }); setActiveTab('Collections Analytics'); } : null} />}
         {activeTab === 'Collections Reports' && <CollectionsReportsTab token={token} onBack={() => setActiveTab('Collections Analytics')} />}
         {activeTab === 'Coordinator Workspace' && <CollectionsWorkspaceTab token={token} />}
         {activeTab === 'Escalation Rules' && <CollectionsEscalationTab token={token} />}
