@@ -4663,7 +4663,7 @@ function App() {
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} onLogout={handleLogout} />
       <div style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
         {activeTab === 'Collections Analytics' && <CollectionsAnalyticsTab token={token} onNavigate={(tab, filters) => { if (filters) setCollectionsCaseFilter(f => ({...f, ...filters})); setActiveTab(tab); }} />}
-        {activeTab === 'Collections Cases' && <CollectionsCasesTab token={token} initialFilters={collectionsCaseFilter} onBack={((collectionsCaseFilter?.status !== undefined && collectionsCaseFilter?.status !== '') || collectionsCaseFilter?.aging_bucket) ? () => { setCollectionsCaseFilter({ status: '', property_id: '', aging_bucket: '' }); setActiveTab('Collections Analytics'); } : null} />}
+        {activeTab === 'Collections Cases' && <CollectionsCasesTab token={token} initialFilters={collectionsCaseFilter} onBack={() => { setCollectionsCaseFilter({ status: '', property_id: '', aging_bucket: '' }); setActiveTab('Collections Analytics'); }} />}
         {activeTab === 'Collections Reports' && <CollectionsReportsTab token={token} onBack={() => setActiveTab('Collections Analytics')} />}
         {activeTab === 'Coordinator Workspace' && <CollectionsWorkspaceTab token={token} />}
         {activeTab === 'Escalation Rules' && <CollectionsEscalationTab token={token} />}
