@@ -376,6 +376,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
 function CoordinatorAssignField({ caseId, currentCoordinator, token, onAssigned }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(currentCoordinator || '');
+  const [saving, setSaving] = useState(false);
   const KNOWN_COORDINATORS = JSON.parse(localStorage.getItem('collections_known_coordinators') || '[]');
 
   const handleSave = async () => {
@@ -2359,6 +2360,8 @@ function CollectionsEscalationTab({ token }) {
   const [loading, setLoading] = useState(true);
   const [alertsLoading, setAlertsLoading] = useState(true);
   const [showNewRule, setShowNewRule] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [supervisorEmail, setSupervisorEmail] = useState(localStorage.getItem('collections_supervisor_email') || '');
   const [formError, setFormError] = useState('');
   const [form, setForm] = useState({
     rule_name: '', property_id: '', trigger_type: 'aging_bucket', trigger_value: '120+',
@@ -3759,6 +3762,7 @@ function CollectionsOwnerSummaryTab({ token }) {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [ownerName, setOwnerName] = useState('');
+  const [shareMode, setShareMode] = useState(false);
 
   const fmtCurrency = (v) => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
   const fmtStatus   = (s) => (s || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -3969,6 +3973,7 @@ function CollectionsOnboardingTab({ token }) {
   const [billingStatus, setBillingStatus] = useState(null);
   const [caseCount, setCaseCount] = useState(0);
   const [ruleCount, setRuleCount] = useState(0);
+  const [supervisorEmail] = useState(localStorage.getItem('collections_supervisor_email') || '');
 
   // Checklist state — persisted per property in localStorage
   const getChecklist = (propId) => {
