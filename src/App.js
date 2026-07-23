@@ -1796,6 +1796,14 @@ function CollectionsWorkspaceTab({ token }) {
   const [quickSubmitting, setQuickSubmitting] = useState(false);
   const [quickError, setQuickError] = useState('');
   const [view, setView] = useState('queue'); // queue | all
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [mobileView, setMobileView] = useState('queue'); // queue | detail
+
+  React.useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
   const AGING_COLORS  = { '30-60': '#facc15', '61-90': '#fb923c', '91-120': '#f87171', '120+': '#dc2626' };
   const URGENCY_COLOR = (days) => days >= 7 ? '#dc2626' : days >= 3 ? '#fb923c' : '#facc15';
@@ -1971,15 +1979,6 @@ function CollectionsWorkspaceTab({ token }) {
       </div>
     </div>
   );
-
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [mobileView, setMobileView] = useState('queue'); // queue | detail
-
-  React.useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
-  }, []);
 
   // ── Mobile Layout ─────────────────────────────────────────────────────────────
   if (isMobile) return (
