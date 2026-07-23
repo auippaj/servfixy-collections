@@ -5069,29 +5069,29 @@ function ComplianceTab({ token }) {
   };
 
   const sty = {
-    wrap: { padding: '24px', backgroundColor: '#f8fafc', minHeight: '100vh', color: '#374151' },
+    wrap: { padding: '24px', backgroundColor: '#ffffff', minHeight: '100vh', color: '#0f172a' },
     hdr: { display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'20px' },
-    title: { fontSize:'20px', fontWeight:'bold', color:'#f1f5f9' },
-    subnav: { display:'flex', gap:'4px', marginBottom:'20px', borderBottom:'1px solid #1e293b', paddingBottom:'0' },
+    title: { fontSize:'20px', fontWeight:'bold', color:'#0f172a' },
+    subnav: { display:'flex', gap:'4px', marginBottom:'20px', borderBottom:'1px solid #e2e8f0', paddingBottom:'0' },
     snbtn: (active) => ({ padding:'10px 16px', background:'none', border:'none', borderBottom: active ? '2px solid #14B8A6' : '2px solid transparent', color: active ? '#14B8A6' : '#94a3b8', fontSize:'13px', fontWeight: active ? '600' : 'normal', cursor:'pointer' }),
     saveBtn: { padding:'8px 16px', backgroundColor:'#14B8A6', color:'#fff', border:'none', borderRadius:'6px', fontSize:'13px', fontWeight:'bold', cursor:'pointer' },
-    card: { backgroundColor:'#1e293b', borderRadius:'8px', padding:'16px', marginBottom:'12px' },
-    metaCard: { backgroundColor:'#1e293b', borderRadius:'8px', padding:'16px 20px' },
-    metaNum: { fontSize:'26px', fontWeight:'bold', color:'#f1f5f9', marginBottom:'4px' },
-    metaLbl: { fontSize:'12px', color:'#94a3b8' },
+    card: { backgroundColor:'#f8fafc', borderRadius:'8px', padding:'16px', marginBottom:'12px', border:'1px solid #e2e8f0' },
+    metaCard: { backgroundColor:'#f8fafc', borderRadius:'8px', padding:'16px 20px', border:'1px solid #e2e8f0' },
+    metaNum: { fontSize:'26px', fontWeight:'bold', color:'#0f172a', marginBottom:'4px' },
+    metaLbl: { fontSize:'12px', color:'#64748b' },
     grid4: { display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'12px', marginBottom:'20px' },
     grid2: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px' },
-    sectionTitle: { fontSize:'13px', fontWeight:'600', color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'12px' },
+    sectionTitle: { fontSize:'13px', fontWeight:'600', color:'#475569', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'12px' },
     table: { width:'100%', borderCollapse:'collapse', fontSize:'13px' },
-    th: { textAlign:'left', padding:'8px 10px', fontSize:'11px', fontWeight:'600', textTransform:'uppercase', letterSpacing:'0.04em', color:'#64748b', borderBottom:'1px solid #1e293b' },
-    td: { padding:'9px 10px', borderBottom:'1px solid #1e293b', color:'#e2e8f0', verticalAlign:'top' },
-    select: { background:'#0f172a', border:'1px solid #334155', borderRadius:'4px', color:'#e2e8f0', padding:'3px 6px', fontSize:'12px', width:'100%' },
-    textarea: { background:'#0f172a', border:'1px solid #334155', borderRadius:'4px', color:'#e2e8f0', padding:'4px 6px', fontSize:'12px', width:'100%', minHeight:'40px', resize:'vertical' },
-    input: { background:'#0f172a', border:'1px solid #334155', borderRadius:'4px', color:'#e2e8f0', padding:'3px 6px', fontSize:'12px' },
-    gapItem: { padding:'10px 12px', borderLeft:'3px solid #ef4444', backgroundColor:'#1e293b', borderRadius:'0 6px 6px 0', marginBottom:'6px' },
+    th: { textAlign:'left', padding:'8px 10px', fontSize:'11px', fontWeight:'600', textTransform:'uppercase', letterSpacing:'0.04em', color:'#475569', borderBottom:'1px solid #1e293b' },
+    td: { padding:'9px 10px', borderBottom:'1px solid #e2e8f0', color:'#0f172a', verticalAlign:'top' },
+    select: { background:'#ffffff', border:'1px solid #e2e8f0', borderRadius:'4px', color:'#0f172a', padding:'3px 6px', fontSize:'12px', width:'100%' },
+    textarea: { background:'#ffffff', border:'1px solid #e2e8f0', borderRadius:'4px', color:'#0f172a', padding:'4px 6px', fontSize:'12px', width:'100%', minHeight:'40px', resize:'vertical' },
+    input: { background:'#ffffff', border:'1px solid #e2e8f0', borderRadius:'4px', color:'#0f172a', padding:'3px 6px', fontSize:'12px' },
+    gapItem: { padding:'10px 12px', borderLeft:'3px solid #ef4444', backgroundColor:'#fff1f2', borderRadius:'0 6px 6px 0', marginBottom:'6px' },
     progRow: { display:'flex', alignItems:'center', gap:'10px', marginBottom:'6px' },
-    progBg: { flex:1, height:'5px', backgroundColor:'#1e293b', borderRadius:'3px', overflow:'hidden' },
-    addBtn: { width:'100%', padding:'8px', background:'none', border:'1px dashed #334155', borderRadius:'6px', color:'#64748b', cursor:'pointer', fontSize:'13px', marginTop:'8px' },
+    progBg: { flex:1, height:'5px', backgroundColor:'#e2e8f0', borderRadius:'3px', overflow:'hidden' },
+    addBtn: { width:'100%', padding:'8px', background:'none', border:'1px dashed #cbd5e1', borderRadius:'6px', color:'#64748b', cursor:'pointer', fontSize:'13px', marginTop:'8px' },
   };
 
   const domainPct = (domain) => {
@@ -5151,7 +5151,7 @@ function ComplianceTab({ token }) {
                 <div style={sty.sectionTitle}>Open gaps ({gaps.length})</div>
                 {gaps.slice(0,6).map(c => (
                   <div key={c.id} style={sty.gapItem}>
-                    <div style={{fontSize:'13px',fontWeight:'500',color:'#fca5a5'}}>{c.control}</div>
+                    <div style={{fontSize:'13px',fontWeight:'500',color:'#dc2626'}}>{c.control}</div>
                     <div style={{fontSize:'11px',color:'#94a3b8',marginTop:'2px'}}>{c.domain} · {c.soc2} · {c.iso}</div>
                   </div>
                 ))}
