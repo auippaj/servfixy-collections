@@ -252,7 +252,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
         {kpis.map((k, i) => (
           <div key={i} onClick={k.onClick}
             style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', borderLeft: `4px solid ${k.color}`, cursor: 'pointer', transition: 'background 0.15s', userSelect: 'none' }}
-            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#253347'}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
             onMouseLeave={e => e.currentTarget.style.backgroundColor = '#ffffff'}>
             <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{k.label}</div>
             <div style={{ fontSize: '26px', fontWeight: '800', color: k.color, marginBottom: '4px' }}>{k.value}</div>
