@@ -230,10 +230,10 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   const maxAgingBalance = Math.max(...byAging.map(r => Number(r.balance) || 0), 1);
 
   return (
-    <div style={{ padding: '24px', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', minHeight: '100vh', color: '#1e293b' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', color: '#1e293b' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#0f172a' }}>Collections Analytics</h1>
           <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#94a3b8' }}>Portfolio-wide delinquency intelligence</p>
@@ -250,6 +250,9 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
           </button>
         </div>
       </div>
+
+      {/* Scrollable body */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px', marginBottom: '28px' }}>
@@ -372,6 +375,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
       </div>
 
     </div>
+      </div>
   );
 }
 // ── End Collections Analytics Tab ──────────────────────────────────────────────
@@ -1679,10 +1683,10 @@ function CollectionsReportsTab({ token, onBack }) {
   const showDateFilter      = activeReport === 'coordinator_activity';
 
   return (
-    <div style={{ padding: '24px', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', minHeight: '100vh', color: '#1e293b' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', color: '#1e293b' }}>
 
       {/* Header */}
-      <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', marginBottom: '0', padding: '20px 24px', display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
         {onBack && (
           <button onClick={onBack}
             style={{ marginTop: '4px', padding: '6px 12px', backgroundColor: '#1B3A6B', border: '1px solid #14B8A6', borderRadius: '6px', color: '#14B8A6', fontSize: '12px', fontWeight: '600', cursor: 'pointer', flexShrink: 0 }}>
@@ -3579,10 +3583,10 @@ function CollectionsCalendarTab({ token }) {
   const selectedEvents = selectedDate ? (eventsByDate[selectedDate] || []) : [];
 
   return (
-    <div style={{ padding: '24px', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', minHeight: '100vh', color: '#1e293b' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', color: '#1e293b' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '20px 24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0f172a' }}>Court Date Calendar</h1>
           <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>All upcoming legal dates across your portfolio. Click a date to see cases.</p>
@@ -4100,9 +4104,9 @@ function CollectionsOnboardingTab({ token }) {
   const propState = propData?.state;
 
   return (
-    <div style={{ padding: '24px', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', minHeight: '100vh', color: '#1e293b' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', color: '#1e293b' }}>
 
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', padding: '20px 24px', marginBottom: '0' }}>
         <h1 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0f172a' }}>Collections Onboarding</h1>
         <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Complete each step to activate Collections for a property.</p>
       </div>
@@ -4342,9 +4346,9 @@ function CollectionsRiskTab({ token }) {
   ];
 
   return (
-    <div style={{ padding: '28px', maxWidth: '1200px' }}>
+    <div style={{ backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 28px' }}>
         <div>
           <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#0f172a' }}>Collections Risk</h1>
           <div style={{ fontSize: '13px', color: '#2563eb', marginTop: '3px' }}>Risk scoring, flags, and predictive analysis</div>
@@ -5339,8 +5343,8 @@ function IntegrationsTab({ token }) {
   const connectedNames = new Set(connectors.map(c => c.connector));
 
   return (
-    <div style={{ padding: '32px', maxWidth: '1100px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 32px' }}>
         <div style={{ color: '#1e293b', fontSize: '22px', fontWeight: 'bold' }}>PMS Integrations</div>
       </div>
       <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '32px', marginTop: '4px' }}>
