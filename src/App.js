@@ -189,7 +189,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
             <div style={{ width: '130px', fontSize: '12px', color: '#94a3b8', textAlign: 'right', flexShrink: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {fmtStatus(row[labelKey])}
             </div>
-            <div style={{ flex: 1, height: '22px', backgroundColor: '#ffffff', borderRadius: '4px', overflow: 'hidden' }}>
+            <div style={{ flex: 1, height: '22px', backgroundColor: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
               <div style={{ width: `${Math.min(100, (Number(row[valueKey]) / max) * 100)}%`, height: '100%', backgroundColor: colorMap ? (colorMap[row[labelKey]] || '#14B8A6') : '#14B8A6', borderRadius: '4px', transition: 'width 0.4s ease' }} />
             </div>
             <div style={{ width: '40px', fontSize: '12px', color: '#1e293b', fontWeight: '600', flexShrink: 0 }}>{row[valueKey]}</div>
@@ -273,7 +273,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
 
         {/* Aging Breakdown */}
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px' }}>
+        <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
           <h3 style={{ margin: '0 0 16px', fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>Balance by Aging Bucket</h3>
           {byAging.length === 0 ? (
             <div style={{ color: '#475569', fontSize: '13px' }}>No data yet</div>
@@ -288,7 +288,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
                     <span style={{ fontSize: '13px', fontWeight: '600', color: AGING_COLORS[row.aging_bucket] || '#14B8A6' }}>{row.aging_bucket} Days</span>
                     <span style={{ fontSize: '13px', color: '#94a3b8' }}>{row.count} cases &nbsp;·&nbsp; {fmtCurrency(row.balance)} <span style={{ color: '#cbd5e1', fontSize: '11px' }}>→</span></span>
                   </div>
-                  <div style={{ height: '10px', backgroundColor: '#ffffff', borderRadius: '5px', overflow: 'hidden' }}>
+                  <div style={{ height: '10px', backgroundColor: '#f1f5f9', borderRadius: '5px', overflow: 'hidden' }}>
                     <div style={{ width: `${Math.min(100, (Number(row.balance) / maxAgingBalance) * 100)}%`, height: '100%', backgroundColor: AGING_COLORS[row.aging_bucket] || '#14B8A6', borderRadius: '5px', transition: 'width 0.4s ease' }} />
                   </div>
                 </div>
@@ -298,7 +298,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
         </div>
 
         {/* Pipeline by Status */}
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px' }}>
+        <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
           <h3 style={{ margin: '0 0 16px', fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>Collections Pipeline</h3>
           {byStatus.length === 0 ? (
             <div style={{ color: '#475569', fontSize: '13px' }}>No data yet</div>
@@ -312,7 +312,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
 
         {/* Top Properties by Balance */}
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px' }}>
+        <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
           <h3 style={{ margin: '0 0 16px', fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>Properties by Delinquent Balance</h3>
           {byProperty.length === 0 ? (
             <div style={{ color: '#475569', fontSize: '13px' }}>No data yet</div>
@@ -335,7 +335,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
         </div>
 
         {/* Recent Contact Activity */}
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px' }}>
+        <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
           <h3 style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>Contact Activity</h3>
           <div style={{ fontSize: '11px', color: '#475569', marginBottom: '16px' }}>Last 30 days</div>
           {activity.length === 0 ? (
@@ -357,7 +357,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
       </div>
 
       {/* Payment Plan Summary */}
-      <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px' }}>
+      <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
         <h3 style={{ margin: '0 0 16px', fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>Payment Plan Overview</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
           {[
@@ -366,7 +366,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
             { label: 'Completed', value: plans.completed_plans || 0, color: '#14B8A6' },
             { label: 'Broken', value: plans.broken_plans || 0, color: '#dc2626' },
           ].map((item, i) => (
-            <div key={i} style={{ textAlign: 'center', padding: '16px', backgroundColor: '#ffffff', borderRadius: '10px' }}>
+            <div key={i} style={{ textAlign: 'center', padding: '16px', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
               <div style={{ fontSize: '28px', fontWeight: '800', color: item.color }}>{item.value}</div>
               <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>{item.label}</div>
             </div>
@@ -1291,7 +1291,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
 
             {/* Documents */}
             {(caseDetail.documents || []).length > 0 && (
-              <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px' }}>
+              <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
                 <h3 style={{ margin: '0 0 16px', fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>Documents ({caseDetail.documents.length})</h3>
                 {caseDetail.documents.map((d, i) => (
                   <div key={i} style={{ padding: '12px', backgroundColor: '#ffffff', borderRadius: '8px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2329,7 +2329,7 @@ function CollectionsWorkspaceTab({ token }) {
 
             {/* Active Payment Plans */}
             {(caseDetail.payment_plans || []).filter(p => p.status === 'active').length > 0 && (
-              <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px' }}>
+              <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
                 <h3 style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>Active Payment Plan</h3>
                 {caseDetail.payment_plans.filter(p => p.status === 'active').map((plan, i) => (
                   <div key={i} style={{ padding: '14px', backgroundColor: '#ffffff', borderRadius: '8px' }}>
@@ -3018,7 +3018,7 @@ function CollectionsDocumentVault({ token }) {
             </div>
 
             {/* Documents List */}
-            <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px' }}>
+            <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
               <h3 style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>Documents ({documents.length})</h3>
               {docsLoading ? (
                 <div style={{ color: '#475569', fontSize: '13px' }}>Loading documents...</div>
@@ -3338,7 +3338,7 @@ function CollectionsImportTab({ token }) {
             </label>
           </div>
 
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px' }}>
+          <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
             <h3 style={{ margin: '0 0 12px', fontSize: '13px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>Expected Columns (any order)</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               {FIELDS.map(f => (
@@ -3684,7 +3684,7 @@ function CollectionsCalendarTab({ token }) {
           {/* Side Panel — selected date or upcoming */}
           <div>
             {selectedDate && selectedEvents.length > 0 ? (
-              <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px' }}>
+              <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
                 <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '4px' }}>
                   {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                 </div>
@@ -3702,7 +3702,7 @@ function CollectionsCalendarTab({ token }) {
                 ))}
               </div>
             ) : (
-              <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px' }}>
+              <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
                 <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', marginBottom: '14px' }}>Next 60 Days ({upcoming.length})</div>
                 {upcoming.length === 0 ? (
                   <div style={{ color: '#475569', fontSize: '13px' }}>No upcoming legal dates.</div>
@@ -3886,7 +3886,7 @@ function CollectionsOwnerSummaryTab({ token }) {
 
             {/* Aging Breakdown */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-              <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px' }}>
+              <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
                 <h3 style={{ margin: '0 0 16px', fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>Delinquency Aging</h3>
                 {Object.entries(summaryData.aging).map(([bucket, count]) => (
                   <div key={bucket} style={{ marginBottom: '14px' }}>
@@ -3902,7 +3902,7 @@ function CollectionsOwnerSummaryTab({ token }) {
               </div>
 
               {/* Pipeline Summary */}
-              <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px' }}>
+              <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
                 <h3 style={{ margin: '0 0 16px', fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>Pipeline Summary</h3>
                 {[
                   { label: 'Active — No Action Yet', count: cases.filter(c => c.status === 'active').length, color: '#1d4ed8' },
