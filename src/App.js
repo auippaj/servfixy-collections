@@ -4640,6 +4640,759 @@ function CollectionsRiskTab({ token }) {
 }
 // ── End Collections Risk Tab ───────────────────────────────────────────────────
 
+const PMS_CATALOG = [
+  { name: 'appfolio', label: 'AppFolio',       color: '#6366f1', note: 'Partner approval pending' },
+  { name: 'resman',   label: 'ResMan',          color: '#f59e0b', note: 'Partner application pending' },
+  { name: 'entrata',  label: 'Entrata',         color: '#10b981', note: 'Requires mutual client sponsor' },
+  { name: 'onesite',  label: 'RealPage OneSite',color: '#ef4444', note: 'Requires RPX registration + active client' },
+  { name: 'yardi',    label: 'Yardi Voyager',   color: '#8b5cf6', note: 'Requires SIPP (3 active Voyager clients)' },
+];
+
+function ConnectorStatusBadge({ status }) {
+  const map = {
+    active:   { bg: '#064e3b', color: '#34d399', label: 'Active' },
+    inactive: { bg: '#1e293b', color: '#94a3b8', label: 'Inactive' },
+    error:    { bg: '#7f1d1d', color: '#fca5a5', label: 'Error' },
+  };
+  const s = map[status] || map.inactive;
+  return (
+    <span style={{ backgroundColor: s.bg, color: s.color, padding: '3px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>
+      {s.label}
+    </span>
+  );
+}
+
+function SyncJobRow({ job }) {
+  const statusColor = { completed: '#34d399', failed: '#fca5a5', running: '#60a5fa', pending: '#94a3b8' };
+  const d = s => s ? new Date(s).toLocaleString() : '—';
+  return (
+    <tr style={{ borderBottom: '1px solid #1e293b' }}>
+      <td style={{ padding: '10px 12px', color: '#94a3b8', fontSize: '12px' }}>{d(job.created_at)}</td>
+      <td style={{ padding: '10px 12px', color: '#374151', fontSize: '12px', textTransform: 'capitalize' }}>{job.job_type}</td>
+      <td style={{ padding: '10px 12px', color: '#94a3b8', fontSize: '12px' }}>{job.entity_type || 'all'}</td>
+      <td style={{ padding: '10px 12px' }}>
+        <span style={{ color: statusColor[job.status] || '#94a3b8', fontSize: '12px', fontWeight: 'bold', textTransform: 'capitalize' }}>{job.status}</span>
+      </td>
+      <td style={{ padding: '10px 12px', color: '#34d399', fontSize: '12px' }}>{job.records_created || 0} new</td>
+      <td style={{ padding: '10px 12px', color: '#60a5fa', fontSize: '12px' }}>{job.records_updated || 0} updated</td>
+      <td style={{ padding: '10px 12px', color: '#fca5a5', fontSize: '12px' }}>{job.records_failed || 0} failed</td>
+      <td style={{ padding: '10px 12px', color: '#94a3b8', fontSize: '12px' }}>{job.completed_at ? Math.round((new Date(job.completed_at) - new Date(job.started_at)) / 1000) + 's' : '—'}</td>
+    </tr>
+  );
+}
+
+function ConnectorCard({ connector, catalogEntry, token, onRefresh }) {
+  const [syncing, setSyncing] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [jobs, setJobs] = useState([]);
+  const [showJobs, setShowJobs] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  const api = (path, opts = {}) => fetch(`${API_URL}${path}`, {
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    ...opts
+  });
+
+  const loadJobs = async () => {
+    const r = await api(`/api/integrations/${connector.id}/jobs?limit=10`);
+    const d = await r.json();
+    setJobs(d.jobs || []);
+  };
+
+  const handleTest = async () => {
+    setTesting(true); setMsg('');
+    try {
+      const r = await api(`/api/integrations/${connector.id}/test`, { method: 'POST' });
+      const d = await r.json();
+      setMsg(d.message || (d.success ? 'Connection verified.' : 'Test failed.'));
+      onRefresh();
+    } catch { setMsg('Test request failed.'); }
+    finally { setTesting(false); }
+  };
+
+  const handleSync = async (type) => {
+    setSyncing(true); setMsg('');
+    try {
+      const r = await api(`/api/integrations/${connector.id}/sync`, {
+        method: 'POST', body: JSON.stringify({ type })
+      });
+      const d = await r.json();
+      setMsg(d.message || 'Sync started.');
+      setTimeout(() => { loadJobs(); onRefresh(); }, 2000);
+    } catch { setMsg('Sync request failed.'); }
+    finally { setSyncing(false); }
+  };
+
+  const handleToggle = async () => {
+    const newStatus = connector.status === 'active' ? 'inactive' : 'active';
+    await api(`/api/integrations/${connector.id}/status`, {
+      method: 'PATCH', body: JSON.stringify({ status: newStatus })
+    });
+    onRefresh();
+  };
+
+  const handleDisconnect = async () => {
+    if (!window.confirm(`Disconnect ${catalogEntry.label}? This removes all credentials and sync history.`)) return;
+    await api(`/api/integrations/${connector.id}`, { method: 'DELETE' });
+    onRefresh();
+  };
+
+  const fmt = d => d ? new Date(d).toLocaleString() : 'Never';
+
+  return (
+    <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '24px', border: `1px solid ${catalogEntry.color}33` }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: catalogEntry.color }} />
+          <span style={{ color: '#1e293b', fontSize: '16px', fontWeight: 'bold' }}>{catalogEntry.label}</span>
+          <ConnectorStatusBadge status={connector.status} />
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={handleTest} disabled={testing}
+            style={{ padding: '6px 14px', backgroundColor: '#334155', color: '#94a3b8', border: 'none', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
+            {testing ? 'Testing...' : 'Test'}
+          </button>
+          <button onClick={() => handleSync('incremental')} disabled={syncing || connector.status !== 'active'}
+            style={{ padding: '6px 14px', backgroundColor: '#14B8A6', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px', cursor: connector.status !== 'active' ? 'not-allowed' : 'pointer', opacity: connector.status !== 'active' ? 0.5 : 1 }}>
+            {syncing ? 'Syncing...' : 'Sync Now'}
+          </button>
+          <button onClick={() => handleSync('full')} disabled={syncing || connector.status !== 'active'}
+            style={{ padding: '6px 14px', backgroundColor: '#1e40af', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px', cursor: connector.status !== 'active' ? 'not-allowed' : 'pointer', opacity: connector.status !== 'active' ? 0.5 : 1 }}>
+            Full Sync
+          </button>
+          <button onClick={handleToggle}
+            style={{ padding: '6px 14px', backgroundColor: '#334155', color: '#94a3b8', border: 'none', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
+            {connector.status === 'active' ? 'Disable' : 'Enable'}
+          </button>
+          <button onClick={handleDisconnect}
+            style={{ padding: '6px 14px', backgroundColor: '#7f1d1d', color: '#fca5a5', border: 'none', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
+            Remove
+          </button>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+        <div style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '12px' }}>
+          <div style={{ color: '#64748b', fontSize: '11px', marginBottom: '4px' }}>FULL SYNC</div>
+          <div style={{ color: '#374151', fontSize: '13px' }}>{fmt(connector.last_full_sync_at)}</div>
+        </div>
+        <div style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '12px' }}>
+          <div style={{ color: '#64748b', fontSize: '11px', marginBottom: '4px' }}>LAST INCREMENTAL</div>
+          <div style={{ color: '#374151', fontSize: '13px' }}>{fmt(connector.last_incremental_sync_at)}</div>
+        </div>
+        <div style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '12px' }}>
+          <div style={{ color: '#64748b', fontSize: '11px', marginBottom: '4px' }}>CONNECTED</div>
+          <div style={{ color: '#374151', fontSize: '13px' }}>{fmt(connector.created_at)}</div>
+        </div>
+      </div>
+      {msg && <div style={{ backgroundColor: '#f8fafc', color: '#60a5fa', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', marginBottom: '12px' }}>{msg}</div>}
+      <button onClick={() => { setShowJobs(!showJobs); if (!showJobs) loadJobs(); }}
+        style={{ backgroundColor: 'transparent', border: 'none', color: '#94a3b8', fontSize: '13px', cursor: 'pointer', padding: '0' }}>
+        {showJobs ? '▲ Hide' : '▼ Show'} sync history
+      </button>
+      {showJobs && (
+        <div style={{ marginTop: '12px', overflowX: 'auto' }}>
+          {jobs.length === 0 ? (
+            <div style={{ color: '#475569', fontSize: '13px', padding: '12px 0' }}>No sync jobs yet.</div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                  {['Time','Type','Entity','Status','Created','Updated','Failed','Duration'].map(h => (
+                    <th key={h} style={{ padding: '8px 12px', color: '#64748b', fontSize: '11px', textAlign: 'left', fontWeight: 'normal' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>{jobs.map(j => <SyncJobRow key={j.id} job={j} />)}</tbody>
+            </table>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ConnectModal({ entry, token, onClose, onConnected }) {
+  const fields = {
+    appfolio: [
+      { key: 'clientId',     label: 'Client ID',     type: 'text' },
+      { key: 'clientSecret', label: 'Client Secret', type: 'password' },
+    ],
+    resman: [
+      { key: 'partnerId', label: 'Integration Partner ID', type: 'text' },
+      { key: 'apiKey',    label: 'API Key',                type: 'password' },
+      { key: 'accountId', label: 'ResMan Account ID',      type: 'text' },
+    ],
+    entrata: [
+      { key: 'domain',   label: 'Entrata Domain (e.g. mycompany)', type: 'text' },
+      { key: 'username', label: 'Username',                         type: 'text' },
+      { key: 'password', label: 'Password',                         type: 'password' },
+      { key: 'clientId', label: 'Client ID',                        type: 'text' },
+    ],
+    onesite: [
+      { key: 'apiKey', label: 'RealPage Exchange API Key', type: 'password' },
+      { key: 'pmcId',  label: 'PMC ID',                   type: 'text' },
+      { key: 'siteId', label: 'Site ID',                  type: 'text' },
+    ],
+    yardi: [
+      { key: 'serverUrl', label: 'Voyager Server URL', type: 'text' },
+      { key: 'username',  label: 'Username',           type: 'text' },
+      { key: 'password',  label: 'Password',           type: 'password' },
+      { key: 'database',  label: 'Database Name',      type: 'text' },
+      { key: 'entity',    label: 'Entity',             type: 'text' },
+    ],
+  };
+
+  const [form, setForm] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async () => {
+    setLoading(true); setError('');
+    try {
+      const r = await fetch(`${API_URL}/api/integrations/connect`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ connector: entry.name, displayName: entry.label, credentials: form })
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'Connection failed.');
+      onConnected();
+      onClose();
+    } catch (err) { setError(err.message); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '32px', width: '480px', maxWidth: '90vw' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+          <h3 style={{ color: '#1e293b', margin: 0, fontSize: '18px' }}>Connect {entry.label}</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '20px', cursor: 'pointer' }}>×</button>
+        </div>
+        <div style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#94a3b8', fontSize: '13px' }}>
+          {entry.note}
+        </div>
+        {(fields[entry.name] || []).map(f => (
+          <div key={f.key} style={{ marginBottom: '14px' }}>
+            <label style={{ color: '#94a3b8', fontSize: '12px', display: 'block', marginBottom: '5px' }}>{f.label}</label>
+            <input type={f.type} value={form[f.key] || ''} onChange={e => setForm({ ...form, [f.key]: e.target.value })}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e5e7eb', backgroundColor: '#f8fafc', color: 'white', fontSize: '13px', boxSizing: 'border-box' }} />
+          </div>
+        ))}
+        {error && <div style={{ color: '#fca5a5', fontSize: '13px', marginBottom: '14px' }}>{error}</div>}
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '8px' }}>
+          <button onClick={onClose} style={{ padding: '9px 20px', backgroundColor: '#334155', color: '#94a3b8', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
+          <button onClick={handleSubmit} disabled={loading}
+            style={{ padding: '9px 20px', backgroundColor: '#14B8A6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>
+            {loading ? 'Connecting...' : 'Connect'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ─── COMPLIANCE TAB ──────────────────────────────────────────────────────────
+function ComplianceTab({ token }) {
+  const API = 'https://servfixy-production.up.railway.app';
+
+  const DEFAULT_CONTROLS = [
+    {id:'c1',domain:'Access Control',control:'MFA enforced on all admin systems',soc2:'CC6.1',iso:'A.8.5',status:'implemented',evidence:'GitHub, Supabase, Railway, Vercel, Stripe all require MFA'},
+    {id:'c2',domain:'Access Control',control:'Least-privilege access — role-based by property_id',soc2:'CC6.3',iso:'A.8.2',status:'implemented',evidence:'All DB queries scoped by property_id; technicians see assigned work only'},
+    {id:'c3',domain:'Access Control',control:'Access review for all personnel',soc2:'CC6.2',iso:'A.5.18',status:'partial',evidence:'No formal quarterly review process documented yet'},
+    {id:'c4',domain:'Access Control',control:'Offboarding procedure (access revocation)',soc2:'CC6.2',iso:'A.6.5',status:'gap',evidence:''},
+    {id:'c5',domain:'Encryption',control:'Encryption in transit (TLS 1.2+)',soc2:'CC6.7',iso:'A.8.24',status:'implemented',evidence:'Enforced by Railway, Vercel, Supabase — no plain HTTP in production'},
+    {id:'c6',domain:'Encryption',control:'Encryption at rest',soc2:'CC6.7',iso:'A.8.24',status:'implemented',evidence:'Supabase managed PostgreSQL encryption at rest; Supabase Storage S3-compatible'},
+    {id:'c7',domain:'Secrets Management',control:'No secrets in source code',soc2:'CC6.1',iso:'A.8.10',status:'implemented',evidence:'All secrets in Railway env vars; GitHub PAT scoped to required repos'},
+    {id:'c8',domain:'Secrets Management',control:'Secret rotation policy',soc2:'CC6.1',iso:'A.8.10',status:'partial',evidence:'Policy: rotate on personnel change or breach — not yet formally documented'},
+    {id:'c9',domain:'Incident Response',control:'Incident response plan documented',soc2:'CC7.3',iso:'A.5.24',status:'gap',evidence:''},
+    {id:'c10',domain:'Incident Response',control:'Incident response tested',soc2:'CC7.4',iso:'A.5.26',status:'gap',evidence:''},
+    {id:'c11',domain:'Change Management',control:'Code review before production merge',soc2:'CC8.1',iso:'A.8.32',status:'partial',evidence:'Solo founder build — no formal peer review; CI/CD via Railway + Vercel on main push'},
+    {id:'c12',domain:'Change Management',control:'Branch protection on main',soc2:'CC8.1',iso:'A.8.32',status:'gap',evidence:'Recommended but not confirmed enforced'},
+    {id:'c13',domain:'Logging & Monitoring',control:'Audit logging of user actions',soc2:'CC7.2',iso:'A.8.15',status:'implemented',evidence:'audit_logs table in Supabase; user actions logged in backend middleware'},
+    {id:'c14',domain:'Logging & Monitoring',control:'Log retention policy (2 years)',soc2:'CC7.2',iso:'A.8.17',status:'partial',evidence:'Audit logs in Supabase; retention period not formally enforced'},
+    {id:'c15',domain:'Logging & Monitoring',control:'Alerting on anomalous activity',soc2:'CC7.1',iso:'A.8.16',status:'gap',evidence:''},
+    {id:'c16',domain:'Vulnerability Management',control:'Penetration test',soc2:'CC7.1',iso:'A.8.8',status:'gap',evidence:'Required for SOC 2 — pending budget'},
+    {id:'c17',domain:'Vulnerability Management',control:'Dependency vulnerability scanning',soc2:'CC7.1',iso:'A.8.8',status:'gap',evidence:''},
+    {id:'c18',domain:'Vendor Management',control:'Vendor risk assessment documented',soc2:'CC9.2',iso:'A.5.21',status:'partial',evidence:'Vendor register built — no formal DPA review completed for AI vendors'},
+    {id:'c19',domain:'Vendor Management',control:'DPAs in place with data processors',soc2:'CC9.2',iso:'A.5.21',status:'gap',evidence:'OpenAI/Anthropic DPA not confirmed'},
+    {id:'c20',domain:'Business Continuity',control:'Backup and recovery plan',soc2:'A1.2',iso:'A.8.13',status:'partial',evidence:'Supabase manages automated backups; no formal RTO/RPO defined'},
+    {id:'c21',domain:'Business Continuity',control:'Disaster recovery tested',soc2:'A1.3',iso:'A.5.30',status:'gap',evidence:''},
+    {id:'c22',domain:'Security Policies',control:'Information Security Policy',soc2:'CC1.1',iso:'A.5.1',status:'implemented',evidence:'SFXY-SEC-002 complete — July 2026'},
+    {id:'c23',domain:'Security Policies',control:'Data Classification Policy',soc2:'CC6.5',iso:'A.5.12',status:'partial',evidence:'Data classification documented in Asset Inventory (SFXY-SEC-001)'},
+    {id:'c24',domain:'Security Policies',control:'Acceptable Use Policy',soc2:'CC1.1',iso:'A.5.10',status:'gap',evidence:''},
+    {id:'c25',domain:'API Security',control:'Rate limiting on all endpoints',soc2:'CC6.1',iso:'A.8.20',status:'implemented',evidence:'Rate limiting implemented in backend middleware (Phase 2 security hardening)'},
+    {id:'c26',domain:'API Security',control:'Input validation',soc2:'CC6.1',iso:'A.8.20',status:'implemented',evidence:'Input validation in backend middleware'},
+    {id:'c27',domain:'Training',control:'Security awareness training for all personnel',soc2:'CC1.4',iso:'A.6.3',status:'gap',evidence:''},
+  ];
+
+  const DEFAULT_RISKS = [
+    {id:'r1',asset:'Supabase PostgreSQL',threat:'Unauthorized DB access via SQL injection',likelihood:2,impact:5,treatment:'mitigate',notes:'Input validation + parameterized queries in place; pentest pending'},
+    {id:'r2',asset:'Railway env vars',threat:'Secret exposure via misconfigured repo',likelihood:2,impact:5,treatment:'mitigate',notes:'No secrets in source code policy implemented; GitHub PAT scoped'},
+    {id:'r3',asset:'Resident PII',threat:'Data breach — unauthorized export',likelihood:2,impact:5,treatment:'mitigate',notes:'Access scoped by property_id; MFA on all admin systems'},
+    {id:'r4',asset:'Supabase Storage',threat:'Photo/PDF access without authorization',likelihood:2,impact:3,treatment:'mitigate',notes:'Signed URLs implemented for photo access'},
+    {id:'r5',asset:'Railway backend',threat:'Service outage / availability failure',likelihood:3,impact:4,treatment:'mitigate',notes:'No formal RTO/RPO; Supabase backups automated'},
+    {id:'r6',asset:'Stripe integration',threat:'Payment processing failure / fraud',likelihood:2,impact:4,treatment:'transfer',notes:'Stripe PCI DSS Level 1; Servfixy does not store card data'},
+    {id:'r7',asset:'GitHub repos',threat:'Malicious code injection via compromised account',likelihood:2,impact:5,treatment:'mitigate',notes:'MFA on GitHub; branch protection recommended'},
+    {id:'r8',asset:'Twilio A2P SMS',threat:'Resident SMS spoofing / spam',likelihood:2,impact:2,treatment:'mitigate',notes:'A2P carrier approval pending'},
+    {id:'r9',asset:'AI triage features',threat:'PII sent to third-party AI without DPA',likelihood:3,impact:4,treatment:'mitigate',notes:'DPA with OpenAI/Anthropic not confirmed — action required'},
+    {id:'r10',asset:'PMS connectors',threat:'Credential theft exposing AppFolio/Yardi data',likelihood:2,impact:5,treatment:'mitigate',notes:'Credentials not yet received; framework built with env var pattern'},
+  ];
+
+  const DEFAULT_DOCS = [
+    {id:'d1',name:'Asset Inventory & System Description',docId:'SFXY-SEC-001',status:'complete',lastReview:'2026-07',nextReview:'2026-10',framework:'SOC 2 + ISO 27001',notes:'v1.0 complete'},
+    {id:'d2',name:'Information Security Policy',docId:'SFXY-SEC-002',status:'complete',lastReview:'2026-07',nextReview:'2027-07',framework:'SOC 2 + ISO 27001',notes:'v1.0 complete'},
+    {id:'d3',name:'Access Control Policy',docId:'SFXY-SEC-003',status:'pending',lastReview:'',nextReview:'',framework:'SOC 2 + ISO 27001',notes:''},
+    {id:'d4',name:'Incident Response Plan',docId:'SFXY-SEC-004',status:'pending',lastReview:'',nextReview:'',framework:'SOC 2 + ISO 27001',notes:''},
+    {id:'d5',name:'Change Management Policy',docId:'SFXY-SEC-005',status:'pending',lastReview:'',nextReview:'',framework:'SOC 2 + ISO 27001',notes:''},
+    {id:'d6',name:'Vendor Management Policy',docId:'SFXY-SEC-006',status:'pending',lastReview:'',nextReview:'',framework:'SOC 2 + ISO 27001',notes:''},
+    {id:'d7',name:'Data Classification Policy',docId:'SFXY-SEC-007',status:'partial',lastReview:'2026-07',nextReview:'2026-10',framework:'SOC 2 + ISO 27001',notes:'Partially covered in SFXY-SEC-001'},
+    {id:'d8',name:'Business Continuity & DR Plan',docId:'SFXY-SEC-008',status:'pending',lastReview:'',nextReview:'',framework:'SOC 2 + ISO 27001',notes:''},
+    {id:'d9',name:'Acceptable Use Policy',docId:'SFXY-SEC-009',status:'pending',lastReview:'',nextReview:'',framework:'SOC 2',notes:''},
+    {id:'d10',name:'Risk Assessment & Risk Register',docId:'SFXY-SEC-010',status:'partial',lastReview:'2026-07',nextReview:'2026-10',framework:'ISO 27001',notes:'Live in compliance tab'},
+  ];
+
+  const DEFAULT_VENDORS = [
+    {id:'v1',vendor:'Supabase',service:'Database + Storage + Auth',dataTier:'Critical',soc2Status:'SOC 2 Type II',isoStatus:'Not certified',dpa:'Confirm',notes:'Primary data store — highest priority'},
+    {id:'v2',vendor:'Railway',service:'Backend hosting',dataTier:'Critical',soc2Status:'SOC 2 Type II',isoStatus:'Not certified',dpa:'Confirm',notes:'API runtime; env vars and secrets'},
+    {id:'v3',vendor:'Vercel',service:'Frontend hosting / CDN',dataTier:'High',soc2Status:'SOC 2 Type II',isoStatus:'Not certified',dpa:'Confirm',notes:'No persistent data stored'},
+    {id:'v4',vendor:'Stripe',service:'Payment processing',dataTier:'High',soc2Status:'SOC 2 Type I',isoStatus:'PCI DSS L1',dpa:'Confirm',notes:'No raw card data stored by Servfixy'},
+    {id:'v5',vendor:'Firebase (Google)',service:'Push notifications (FCM)',dataTier:'Medium',soc2Status:'N/A',isoStatus:'ISO 27001',dpa:'Google DPA',notes:'Device tokens + notification payloads'},
+    {id:'v6',vendor:'Twilio',service:'SMS (A2P pending)',dataTier:'Medium',soc2Status:'SOC 2 Type II',isoStatus:'ISO 27001',dpa:'Confirm',notes:'Phone numbers and message content'},
+    {id:'v7',vendor:'GitHub (Microsoft)',service:'Source control',dataTier:'High',soc2Status:'SOC 2 Type II',isoStatus:'ISO 27001',dpa:'Microsoft DPA',notes:'Application source code across 4 repos'},
+    {id:'v8',vendor:'OpenAI',service:'AI triage / analysis',dataTier:'Medium',soc2Status:'SOC 2 Type II',isoStatus:'Not certified',dpa:'MISSING',notes:'Maintenance request content — DPA required urgently'},
+    {id:'v9',vendor:'Anthropic',service:'AI features',dataTier:'Medium',soc2Status:'SOC 2 (in progress)',isoStatus:'Not certified',dpa:'MISSING',notes:'Confirm DPA before audit'},
+    {id:'v10',vendor:'Framer',service:'Marketing website',dataTier:'Low',soc2Status:'Unknown',isoStatus:'Unknown',dpa:'Not required',notes:'No customer data — out of scope'},
+  ];
+
+  const STORAGE_KEY = 'sfxy-compliance-v2';
+
+  const [activeSection, setActiveSection] = React.useState('dashboard');
+  const [controls, setControls] = React.useState(DEFAULT_CONTROLS);
+  const [risks, setRisks] = React.useState(DEFAULT_RISKS);
+  const [docs, setDocs] = React.useState(DEFAULT_DOCS);
+  const [vendors, setVendors] = React.useState(DEFAULT_VENDORS);
+  const [saved, setSaved] = React.useState(false);
+  const [loaded, setLoaded] = React.useState(false);
+
+  React.useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const s = JSON.parse(raw);
+        if (s.controls) setControls(s.controls);
+        if (s.risks) setRisks(s.risks);
+        if (s.docs) setDocs(s.docs);
+        if (s.vendors) setVendors(s.vendors);
+      }
+    } catch(e) {}
+    setLoaded(true);
+  }, []);
+
+  const saveAll = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ controls, risks, docs, vendors }));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch(e) {}
+  };
+
+  const updateControl = (id, field, value) => {
+    setControls(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c));
+  };
+  const updateRisk = (id, field, value) => {
+    setRisks(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
+  };
+  const updateDoc = (id, field, value) => {
+    setDocs(prev => prev.map(d => d.id === id ? { ...d, [field]: value } : d));
+  };
+  const updateVendor = (id, field, value) => {
+    setVendors(prev => prev.map(v => v.id === id ? { ...v, [field]: value } : v));
+  };
+  const addRisk = () => {
+    setRisks(prev => [...prev, { id: 'r' + Date.now(), asset: 'New asset', threat: 'New threat', likelihood: 2, impact: 2, treatment: 'mitigate', notes: '' }]);
+  };
+
+  // ── Stats ──
+  const total = controls.length;
+  const impl = controls.filter(c => c.status === 'implemented').length;
+  const partial = controls.filter(c => c.status === 'partial').length;
+  const gap = controls.filter(c => c.status === 'gap').length;
+  const score = Math.round((impl + partial * 0.5) / total * 100);
+  const soc2c = controls.filter(c => c.soc2);
+  const soc2score = Math.round((soc2c.filter(c=>c.status==='implemented').length + soc2c.filter(c=>c.status==='partial').length*0.5) / soc2c.length * 100);
+  const isoc = controls.filter(c => c.iso);
+  const isoscore = Math.round((isoc.filter(c=>c.status==='implemented').length + isoc.filter(c=>c.status==='partial').length*0.5) / isoc.length * 100);
+  const vendorGaps = vendors.filter(v => v.dpa === 'MISSING').length;
+  const docsComplete = docs.filter(d => d.status === 'complete').length;
+  const gaps = controls.filter(c => c.status === 'gap');
+
+  const domains = [...new Set(controls.map(c => c.domain))];
+  const domainColors = {
+    'Access Control':'#1B3A6B','Encryption':'#14B8A6','Secrets Management':'#7C3AED',
+    'Incident Response':'#DC2626','Change Management':'#D97706','Logging & Monitoring':'#0284C7',
+    'Vulnerability Management':'#EA580C','Vendor Management':'#6366F1','Business Continuity':'#059669',
+    'Security Policies':'#475569','API Security':'#0891B2','Training':'#9333EA'
+  };
+
+  const statusBadge = (s) => {
+    const map = { implemented: ['#166534','#dcfce7','Implemented'], partial: ['#854d0e','#fef9c3','Partial'], gap: ['#991b1b','#fee2e2','Gap'], complete: ['#166534','#dcfce7','Complete'], pending: ['#991b1b','#fee2e2','Pending'] };
+    const [tc,bg,label] = map[s] || ['#374151','#f3f4f6',s];
+    return <span style={{backgroundColor:bg,color:tc,padding:'2px 8px',borderRadius:'4px',fontSize:'11px',fontWeight:'bold'}}>{label}</span>;
+  };
+
+  const dpaBadge = (d) => {
+    if (d === 'MISSING') return <span style={{backgroundColor:'#fee2e2',color:'#991b1b',padding:'2px 8px',borderRadius:'4px',fontSize:'11px',fontWeight:'bold'}}>Missing</span>;
+    if (d === 'Not required') return <span style={{backgroundColor:'#f1f5f9',color:'#64748b',padding:'2px 8px',borderRadius:'4px',fontSize:'11px'}}>N/A</span>;
+    return <span style={{backgroundColor:'#fef9c3',color:'#854d0e',padding:'2px 8px',borderRadius:'4px',fontSize:'11px',fontWeight:'bold'}}>{d}</span>;
+  };
+
+  const tierBadge = (t) => {
+    const map = {Critical:['#fee2e2','#991b1b'],High:['#fef9c3','#854d0e'],Medium:['#dbeafe','#1e40af'],Low:['#f1f5f9','#475569']};
+    const [bg,tc] = map[t] || ['#f1f5f9','#475569'];
+    return <span style={{backgroundColor:bg,color:tc,padding:'2px 8px',borderRadius:'4px',fontSize:'11px',fontWeight:'bold'}}>{t}</span>;
+  };
+
+  const riskScore = (r) => {
+    const s = r.likelihood * r.impact;
+    const [bg,tc] = s>=15?['#fee2e2','#991b1b']:s>=9?['#fef9c3','#854d0e']:s>=4?['#fef3c7','#92400e']:['#dcfce7','#166534'];
+    return <span style={{backgroundColor:bg,color:tc,width:'28px',height:'28px',borderRadius:'50%',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:'12px',fontWeight:'bold'}}>{s}</span>;
+  };
+
+  const sty = {
+    wrap: { padding: '24px', backgroundColor: '#f8fafc', minHeight: '100vh', color: '#374151' },
+    hdr: { display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'20px' },
+    title: { fontSize:'20px', fontWeight:'bold', color:'#f1f5f9' },
+    subnav: { display:'flex', gap:'4px', marginBottom:'20px', borderBottom:'1px solid #1e293b', paddingBottom:'0' },
+    snbtn: (active) => ({ padding:'10px 16px', background:'none', border:'none', borderBottom: active ? '2px solid #14B8A6' : '2px solid transparent', color: active ? '#14B8A6' : '#94a3b8', fontSize:'13px', fontWeight: active ? '600' : 'normal', cursor:'pointer' }),
+    saveBtn: { padding:'8px 16px', backgroundColor:'#14B8A6', color:'#fff', border:'none', borderRadius:'6px', fontSize:'13px', fontWeight:'bold', cursor:'pointer' },
+    card: { backgroundColor:'#1e293b', borderRadius:'8px', padding:'16px', marginBottom:'12px' },
+    metaCard: { backgroundColor:'#1e293b', borderRadius:'8px', padding:'16px 20px' },
+    metaNum: { fontSize:'26px', fontWeight:'bold', color:'#f1f5f9', marginBottom:'4px' },
+    metaLbl: { fontSize:'12px', color:'#94a3b8' },
+    grid4: { display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'12px', marginBottom:'20px' },
+    grid2: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px' },
+    sectionTitle: { fontSize:'13px', fontWeight:'600', color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'12px' },
+    table: { width:'100%', borderCollapse:'collapse', fontSize:'13px' },
+    th: { textAlign:'left', padding:'8px 10px', fontSize:'11px', fontWeight:'600', textTransform:'uppercase', letterSpacing:'0.04em', color:'#64748b', borderBottom:'1px solid #1e293b' },
+    td: { padding:'9px 10px', borderBottom:'1px solid #1e293b', color:'#e2e8f0', verticalAlign:'top' },
+    select: { background:'#0f172a', border:'1px solid #334155', borderRadius:'4px', color:'#e2e8f0', padding:'3px 6px', fontSize:'12px', width:'100%' },
+    textarea: { background:'#0f172a', border:'1px solid #334155', borderRadius:'4px', color:'#e2e8f0', padding:'4px 6px', fontSize:'12px', width:'100%', minHeight:'40px', resize:'vertical' },
+    input: { background:'#0f172a', border:'1px solid #334155', borderRadius:'4px', color:'#e2e8f0', padding:'3px 6px', fontSize:'12px' },
+    gapItem: { padding:'10px 12px', borderLeft:'3px solid #ef4444', backgroundColor:'#1e293b', borderRadius:'0 6px 6px 0', marginBottom:'6px' },
+    progRow: { display:'flex', alignItems:'center', gap:'10px', marginBottom:'6px' },
+    progBg: { flex:1, height:'5px', backgroundColor:'#1e293b', borderRadius:'3px', overflow:'hidden' },
+    addBtn: { width:'100%', padding:'8px', background:'none', border:'1px dashed #334155', borderRadius:'6px', color:'#64748b', cursor:'pointer', fontSize:'13px', marginTop:'8px' },
+  };
+
+  const domainPct = (domain) => {
+    const dc = controls.filter(c => c.domain === domain);
+    return dc.length ? Math.round((dc.filter(c=>c.status==='implemented').length + dc.filter(c=>c.status==='partial').length*0.5)/dc.length*100) : 0;
+  };
+
+  const progColor = (pct) => pct >= 80 ? '#22c55e' : pct >= 50 ? '#eab308' : '#ef4444';
+
+  if (!loaded) return <div style={sty.wrap}><p style={{color:'#94a3b8'}}>Loading compliance data...</p></div>;
+
+  return (
+    <div style={sty.wrap}>
+      <div style={sty.hdr}>
+        <div>
+          <div style={sty.title}>🛡 Compliance</div>
+          <div style={{fontSize:'12px',color:'#64748b',marginTop:'2px'}}>SOC 2 + ISO 27001 — Internal tracking</div>
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:'12px'}}>
+          {saved && <span style={{fontSize:'12px',color:'#22c55e'}}>✓ Saved</span>}
+          <button style={sty.saveBtn} onClick={saveAll}>Save changes</button>
+        </div>
+      </div>
+
+      <div style={sty.subnav}>
+        {['dashboard','controls','risks','documents','vendors'].map(s => (
+          <button key={s} style={sty.snbtn(activeSection===s)} onClick={() => setActiveSection(s)}>
+            {s.charAt(0).toUpperCase() + s.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {activeSection === 'dashboard' && (
+        <div>
+          <div style={sty.grid4}>
+            <div style={sty.metaCard}><div style={{...sty.metaNum, color: score>=80?'#22c55e':score>=50?'#eab308':'#ef4444'}}>{score}%</div><div style={sty.metaLbl}>Overall score</div></div>
+            <div style={sty.metaCard}><div style={{...sty.metaNum, color:'#38bdf8'}}>{soc2score}%</div><div style={sty.metaLbl}>SOC 2 readiness</div></div>
+            <div style={sty.metaCard}><div style={{...sty.metaNum, color:'#a78bfa'}}>{isoscore}%</div><div style={sty.metaLbl}>ISO 27001 readiness</div></div>
+            <div style={sty.metaCard}><div style={{...sty.metaNum, color: vendorGaps>0?'#ef4444':'#22c55e'}}>{vendorGaps}</div><div style={sty.metaLbl}>Vendor DPA gaps</div></div>
+          </div>
+          <div style={sty.grid2}>
+            <div style={sty.card}>
+              <div style={sty.sectionTitle}>Domain progress</div>
+              {domains.map(d => {
+                const pct = domainPct(d);
+                return (
+                  <div key={d} style={sty.progRow}>
+                    <span style={{fontSize:'12px',color:domainColors[d]||'#94a3b8',width:'140px',flexShrink:0,fontWeight:'500'}}>{d}</span>
+                    <div style={sty.progBg}><div style={{height:'100%',width:pct+'%',backgroundColor:progColor(pct),borderRadius:'3px'}}></div></div>
+                    <span style={{fontSize:'12px',fontWeight:'500',color:'#f1f5f9',width:'32px',textAlign:'right'}}>{pct}%</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div>
+              <div style={sty.card}>
+                <div style={sty.sectionTitle}>Open gaps ({gaps.length})</div>
+                {gaps.slice(0,6).map(c => (
+                  <div key={c.id} style={sty.gapItem}>
+                    <div style={{fontSize:'13px',fontWeight:'500',color:'#fca5a5'}}>{c.control}</div>
+                    <div style={{fontSize:'11px',color:'#94a3b8',marginTop:'2px'}}>{c.domain} · {c.soc2} · {c.iso}</div>
+                  </div>
+                ))}
+                {gaps.length > 6 && <div style={{fontSize:'12px',color:'#64748b',marginTop:'6px'}}>+{gaps.length-6} more — see Controls tab</div>}
+              </div>
+              <div style={sty.card}>
+                <div style={sty.sectionTitle}>Documents</div>
+                <div style={sty.progRow}>
+                  <span style={{fontSize:'12px',color:'#94a3b8',width:'100px'}}>Complete</span>
+                  <div style={sty.progBg}><div style={{height:'100%',width:Math.round(docs.filter(d=>d.status==='complete').length/docs.length*100)+'%',backgroundColor:'#22c55e',borderRadius:'3px'}}></div></div>
+                  <span style={{fontSize:'12px',color:'#f1f5f9',width:'40px',textAlign:'right'}}>{docs.filter(d=>d.status==='complete').length}/{docs.length}</span>
+                </div>
+                <div style={sty.progRow}>
+                  <span style={{fontSize:'12px',color:'#94a3b8',width:'100px'}}>In progress</span>
+                  <div style={sty.progBg}><div style={{height:'100%',width:Math.round(docs.filter(d=>d.status==='partial').length/docs.length*100)+'%',backgroundColor:'#eab308',borderRadius:'3px'}}></div></div>
+                  <span style={{fontSize:'12px',color:'#f1f5f9',width:'40px',textAlign:'right'}}>{docs.filter(d=>d.status==='partial').length}/{docs.length}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeSection === 'controls' && (
+        <div>
+          <div style={{marginBottom:'12px',fontSize:'13px',color:'#94a3b8'}}>{impl} implemented · {partial} partial · {gap} gaps</div>
+          {domains.map(domain => {
+            const dc = controls.filter(c => c.domain === domain);
+            return (
+              <div key={domain} style={{marginBottom:'24px'}}>
+                <div style={{fontSize:'12px',fontWeight:'600',color:domainColors[domain]||'#94a3b8',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'8px',paddingBottom:'6px',borderBottom:'1px solid #1e293b'}}>{domain}</div>
+                <table style={sty.table}>
+                  <thead><tr>
+                    <th style={{...sty.th,width:'35%'}}>Control</th>
+                    <th style={sty.th}>SOC 2</th>
+                    <th style={sty.th}>ISO 27001</th>
+                    <th style={{...sty.th,width:'120px'}}>Status</th>
+                    <th style={{...sty.th,width:'28%'}}>Evidence / Notes</th>
+                  </tr></thead>
+                  <tbody>
+                    {dc.map(c => (
+                      <tr key={c.id}>
+                        <td style={sty.td}>{c.control}</td>
+                        <td style={{...sty.td,fontSize:'11px',color:'#64748b',whiteSpace:'nowrap'}}>{c.soc2||'—'}</td>
+                        <td style={{...sty.td,fontSize:'11px',color:'#64748b',whiteSpace:'nowrap'}}>{c.iso||'—'}</td>
+                        <td style={sty.td}>
+                          <select style={sty.select} value={c.status} onChange={e => updateControl(c.id,'status',e.target.value)}>
+                            <option value="implemented">✓ Implemented</option>
+                            <option value="partial">~ Partial</option>
+                            <option value="gap">✗ Gap</option>
+                          </select>
+                        </td>
+                        <td style={sty.td}>
+                          <textarea style={sty.textarea} value={c.evidence} onChange={e => updateControl(c.id,'evidence',e.target.value)} placeholder="Add evidence..." />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {activeSection === 'risks' && (
+        <div>
+          <div style={{marginBottom:'12px',fontSize:'12px',color:'#64748b'}}>Score = Likelihood (1–5) × Impact (1–5). Critical ≥15, High ≥9, Medium ≥4</div>
+          <table style={sty.table}>
+            <thead><tr>
+              <th style={sty.th}>Score</th>
+              <th style={sty.th}>Asset</th>
+              <th style={sty.th}>Threat</th>
+              <th style={sty.th}>L</th>
+              <th style={sty.th}>I</th>
+              <th style={sty.th}>Treatment</th>
+              <th style={{...sty.th,width:'28%'}}>Notes</th>
+            </tr></thead>
+            <tbody>
+              {[...risks].sort((a,b)=>(b.likelihood*b.impact)-(a.likelihood*a.impact)).map(r => (
+                <tr key={r.id}>
+                  <td style={sty.td}>{riskScore(r)}</td>
+                  <td style={{...sty.td,fontWeight:'500',fontSize:'12px'}}>{r.asset}</td>
+                  <td style={{...sty.td,fontSize:'12px'}}>{r.threat}</td>
+                  <td style={sty.td}><select style={{...sty.select,width:'48px'}} value={r.likelihood} onChange={e=>updateRisk(r.id,'likelihood',parseInt(e.target.value))}>{[1,2,3,4,5].map(n=><option key={n}>{n}</option>)}</select></td>
+                  <td style={sty.td}><select style={{...sty.select,width:'48px'}} value={r.impact} onChange={e=>updateRisk(r.id,'impact',parseInt(e.target.value))}>{[1,2,3,4,5].map(n=><option key={n}>{n}</option>)}</select></td>
+                  <td style={sty.td}><select style={sty.select} value={r.treatment} onChange={e=>updateRisk(r.id,'treatment',e.target.value)}>
+                    <option value="mitigate">Mitigate</option>
+                    <option value="transfer">Transfer</option>
+                    <option value="accept">Accept</option>
+                    <option value="avoid">Avoid</option>
+                  </select></td>
+                  <td style={sty.td}><textarea style={sty.textarea} value={r.notes} onChange={e=>updateRisk(r.id,'notes',e.target.value)} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <button style={sty.addBtn} onClick={addRisk}>+ Add risk</button>
+        </div>
+      )}
+
+      {activeSection === 'documents' && (
+        <div>
+          <div style={{marginBottom:'12px',fontSize:'13px',color:'#94a3b8'}}>{docsComplete} of {docs.length} documents complete</div>
+          <table style={sty.table}>
+            <thead><tr>
+              <th style={sty.th}>ID</th>
+              <th style={sty.th}>Document</th>
+              <th style={sty.th}>Framework</th>
+              <th style={sty.th}>Status</th>
+              <th style={sty.th}>Last review</th>
+              <th style={sty.th}>Next review</th>
+              <th style={sty.th}>Notes</th>
+            </tr></thead>
+            <tbody>
+              {docs.map(d => (
+                <tr key={d.id}>
+                  <td style={{...sty.td,fontSize:'11px',color:'#64748b',whiteSpace:'nowrap'}}>{d.docId}</td>
+                  <td style={{...sty.td,fontWeight:'500'}}>{d.name}</td>
+                  <td style={{...sty.td,fontSize:'11px',color:'#64748b'}}>{d.framework}</td>
+                  <td style={sty.td}><select style={sty.select} value={d.status} onChange={e=>updateDoc(d.id,'status',e.target.value)}>
+                    <option value="complete">Complete</option>
+                    <option value="partial">In progress</option>
+                    <option value="pending">Pending</option>
+                  </select></td>
+                  <td style={sty.td}><input type="month" style={sty.input} value={d.lastReview} onChange={e=>updateDoc(d.id,'lastReview',e.target.value)} /></td>
+                  <td style={sty.td}><input type="month" style={sty.input} value={d.nextReview} onChange={e=>updateDoc(d.id,'nextReview',e.target.value)} /></td>
+                  <td style={sty.td}><textarea style={sty.textarea} value={d.notes} onChange={e=>updateDoc(d.id,'notes',e.target.value)} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {activeSection === 'vendors' && (
+        <div>
+          <div style={{marginBottom:'12px',fontSize:'13px',color:'#ef4444'}}>{vendorGaps} vendors with missing DPAs — action required</div>
+          <table style={sty.table}>
+            <thead><tr>
+              <th style={sty.th}>Vendor</th>
+              <th style={sty.th}>Service</th>
+              <th style={sty.th}>Tier</th>
+              <th style={sty.th}>SOC 2</th>
+              <th style={sty.th}>ISO 27001</th>
+              <th style={sty.th}>DPA</th>
+              <th style={sty.th}>Notes</th>
+            </tr></thead>
+            <tbody>
+              {[...vendors].sort((a,b)=>({'Critical':0,'High':1,'Medium':2,'Low':3}[a.dataTier]||9)-({'Critical':0,'High':1,'Medium':2,'Low':3}[b.dataTier]||9)).map(v => (
+                <tr key={v.id}>
+                  <td style={{...sty.td,fontWeight:'500'}}>{v.vendor}</td>
+                  <td style={{...sty.td,fontSize:'12px',color:'#94a3b8'}}>{v.service}</td>
+                  <td style={sty.td}>{tierBadge(v.dataTier)}</td>
+                  <td style={{...sty.td,fontSize:'12px'}}>{v.soc2Status}</td>
+                  <td style={{...sty.td,fontSize:'12px'}}>{v.isoStatus}</td>
+                  <td style={sty.td}>{dpaBadge(v.dpa)}</td>
+                  <td style={sty.td}><textarea style={sty.textarea} value={v.notes} onChange={e=>updateVendor(v.id,'notes',e.target.value)} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+// ─── END COMPLIANCE TAB ───────────────────────────────────────────────────────
+
+function IntegrationsTab({ token }) {
+  const [connectors, setConnectors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal] = useState(null);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const r = await fetch(`${API_URL}/api/integrations`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const d = await r.json();
+      setConnectors(d.connectors || []);
+    } catch { setConnectors([]); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const connectedNames = new Set(connectors.map(c => c.connector));
+
+  return (
+    <div style={{ padding: '32px', maxWidth: '1100px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+        <div style={{ color: '#1e293b', fontSize: '22px', fontWeight: 'bold' }}>PMS Integrations</div>
+      </div>
+      <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '32px', marginTop: '4px' }}>
+        Connect Servfixy to your property management system. Each connector syncs properties, units, residents, and work orders automatically.
+      </p>
+
+      {loading ? (
+        <div style={{ color: '#475569', fontSize: '14px' }}>Loading connectors...</div>
+      ) : (
+        <>
+          {connectors.length > 0 && (
+            <div style={{ marginBottom: '32px' }}>
+              <div style={{ color: '#94a3b8', fontSize: '13px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '16px' }}>CONNECTED</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {connectors.map(c => {
+                  const entry = PMS_CATALOG.find(p => p.name === c.connector) || { label: c.connector, color: '#94a3b8', note: '' };
+                  return <ConnectorCard key={c.id} connector={c} catalogEntry={entry} token={token} onRefresh={load} />;
+                })}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <div style={{ color: '#94a3b8', fontSize: '13px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '16px' }}>
+              {connectors.length > 0 ? 'ADD ANOTHER' : 'AVAILABLE CONNECTORS'}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '14px' }}>
+              {PMS_CATALOG.filter(p => !connectedNames.has(p.name)).map(entry => (
+                <div key={entry.name} style={{ backgroundColor: '#ffffff', borderRadius: '10px', padding: '20px', border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: entry.color }} />
+                    <span style={{ color: '#1e293b', fontSize: '15px', fontWeight: 'bold' }}>{entry.label}</span>
+                  </div>
+                  <div style={{ color: '#475569', fontSize: '12px' }}>{entry.note}</div>
+                  <button onClick={() => setModal(entry)}
+                    style={{ marginTop: '4px', padding: '8px 16px', backgroundColor: '#14B8A6', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', alignSelf: 'flex-start' }}>
+                    Connect
+                  </button>
+                </div>
+              ))}
+              {PMS_CATALOG.filter(p => !connectedNames.has(p.name)).length === 0 && (
+                <div style={{ color: '#475569', fontSize: '14px', gridColumn: '1 / -1' }}>All available connectors are connected.</div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {modal && <ConnectModal entry={modal} token={token} onClose={() => setModal(null)} onConnected={load} />}
+    </div>
+  );
+}
+// ── End Integrations Tab ──────────────────────────────────────────────────────
+
+// ── Collections Analytics Tab ──────────────────────────────────────────────────
+
 // ── Root App ───────────────────────────────────────────────────────────────────
 function App() {
   const [user, setUser] = useState(() => {
