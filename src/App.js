@@ -1952,9 +1952,9 @@ function CollectionsWorkspaceTab({ token }) {
   };
 
   useEffect(() => {
-    // Try to restore coordinator name from localStorage
-    const saved = localStorage.getItem('collections_coordinator_name');
-    if (saved) { setCoordinator(saved); setCoordinatorInput(saved); fetchWorkspace(saved); }
+    // Try to restore coordinator name from localStorage; default to Demo Coordinator
+    const saved = localStorage.getItem('collections_coordinator_name') || 'Demo Coordinator';
+    setCoordinator(saved); setCoordinatorInput(saved); fetchWorkspace(saved);
   }, [token]);
 
   const handleSetCoordinator = () => {
@@ -1984,7 +1984,7 @@ function CollectionsWorkspaceTab({ token }) {
   // ── Coordinator not set ───────────────────────────────────────────────────────
   if (!coordinator) return (
     <div style={{ minHeight: '100vh', backgroundColor: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Arial, sans-serif' }}>
-      <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '40px', width: '100%', maxWidth: '420px', textAlign: 'center' }}>
+      <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '40px', width: '100%', maxWidth: '420px', textAlign: 'center', boxShadow: '0 4px 32px rgba(0,0,0,0.10)', border: '1px solid #e2e8f0' }}>
         <div style={{ fontSize: '40px', marginBottom: '16px' }}>👤</div>
         <h2 style={{ margin: '0 0 8px', fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>Collections Workspace</h2>
         <p style={{ margin: '0 0 28px', fontSize: '13px', color: '#94a3b8' }}>Enter your name to load your task queue and case assignments.</p>
@@ -2015,7 +2015,7 @@ function CollectionsWorkspaceTab({ token }) {
   if (isMobile) return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif', overflow: 'hidden' }}>
       {/* Mobile Header */}
-      <div style={{ backgroundColor: '#ffffff', padding: '12px 16px', borderBottom: '1px solid #ffffff', flexShrink: 0 }}>
+      <div style={{ backgroundColor: '#ffffff', padding: '12px 16px', borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: '11px', color: '#475569', textTransform: 'uppercase' }}>Coordinator</div>
@@ -2034,7 +2034,7 @@ function CollectionsWorkspaceTab({ token }) {
               { label: 'Priority', value: stats.high_priority, color: '#dc2626' },
               { label: 'Legal', value: stats.in_legal, color: '#7c3aed' },
             ].map((k, i) => (
-              <div key={i} style={{ flex: 1, backgroundColor: '#ffffff', borderRadius: '6px', padding: '6px', textAlign: 'center' }}>
+              <div key={i} style={{ flex: 1, backgroundColor: '#f8fafc', borderRadius: '6px', padding: '6px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
                 <div style={{ fontSize: '16px', fontWeight: '800', color: k.color }}>{k.value}</div>
                 <div style={{ fontSize: '10px', color: '#475569' }}>{k.label}</div>
               </div>
@@ -2045,7 +2045,7 @@ function CollectionsWorkspaceTab({ token }) {
 
       {/* Mobile View Toggle */}
       {selectedCase && (
-        <div style={{ display: 'flex', backgroundColor: '#ffffff', borderBottom: '1px solid #ffffff', flexShrink: 0 }}>
+        <div style={{ display: 'flex', backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
           <button onClick={() => setMobileView('queue')}
             style={{ flex: 1, padding: '10px', backgroundColor: mobileView === 'queue' ? '#ffffff' : 'transparent', border: 'none', borderBottom: mobileView === 'queue' ? '2px solid #14B8A6' : '2px solid transparent', color: mobileView === 'queue' ? '#14B8A6' : '#475569', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
             ← Queue
@@ -2060,7 +2060,7 @@ function CollectionsWorkspaceTab({ token }) {
       {/* Mobile Queue */}
       {(mobileView === 'queue' || !selectedCase) && (
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          <div style={{ display: 'flex', borderBottom: '1px solid #ffffff' }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0' }}>
             {[{ key: 'queue', label: `Queue (${taskQueue.length})` }, { key: 'all', label: `All (${myCases.length})` }].map(v => (
               <button key={v.key} onClick={() => setView(v.key)}
                 style={{ flex: 1, padding: '8px', backgroundColor: view === v.key ? '#ffffff' : 'transparent', border: 'none', borderBottom: view === v.key ? '2px solid #14B8A6' : '2px solid transparent', color: view === v.key ? '#14B8A6' : '#475569', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
@@ -2072,7 +2072,7 @@ function CollectionsWorkspaceTab({ token }) {
             <div style={{ padding: '24px', textAlign: 'center', color: '#475569', fontSize: '13px' }}>Loading...</div>
           ) : (view === 'queue' ? taskQueue : myCases).map((c, idx) => (
             <div key={c.id} onClick={() => { handleSelectCase(c); setMobileView('detail'); }}
-              style={{ padding: '14px 16px', borderBottom: '1px solid #ffffff', cursor: 'pointer', backgroundColor: selectedCase?.id === c.id ? '#ffffff' : 'transparent' }}>
+              style={{ padding: '14px 16px', borderBottom: '1px solid #e2e8f0', cursor: 'pointer', backgroundColor: selectedCase?.id === c.id ? '#eff6ff' : 'transparent' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                 <div style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>{c.resident_name}</div>
                 <div style={{ fontSize: '14px', fontWeight: '700', color: '#dc2626' }}>${Number(c.balance_owed).toFixed(0)}</div>
@@ -2142,7 +2142,7 @@ function CollectionsWorkspaceTab({ token }) {
                 {(caseDetail.touchpoints || []).length === 0 ? (
                   <div style={{ fontSize: '12px', color: '#475569' }}>No contacts yet.</div>
                 ) : (caseDetail.touchpoints || []).slice(0, 5).map((t, i) => (
-                  <div key={i} style={{ padding: '8px 10px', backgroundColor: '#ffffff', borderRadius: '7px', marginBottom: '6px' }}>
+                  <div key={i} style={{ padding: '8px 10px', backgroundColor: '#f8fafc', borderRadius: '7px', marginBottom: '6px', border: '1px solid #e2e8f0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
                       <span style={{ fontSize: '10px', color: '#1d4ed8', fontWeight: '700', textTransform: 'uppercase' }}>{t.contact_method}</span>
                       <span style={{ fontSize: '10px', color: '#cbd5e1' }}>{new Date(t.contacted_at).toLocaleDateString()}</span>
@@ -2164,10 +2164,10 @@ function CollectionsWorkspaceTab({ token }) {
     <div style={{ display: 'flex', height: '100vh', backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif', overflow: 'hidden' }}>
 
       {/* LEFT — Task Queue + Case List */}
-      <div style={{ width: '380px', minWidth: '380px', borderRight: '1px solid #ffffff', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ width: '380px', minWidth: '380px', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
         {/* Coordinator Header */}
-        <div style={{ padding: '16px', borderBottom: '1px solid #ffffff', backgroundColor: '#ffffff' }}>
+        <div style={{ padding: '16px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: '11px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Coordinator</div>
@@ -2185,7 +2185,7 @@ function CollectionsWorkspaceTab({ token }) {
                 { label: 'High Priority', value: stats.high_priority, color: '#dc2626' },
                 { label: 'In Legal', value: stats.in_legal, color: '#7c3aed' },
               ].map((k, i) => (
-                <div key={i} style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
+                <div key={i} style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '8px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
                   <div style={{ fontSize: '18px', fontWeight: '800', color: k.color }}>{k.value}</div>
                   <div style={{ fontSize: '10px', color: '#475569' }}>{k.label}</div>
                 </div>
@@ -2195,7 +2195,7 @@ function CollectionsWorkspaceTab({ token }) {
 
           {/* Total Balance */}
           {stats && (
-            <div style={{ marginTop: '10px', padding: '8px 12px', backgroundColor: '#ffffff', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ marginTop: '10px', padding: '8px 12px', backgroundColor: '#fef2f2', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #fecaca' }}>
               <span style={{ fontSize: '11px', color: '#475569' }}>Portfolio Balance</span>
               <span style={{ fontSize: '15px', fontWeight: '800', color: '#dc2626' }}>{fmtCurrency(stats.total_balance)}</span>
             </div>
@@ -2203,7 +2203,7 @@ function CollectionsWorkspaceTab({ token }) {
         </div>
 
         {/* View Toggle */}
-        <div style={{ display: 'flex', borderBottom: '1px solid #ffffff' }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0' }}>
           {[{ key: 'queue', label: `Task Queue (${taskQueue.length})` }, { key: 'all', label: `All Active (${myCases.length})` }].map(v => (
             <button key={v.key} onClick={() => setView(v.key)}
               style={{ flex: 1, padding: '10px', backgroundColor: view === v.key ? '#ffffff' : 'transparent', border: 'none', borderBottom: view === v.key ? '2px solid #14B8A6' : '2px solid transparent', color: view === v.key ? '#14B8A6' : '#475569', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
@@ -2220,7 +2220,7 @@ function CollectionsWorkspaceTab({ token }) {
             <div style={{ padding: '24px', textAlign: 'center', color: '#475569', fontSize: '13px' }}>No cases to show.</div>
           ) : (view === 'queue' ? taskQueue : myCases).map((c, idx) => (
             <div key={c.id} onClick={() => handleSelectCase(c)}
-              style={{ padding: '14px 16px', borderBottom: '1px solid #ffffff', cursor: 'pointer', backgroundColor: selectedCase?.id === c.id ? '#ffffff' : 'transparent' }}>
+              style={{ padding: '14px 16px', borderBottom: '1px solid #e2e8f0', cursor: 'pointer', backgroundColor: selectedCase?.id === c.id ? '#eff6ff' : 'transparent' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
                 <div style={{ flex: 1 }}>
                   {view === 'queue' && (
@@ -2251,7 +2251,7 @@ function CollectionsWorkspaceTab({ token }) {
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
             <div style={{ fontSize: '16px', fontWeight: '600', color: '#475569' }}>Select a case from your queue</div>
             {stats && stats.notices_pending > 0 && (
-              <div style={{ marginTop: '20px', padding: '14px 20px', backgroundColor: '#3a1e1e', borderRadius: '10px', textAlign: 'center' }}>
+              <div style={{ marginTop: '20px', padding: '14px 20px', backgroundColor: '#fff1f2', borderRadius: '10px', textAlign: 'center', border: '1px solid #fecaca' }}>
                 <div style={{ fontSize: '13px', color: '#dc2626', fontWeight: '600' }}>⚠️ {stats.notices_pending} cases in 91+ day aging with no notice issued</div>
                 <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>Review task queue for highest priority</div>
               </div>
@@ -2263,7 +2263,7 @@ function CollectionsWorkspaceTab({ token }) {
           <div style={{ padding: '24px' }}>
 
             {/* Case Header */}
-            <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+            <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                 <div>
                   <h2 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>{caseDetail.resident_name}</h2>
@@ -2296,7 +2296,7 @@ function CollectionsWorkspaceTab({ token }) {
                   { label: 'Notice Issued', value: fmtDate(caseDetail.notice_issued_date) },
                   { label: 'Attorney', value: caseDetail.attorney_name || '—' },
                 ].map((item, i) => (
-                  <div key={i} style={{ backgroundColor: '#ffffff', borderRadius: '7px', padding: '8px 10px' }}>
+                  <div key={i} style={{ backgroundColor: '#f8fafc', borderRadius: '7px', padding: '8px 10px', border: '1px solid #e2e8f0' }}>
                     <div style={{ fontSize: '10px', color: '#475569', textTransform: 'uppercase', marginBottom: '3px' }}>{item.label}</div>
                     <div style={{ fontSize: '12px', fontWeight: '600', color: item.color || '#1e293b' }}>{item.value}</div>
                   </div>
@@ -2305,7 +2305,7 @@ function CollectionsWorkspaceTab({ token }) {
             </div>
 
             {/* Quick Log Contact */}
-            <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+            <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
               <h3 style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>Quick Log Contact</h3>
               {quickError && <div style={{ color: '#dc2626', fontSize: '12px', marginBottom: '10px' }}>{quickError}</div>}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
@@ -2329,14 +2329,14 @@ function CollectionsWorkspaceTab({ token }) {
             </div>
 
             {/* Contact History */}
-            <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+            <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
               <h3 style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>
                 Contact History ({(caseDetail.touchpoints || []).length})
               </h3>
               {(caseDetail.touchpoints || []).length === 0 ? (
                 <div style={{ color: '#475569', fontSize: '13px' }}>No contacts logged yet — be the first.</div>
               ) : (caseDetail.touchpoints || []).map((t, i) => (
-                <div key={i} style={{ padding: '10px 12px', backgroundColor: '#ffffff', borderRadius: '8px', marginBottom: '8px' }}>
+                <div key={i} style={{ padding: '10px 12px', backgroundColor: '#f8fafc', borderRadius: '8px', marginBottom: '8px', border: '1px solid #e2e8f0' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <span style={{ fontSize: '10px', backgroundColor: '#dbeafe', color: '#1d4ed8', padding: '2px 7px', borderRadius: '4px', fontWeight: '600', textTransform: 'uppercase' }}>{t.contact_method}</span>
@@ -2362,7 +2362,7 @@ function CollectionsWorkspaceTab({ token }) {
                     </div>
                     <div style={{ fontSize: '12px', color: '#475569' }}>Started {fmtDate(plan.start_date)} · {plan.missed_payments} missed payments</div>
                     {plan.missed_payments >= 1 && (
-                      <div style={{ marginTop: '8px', padding: '6px 10px', backgroundColor: '#3a1e1e', borderRadius: '6px', fontSize: '12px', color: '#dc2626', fontWeight: '600' }}>
+                      <div style={{ marginTop: '8px', padding: '6px 10px', backgroundColor: '#fff1f2', borderRadius: '6px', fontSize: '12px', color: '#dc2626', fontWeight: '600', border: '1px solid #fecaca' }}>
                         ⚠️ Missed payment detected — consider escalating
                       </div>
                     )}
