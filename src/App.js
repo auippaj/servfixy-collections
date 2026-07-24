@@ -5432,18 +5432,58 @@ function App() {
   const [token, setToken] = useState(() => localStorage.getItem('collections_token') || '');
   const [activeTab, setActiveTab] = useState('Collections Analytics');
   const [collectionsCaseFilter, setCollectionsCaseFilter] = useState({ status: '', property_id: '', aging_bucket: '' });
+  const [scoringToast, setScoringToast] = useState('');
 
-  const handleLogin = (u, t) => { setUser(u); setToken(t); };
+  const handleLogin = (u, t) => {
+    setUser(u);
+    setToken(t);
+    // Auto-run risk scoring on login — fire-and-forget, silent on error
+    setScoringToast('analyzing');
+    fetch(`${API_URL}/api/collections/risk/score-all`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${t}`, 'Content-Type': 'application/json' }
+    })
+      .then(() => {
+        setScoringToast('done');
+        setTimeout(() => setScoringToast(''), 3000);
+      })
+      .catch(() => setScoringToast(''));
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('collections_token');
     localStorage.removeItem('collections_user');
-    setUser(null); setToken('');
+    setUser(null); setToken(''); setScoringToast('');
   };
 
   if (!user || !token) return <Login onLogin={handleLogin} />;
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'Arial, sans-serif' }}>
+      {/* Risk scoring toast */}
+      {scoringToast && (
+        <div style={{
+          position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999,
+          backgroundColor: scoringToast === 'done' ? '#f0fdf4' : '#eff6ff',
+          border: `1px solid ${scoringToast === 'done' ? '#86efac' : '#93c5fd'}`,
+          borderRadius: '10px', padding: '12px 18px',
+          display: 'flex', alignItems: 'center', gap: '10px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.10)', fontFamily: 'Arial, sans-serif'
+        }}>
+          {scoringToast === 'analyzing' ? (
+            <>
+              <div style={{ width: '14px', height: '14px', borderRadius: '50%', border: '2px solid #3b82f6', borderTopColor: 'transparent', animation: 'spin 0.7s linear infinite' }} />
+              <span style={{ fontSize: '13px', color: '#1d4ed8', fontWeight: '600' }}>Analyzing portfolio risk...</span>
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: '15px' }}>✓</span>
+              <span style={{ fontSize: '13px', color: '#15803d', fontWeight: '600' }}>Risk scores updated</span>
+            </>
+          )}
+        </div>
+      )}
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} onLogout={handleLogout} />
       <div style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
         {activeTab === 'Collections Analytics' && <CollectionsAnalyticsTab token={token} onNavigate={(tab, filters) => { if (filters) setCollectionsCaseFilter(f => ({...f, ...filters})); setActiveTab(tab); }} />}
