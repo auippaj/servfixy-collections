@@ -126,13 +126,19 @@ const NAV_ITEMS = [
   ]},
 ];
 
-function Sidebar({ activeTab, setActiveTab, user, onLogout }) {
-  return (
-    <div style={{ width: '224px', minWidth: '224px', backgroundColor: '#ffffff', borderRight: '1px solid #1e293b', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0 }}>
+function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
+  const isMobile = window.innerWidth < 768;
+  const SidebarInner = () => (
+    <div style={{ width: '224px', minWidth: '224px', backgroundColor: '#ffffff', borderRight: '1px solid #1e293b', display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* Logo */}
-      <div style={{ padding: '20px 18px 14px', borderBottom: '1px solid #1e293b' }}>
-        <img src="https://i.imgur.com/zJis2hK.png" alt="Servfixy" style={{ height: '28px', objectFit: 'contain' }} />
-        <div style={{ marginTop: '6px', display: 'inline-block', background: '#1d4ed8', borderRadius: '5px', padding: '2px 8px', fontSize: '10px', fontWeight: '700', color: '#fff', letterSpacing: '0.08em' }}>COLLECTIONS</div>
+      <div style={{ padding: '20px 18px 14px', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <img src="https://i.imgur.com/zJis2hK.png" alt="Servfixy" style={{ height: '28px', objectFit: 'contain' }} />
+          <div style={{ marginTop: '6px', display: 'inline-block', background: '#1d4ed8', borderRadius: '5px', padding: '2px 8px', fontSize: '10px', fontWeight: '700', color: '#fff', letterSpacing: '0.08em' }}>COLLECTIONS</div>
+        </div>
+        {isMobile && (
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '22px', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}>✕</button>
+        )}
       </div>
       {/* Nav groups */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
@@ -142,9 +148,9 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout }) {
             {group.items.map(item => {
               const active = activeTab === item.tab;
               return (
-                <div key={item.tab} onClick={() => setActiveTab(item.tab)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 18px', cursor: 'pointer', borderRadius: '0', borderLeft: active ? '3px solid #3b82f6' : '3px solid transparent', backgroundColor: active ? '#eff6ff' : 'transparent', color: active ? '#1d4ed8' : '#94a3b8', fontSize: '13px', fontWeight: active ? '600' : '400', transition: 'all 0.15s' }}>
-                  <span style={{ fontSize: '15px' }}>{item.icon}</span>
+                <div key={item.tab} onClick={() => { setActiveTab(item.tab); if (isMobile) onClose(); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 18px', cursor: 'pointer', borderLeft: active ? '3px solid #3b82f6' : '3px solid transparent', backgroundColor: active ? '#eff6ff' : 'transparent', color: active ? '#1d4ed8' : '#94a3b8', fontSize: '14px', fontWeight: active ? '600' : '400', transition: 'all 0.15s' }}>
+                  <span style={{ fontSize: '18px' }}>{item.icon}</span>
                   {item.label}
                 </div>
               );
@@ -163,6 +169,19 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout }) {
       </div>
     </div>
   );
+
+  if (isMobile) {
+    if (!isOpen) return null;
+    return (
+      <>
+        <div onClick={onClose} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 40 }} />
+        <div style={{ position: 'fixed', top: 0, left: 0, zIndex: 50, height: '100vh' }}>
+          <SidebarInner />
+        </div>
+      </>
+    );
+  }
+  return <div style={{ position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}><SidebarInner /></div>;
 }
 
 // ── App Shell ──────────────────────────────────────────────────────────────────
@@ -271,9 +290,9 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
     <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', color: '#1e293b' }}>
 
       {/* Header */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#0f172a' }}>Collections Analytics</h1>
+          <h1 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>Collections Analytics</h1>
           <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#94a3b8' }}>Portfolio-wide delinquency intelligence</p>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -290,7 +309,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
       </div>
 
       {/* Scrollable body */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px', marginBottom: '28px' }}>
@@ -308,7 +327,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
       </div>
 
       {/* Row 1: Aging + Status */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
 
         {/* Aging Breakdown */}
         <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
@@ -347,7 +366,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
       </div>
 
       {/* Row 2: Properties + Activity */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
 
         {/* Top Properties by Balance */}
         <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
@@ -5508,6 +5527,14 @@ function App() {
   const [activeTab, setActiveTab] = useState('Collections Analytics');
   const [collectionsCaseFilter, setCollectionsCaseFilter] = useState({ status: '', property_id: '', aging_bucket: '' });
   const [scoringToast, setScoringToast] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobileApp, setIsMobileApp] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handler = () => setIsMobileApp(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
   const handleLogin = (u, t) => {
     setUser(u);
@@ -5534,7 +5561,19 @@ function App() {
   if (!user || !token) return <Login onLogin={handleLogin} />;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'Arial, sans-serif' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'Arial, sans-serif' }}>
+      {/* Mobile top bar */}
+      {isMobileApp && (
+        <div style={{ position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', flexShrink: 0 }}>
+          <button onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#1e293b', padding: '4px 8px', borderRadius: '6px' }}>☰</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img src="https://i.imgur.com/zJis2hK.png" alt="Servfixy" style={{ height: '22px', objectFit: 'contain' }} />
+            <div style={{ background: '#1d4ed8', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', fontWeight: '700', color: '#fff', letterSpacing: '0.08em' }}>COLLECTIONS</div>
+          </div>
+          <div style={{ fontSize: '11px', color: '#94a3b8', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeTab.replace('Collections ', '')}</div>
+        </div>
+      )}
+      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
       {/* Risk scoring toast */}
       {scoringToast && (
         <div style={{
@@ -5559,7 +5598,7 @@ function App() {
         </div>
       )}
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} onLogout={handleLogout} />
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} onLogout={handleLogout} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
         {activeTab === 'Collections Analytics' && <CollectionsAnalyticsTab token={token} onNavigate={(tab, filters) => { if (filters) setCollectionsCaseFilter(f => ({...f, ...filters})); setActiveTab(tab); }} />}
         {activeTab === 'Collections Cases' && <CollectionsCasesTab token={token} initialFilters={collectionsCaseFilter} onBack={() => { setCollectionsCaseFilter({ status: '', property_id: '', aging_bucket: '' }); setActiveTab('Collections Analytics'); }} />}
@@ -5574,6 +5613,7 @@ function App() {
         {activeTab === 'Collections Risk' && <CollectionsRiskTab token={token} />}
         {activeTab === 'Integrations' && <IntegrationsTab token={token} />}
         {activeTab === 'Compliance' && <ComplianceTab token={token} />}
+      </div>
       </div>
     </div>
   );
