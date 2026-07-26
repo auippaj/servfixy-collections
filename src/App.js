@@ -251,9 +251,13 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
 
   const navigate = onNavigate || (() => {});
 
+  const totalClosed = (Number(s.closed_paid_count) || 0) + (Number(s.closed_written_off_count) || 0);
+  const recoveryRate = totalClosed > 0 ? Math.round((Number(s.closed_paid_count) || 0) / totalClosed * 100) : 0;
+
   const kpis = [
     { label: 'Total Delinquent Balance', value: fmtCurrency(s.total_balance), color: '#dc2626', sub: `${s.total_cases || 0} total cases`, onClick: () => navigate('Collections Cases', { status: '', property_id: selectedProperty, aging_bucket: '' }) },
-    { label: 'Amount Recovered', value: fmtCurrency(s.amount_recovered), color: '#15803d', sub: 'Closed paid cases', onClick: () => navigate('Collections Cases', { status: 'closed_paid', property_id: selectedProperty, aging_bucket: '' }) },
+    { label: 'Amount Recovered', value: fmtCurrency(s.amount_recovered), color: '#15803d', sub: `${s.closed_paid_count || 0} cases closed paid`, onClick: () => navigate('Collections Cases', { status: 'closed_paid', property_id: selectedProperty, aging_bucket: '' }) },
+    { label: 'Recovery Rate', value: `${recoveryRate}%`, color: '#14B8A6', sub: 'Paid vs written off', onClick: () => navigate('Collections Cases', { status: 'closed_paid', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'Active Cases', value: s.active_cases || 0, color: '#1d4ed8', sub: 'Not yet closed', onClick: () => navigate('Collections Cases', { status: 'active', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'In Legal Pipeline', value: s.legal_cases || 0, color: '#ea580c', sub: 'Attorney thru Possession', onClick: () => navigate('Collections Cases', { status: 'filed_with_attorney', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'Possession Granted', value: s.possession_count || 0, color: '#dc2626', sub: 'This portfolio', onClick: () => navigate('Collections Cases', { status: 'possession_granted', property_id: selectedProperty, aging_bucket: '' }) },
