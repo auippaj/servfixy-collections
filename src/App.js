@@ -1857,6 +1857,35 @@ function CollectionsWorkspaceTab({ token }) {
   const fmtStatus     = (s) => (s || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   const fmtDate       = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
+  const getNextAction = (c, detail) => {
+    const touchpoints = detail?.touchpoints || [];
+    const lastContact = touchpoints.length > 0 ? new Date(touchpoints[0].contacted_at) : null;
+    const daysSince   = lastContact ? Math.floor((Date.now() - lastContact) / 86400000) : 999;
+    const balance     = Number(c.balance_owed || 0);
+    const bucket      = c.aging_bucket || '';
+    if (['possession_granted','writ_of_possession'].includes(c.status))
+      return { icon: '⚖️', label: 'Coordinate writ execution with attorney', priority: 'critical' };
+    if (c.status === 'court_filed' || c.status === 'hearing_scheduled')
+      return { icon: '🗓️', label: 'Confirm hearing date and prepare docs', priority: 'high' };
+    if (c.status === 'filed_with_attorney')
+      return { icon: '📞', label: 'Follow up with attorney on filing status', priority: 'high' };
+    if (bucket === '120+' && c.status === 'active')
+      return { icon: '🚨', label: 'Immediate demand letter — refer to attorney if no response in 3 days', priority: 'critical' };
+    if (bucket === '90-120' && daysSince > 7)
+      return { icon: '📋', label: 'Issue formal demand notice — approaching legal threshold', priority: 'high' };
+    if (daysSince > 14)
+      return { icon: '📞', label: `No contact in ${daysSince} days — call attempt required`, priority: 'high' };
+    if (touchpoints.length > 0 && touchpoints[0].outcome === 'payment_promise')
+      return { icon: '💳', label: 'Verify promised payment received', priority: 'medium' };
+    if (touchpoints.length > 0 && touchpoints[0].outcome === 'no_answer')
+      return { icon: '💬', label: 'Send text/email follow-up — calls not connecting', priority: 'medium' };
+    if (balance > 3000 && c.status === 'active')
+      return { icon: '💰', label: 'Offer payment plan — high balance, escalation risk', priority: 'medium' };
+    return { icon: '📞', label: 'Routine follow-up contact', priority: 'normal' };
+  };
+
+  const PRIORITY_COLORS = { critical: '#dc2626', high: '#ea580c', medium: '#f59e0b', normal: '#14B8A6' };
+
   const fetchWorkspace = async (name) => {
     if (!name) return;
     setLoading(true);
@@ -1892,7 +1921,7 @@ function CollectionsWorkspaceTab({ token }) {
       setMyCases(sorted);
 
       // Build task queue — top 10 most urgent
-      const queue = sorted.slice(0, 10).map(c => ({
+      const queue = sorted.slice(0, 20).map(c => ({
         ...c,
         urgency_reason: agingRank[c.aging_bucket] >= 3 ? 'High aging bucket' : Number(c.balance_owed) > 2000 ? 'High balance' : 'Needs follow-up'
       }));
@@ -1905,6 +1934,7 @@ function CollectionsWorkspaceTab({ token }) {
         in_legal: activeCases.filter(c => ['filed_with_attorney', 'fed', 'writ_filed', 'hearing_scheduled', 'possession_granted'].includes(c.status)).length,
         total_balance: activeCases.reduce((s, c) => s + Number(c.balance_owed || 0), 0),
         notices_pending: activeCases.filter(c => c.status === 'active' && ['91-120', '120+'].includes(c.aging_bucket)).length,
+        avg_balance: activeCases.length > 0 ? activeCases.reduce((s, c) => s + Number(c.balance_owed || 0), 0) / activeCases.length : 0,
       });
 
     } catch (err) {
@@ -2194,15 +2224,16 @@ function CollectionsWorkspaceTab({ token }) {
 
           {/* KPI Strip */}
           {stats && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '14px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginTop: '14px' }}>
               {[
                 { label: 'Active', value: stats.total_active, color: '#1d4ed8' },
                 { label: 'High Priority', value: stats.high_priority, color: '#dc2626' },
                 { label: 'In Legal', value: stats.in_legal, color: '#7c3aed' },
+                { label: 'Notices Due', value: stats.notices_pending, color: '#ea580c' },
               ].map((k, i) => (
-                <div key={i} style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '8px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                  <div style={{ fontSize: '18px', fontWeight: '800', color: k.color }}>{k.value}</div>
-                  <div style={{ fontSize: '10px', color: '#475569' }}>{k.label}</div>
+                <div key={i} style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '7px 5px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '16px', fontWeight: '800', color: k.color }}>{k.value}</div>
+                  <div style={{ fontSize: '9px', color: '#475569' }}>{k.label}</div>
                 </div>
               ))}
             </div>
@@ -2251,8 +2282,10 @@ function CollectionsWorkspaceTab({ token }) {
                   <div style={{ fontSize: '10px', color: AGING_COLORS[c.aging_bucket] || '#94a3b8', fontWeight: '600' }}>{c.aging_bucket} Days</div>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '4px', backgroundColor: '#ffffff', color: '#1d4ed8' }}>{fmtStatus(c.status)}</span>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '4px', backgroundColor: '#dbeafe', color: '#1d4ed8', fontWeight: '600' }}>{fmtStatus(c.status)}</span>
+                {c.times_late > 0 && <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '4px', backgroundColor: '#fef2f2', color: '#dc2626', fontWeight: '600' }}>{c.times_late}x late</span>}
+                {c.attorney_name && <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '4px', backgroundColor: '#fff7ed', color: '#ea580c', fontWeight: '600' }}>Legal</span>}
               </div>
             </div>
           ))}
@@ -2262,13 +2295,24 @@ function CollectionsWorkspaceTab({ token }) {
       {/* RIGHT — Case Work Panel */}
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
         {!selectedCase ? (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1', padding: '40px' }}>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
-            <div style={{ fontSize: '16px', fontWeight: '600', color: '#475569' }}>Select a case from your queue</div>
-            {stats && stats.notices_pending > 0 && (
-              <div style={{ marginTop: '20px', padding: '14px 20px', backgroundColor: '#fff1f2', borderRadius: '10px', textAlign: 'center', border: '1px solid #fecaca' }}>
-                <div style={{ fontSize: '13px', color: '#dc2626', fontWeight: '600' }}>⚠️ {stats.notices_pending} cases in 91+ day aging with no notice issued</div>
-                <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>Review task queue for highest priority</div>
+            <div style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginBottom: '6px' }}>Select a case to begin working</div>
+            <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '28px', textAlign: 'center' }}>Your task queue is sorted by urgency — start at the top.</div>
+            {stats && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '100%', maxWidth: '420px' }}>
+                {[
+                  { icon: '💰', label: 'Total Portfolio', value: '$' + Number(stats.total_balance).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0}), color: '#dc2626', bg: '#fef2f2' },
+                  { icon: '⚖️', label: 'In Legal Pipeline', value: stats.in_legal + ' cases', color: '#7c3aed', bg: '#f5f3ff' },
+                  { icon: '🚨', label: 'High Priority', value: stats.high_priority + ' cases', color: '#ea580c', bg: '#fff7ed' },
+                  { icon: '📋', label: 'Notices Due', value: stats.notices_pending + ' cases', color: '#ea580c', bg: '#fff7ed' },
+                ].map((item, i) => (
+                  <div key={i} style={{ backgroundColor: item.bg, borderRadius: '10px', padding: '14px 16px', border: `1px solid ${item.color}20` }}>
+                    <div style={{ fontSize: '20px', marginBottom: '6px' }}>{item.icon}</div>
+                    <div style={{ fontSize: '20px', fontWeight: '800', color: item.color }}>{item.value}</div>
+                    <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px' }}>{item.label}</div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -2318,6 +2362,22 @@ function CollectionsWorkspaceTab({ token }) {
                 ))}
               </div>
             </div>
+
+            {/* Next Action */}
+            {(() => {
+              const na = getNextAction(selectedCase, caseDetail);
+              return (
+                <div style={{ backgroundColor: PRIORITY_COLORS[na.priority] + '10', borderRadius: '12px', padding: '16px 20px', marginBottom: '20px', border: `1.5px solid ${PRIORITY_COLORS[na.priority]}40`, display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div style={{ fontSize: '28px', flexShrink: 0 }}>{na.icon}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '10px', color: PRIORITY_COLORS[na.priority], fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+                      {na.priority === 'critical' ? '🔴 Critical Action' : na.priority === 'high' ? '🟠 High Priority' : na.priority === 'medium' ? '🟡 Recommended' : '✅ Next Step'}
+                    </div>
+                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>{na.label}</div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Quick Log Contact */}
             <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
