@@ -8,8 +8,9 @@ function Login({ onLogin }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [seedingDemo, setSeedingDemo] = useState(false);
 
-  const doLogin = async (emailVal, passwordVal) => {
+  const doLogin = async (emailVal, passwordVal, isDemo = false) => {
     setError('');
     setLoading(true);
     try {
@@ -25,6 +26,16 @@ function Login({ onLogin }) {
       }
       localStorage.setItem('collections_token', data.token);
       localStorage.setItem('collections_user', JSON.stringify(data.user));
+      if (isDemo) {
+        setSeedingDemo(true);
+        try {
+          await fetch(`${API_URL}/api/collections/seed-demo`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${data.token}` }
+          });
+        } catch(e) { /* non-fatal */ }
+        setSeedingDemo(false);
+      }
       onLogin(data.user, data.token);
     } catch (err) {
       setError(err.message);
@@ -33,14 +44,14 @@ function Login({ onLogin }) {
     }
   };
 
-  const handleLogin = () => doLogin(email, password);
+  const handleLogin = () => doLogin(email, password, false);
 
   const handleDemoLogin = () => {
     const demoEmail = 'james@servfixy.com';
     const demoPass = 'password';
     setEmail(demoEmail);
     setPassword(demoPass);
-    doLogin(demoEmail, demoPass);
+    doLogin(demoEmail, demoPass, true);
   };
 
   return (
@@ -77,8 +88,8 @@ function Login({ onLogin }) {
           <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }} />
         </div>
         <button onClick={handleDemoLogin} disabled={loading}
-          style={{ width: '100%', padding: '13px', borderRadius: '8px', border: '2px solid #14B8A6', background: 'transparent', color: '#0f766e', fontSize: '14px', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '16px' }}>▶</span> Investor Demo Login
+          style={{ width: '100%', padding: '13px', borderRadius: '8px', border: '2px solid #14B8A6', background: 'transparent', color: '#0f766e', fontSize: '14px', fontWeight: '700', cursor: (loading || seedingDemo) ? 'not-allowed' : 'pointer', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '16px' }}>▶</span> {seedingDemo ? 'Loading demo data...' : 'Investor Demo Login'}
         </button>
         <div style={{ marginTop: '10px', textAlign: 'center', fontSize: '11px', color: '#94a3b8' }}>
           Pre-loaded with 200 real-scenario cases across 3 properties
