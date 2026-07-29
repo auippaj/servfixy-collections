@@ -1209,7 +1209,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                     <span style={{ fontSize: '11px', color: '#475569' }}>{fmtDate(t.contacted_at)}</span>
                   </div>
                   <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>by {t.coordinator_name}</div>
-                  {t.notes && <div style={{ fontSize: '13px', color: '#cbd5e1' }}>{t.notes}</div>}
+                  {t.notes && <div style={{ fontSize: '13px', color: '#475569' }}>{t.notes}</div>}
                 </div>
               ))}
             </div>
