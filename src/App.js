@@ -266,7 +266,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   const byStatus = data?.by_status || [];
   const byProperty = data?.by_property || [];
   const activity = data?.recent_activity || [];
-  const plans = data?.plan_performance || {};
+  const plans = data?.plan_performance || { active_plans: 0, completed_plans: 0, broken_plans: 0, total_plans: 0 };
 
   const navigate = onNavigate || (() => {});
 
