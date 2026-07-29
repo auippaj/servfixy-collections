@@ -273,15 +273,18 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   const totalClosed = (Number(s.closed_paid_count) || 0) + (Number(s.closed_written_off_count) || 0);
   const recoveryRate = totalClosed > 0 ? Math.round((Number(s.closed_paid_count) || 0) / totalClosed * 100) : 0;
 
+  const avgBalance = s.active_cases > 0 ? Math.round(Number(s.total_balance) / Number(s.active_cases)) : 0;
+  const legalPct = s.total_cases > 0 ? Math.round((Number(s.legal_cases) / Number(s.total_cases)) * 100) : 0;
   const kpis = [
-    { label: 'Total Delinquent Balance', value: fmtCurrency(s.total_balance), color: '#dc2626', sub: `${s.total_cases || 0} total cases`, onClick: () => navigate('Collections Cases', { status: '', property_id: selectedProperty, aging_bucket: '' }) },
-    { label: 'Amount Recovered', value: fmtCurrency(s.amount_recovered), color: '#15803d', sub: `${s.closed_paid_count || 0} cases closed paid`, onClick: () => navigate('Collections Cases', { status: 'closed_paid', property_id: selectedProperty, aging_bucket: '' }) },
-    { label: 'Recovery Rate', value: `${recoveryRate}%`, color: '#14B8A6', sub: 'Paid vs written off', onClick: () => navigate('Collections Cases', { status: 'closed_paid', property_id: selectedProperty, aging_bucket: '' }) },
-    { label: 'Active Cases', value: s.active_cases || 0, color: '#1d4ed8', sub: 'Not yet closed', onClick: () => navigate('Collections Cases', { status: 'active', property_id: selectedProperty, aging_bucket: '' }) },
-    { label: 'In Legal Pipeline', value: s.legal_cases || 0, color: '#ea580c', sub: 'Attorney thru Possession', onClick: () => navigate('Collections Cases', { status: 'filed_with_attorney', property_id: selectedProperty, aging_bucket: '' }) },
-    { label: 'Possession Granted', value: s.possession_count || 0, color: '#dc2626', sub: 'This portfolio', onClick: () => navigate('Collections Cases', { status: 'possession_granted', property_id: selectedProperty, aging_bucket: '' }) },
-    { label: 'Avg Days Open', value: `${s.avg_days_open || 0}d`, color: '#7c3aed', sub: 'Per active case', onClick: () => navigate('Collections Reports', null) },
-    { label: 'Active Payment Plans', value: plans.active_plans || 0, color: '#15803d', sub: `${plans.completed_plans || 0} completed / ${plans.broken_plans || 0} broken`, onClick: () => navigate('Collections Reports', null) },
+    { label: 'Total Delinquent Balance', value: fmtCurrency(s.total_balance), color: '#dc2626', sub: `${s.total_cases || 0} total cases`, icon: '\uD83D\uDCB8', onClick: () => navigate('Collections Cases', { status: '', property_id: selectedProperty, aging_bucket: '' }) },
+    { label: 'Amount Recovered', value: fmtCurrency(s.amount_recovered), color: '#15803d', sub: `${s.closed_paid_count || 0} cases closed paid`, icon: '\u2705', onClick: () => navigate('Collections Cases', { status: 'closed_paid', property_id: selectedProperty, aging_bucket: '' }) },
+    { label: 'Recovery Rate', value: `${recoveryRate}%`, color: '#14B8A6', sub: recoveryRate >= 50 ? '\u2191 On track' : '\u2193 Below target', icon: '\uD83D\uDCCA', onClick: () => navigate('Collections Cases', { status: 'closed_paid', property_id: selectedProperty, aging_bucket: '' }) },
+    { label: 'Active Cases', value: s.active_cases || 0, color: '#1d4ed8', sub: 'Not yet resolved', icon: '\uD83D\uDCC2', onClick: () => navigate('Collections Cases', { status: 'active', property_id: selectedProperty, aging_bucket: '' }) },
+    { label: 'In Legal Pipeline', value: s.legal_cases || 0, color: '#ea580c', sub: `${legalPct}% of total cases`, icon: '\u2696\uFE0F', onClick: () => navigate('Collections Cases', { status: 'filed_with_attorney', property_id: selectedProperty, aging_bucket: '' }) },
+    { label: 'Possession Granted', value: s.possession_count || 0, color: '#dc2626', sub: 'Eviction complete', icon: '\uD83D\uDD11', onClick: () => navigate('Collections Cases', { status: 'possession_granted', property_id: selectedProperty, aging_bucket: '' }) },
+    { label: 'Avg Balance / Case', value: fmtCurrency(avgBalance), color: '#7c3aed', sub: 'Per active case', icon: '\uD83E\uDDFE', onClick: () => navigate('Collections Reports', null) },
+    { label: 'Avg Days Open', value: `${s.avg_days_open || 0}d`, color: '#0369a1', sub: 'Per active case', icon: '\u23F1\uFE0F', onClick: () => navigate('Collections Reports', null) },
+    { label: 'Active Payment Plans', value: plans.active_plans || 0, color: '#15803d', sub: `${plans.completed_plans || 0} completed \u00b7 ${plans.broken_plans || 0} broken`, icon: '\uD83D\uDDD3\uFE0F', onClick: () => navigate('Collections Reports', null) },
   ];
 
   const maxAgingBalance = Math.max(...byAging.map(r => Number(r.balance) || 0), 1);
@@ -312,16 +315,18 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
 
       {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px', marginBottom: '28px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '14px', marginBottom: '28px' }}>
         {kpis.map((k, i) => (
           <div key={i} onClick={k.onClick}
-            style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', borderLeft: `4px solid ${k.color}`, cursor: 'pointer', transition: 'background 0.15s', userSelect: 'none' }}
-            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
-            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#ffffff'}>
-            <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{k.label}</div>
-            <div style={{ fontSize: '26px', fontWeight: '800', color: k.color, marginBottom: '4px' }}>{k.value}</div>
-            <div style={{ fontSize: '11px', color: '#475569' }}>{k.sub}</div>
-            <div style={{ fontSize: '10px', color: '#cbd5e1', marginTop: '6px' }}>Click to view →</div>
+            style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '18px 20px', borderLeft: `4px solid ${k.color}`, cursor: 'pointer', transition: 'all 0.15s', userSelect: 'none', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#f8fafc'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+              <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '600', lineHeight: '1.3', maxWidth: '75%' }}>{k.label}</div>
+              <span style={{ fontSize: '18px', opacity: 0.7 }}>{k.icon}</span>
+            </div>
+            <div style={{ fontSize: '28px', fontWeight: '800', color: k.color, marginBottom: '6px', lineHeight: 1 }}>{k.value}</div>
+            <div style={{ fontSize: '11px', color: '#64748b' }}>{k.sub}</div>
           </div>
         ))}
       </div>
