@@ -1858,6 +1858,8 @@ function CollectionsWorkspaceTab({ token }) {
   const [allCoordinators, setAllCoordinators] = useState([]);
   const [taskQueue, setTaskQueue] = useState([]);
   const [stats, setStats] = useState(null);
+  const [propertyList, setPropertyList] = useState([]);
+  const [propertyFilter, setPropertyFilter] = useState('all');
   const [loading, setLoading] = useState(false);
   const [selectedCase, setSelectedCase] = useState(null);
   const [caseDetail, setCaseDetail] = useState(null);
@@ -1910,9 +1912,10 @@ function CollectionsWorkspaceTab({ token }) {
 
   const PRIORITY_COLORS = { critical: '#dc2626', high: '#ea580c', medium: '#f59e0b', normal: '#14B8A6' };
 
-  const fetchWorkspace = async (name) => {
+  const fetchWorkspace = async (name, filterOverride) => {
     if (!name) return;
     setLoading(true);
+    const activeFilter = filterOverride !== undefined ? filterOverride : propertyFilter;
     try {
       // Pull all cases assigned to or last touched by this coordinator
       const res = await fetch(`${API_URL}/api/collections/cases`, {
@@ -1932,11 +1935,20 @@ function CollectionsWorkspaceTab({ token }) {
       // Filter to active cases not yet closed
       const activeCases = allCases.filter(c => !['closed_paid', 'closed_written_off'].includes(c.status));
 
+      // Unique properties for filter
+      const uniqueProps = [...new Set(activeCases.map(c => c.property_name).filter(Boolean))];
+      setPropertyList(uniqueProps);
+
+      // Apply property filter
+      const filteredCases = activeFilter && activeFilter !== 'all'
+        ? activeCases.filter(c => c.property_name === activeFilter)
+        : activeCases;
+
       // Build task queue — cases needing attention (no recent contact)
       // We'll fetch last touchpoint per case via case detail in background
       // For now sort by aging bucket severity + balance
       const agingRank = { '120+': 4, '91-120': 3, '61-90': 2, '30-60': 1 };
-      const sorted = [...activeCases].sort((a, b) => {
+      const sorted = [...filteredCases].sort((a, b) => {
         const ageDiff = (agingRank[b.aging_bucket] || 0) - (agingRank[a.aging_bucket] || 0);
         if (ageDiff !== 0) return ageDiff;
         return Number(b.balance_owed) - Number(a.balance_owed);
@@ -2025,6 +2037,13 @@ function CollectionsWorkspaceTab({ token }) {
     const saved = localStorage.getItem('collections_coordinator_name') || 'Demo Coordinator';
     setCoordinator(saved); setCoordinatorInput(saved); fetchWorkspace(saved);
   }, [token]);
+
+  // Auto-select first queue case when task queue loads (demo flow)
+  useEffect(() => {
+    if (taskQueue.length > 0 && !selectedCase) {
+      handleSelectCase(taskQueue[0]);
+    }
+  }, [taskQueue]);
 
   const handleSetCoordinator = () => {
     const name = coordinatorInput.trim();
@@ -2246,14 +2265,27 @@ function CollectionsWorkspaceTab({ token }) {
               style={{ ...btnSmall, backgroundColor: '#ffffff', color: '#94a3b8', border: '1px solid #cbd5e1' }}>Switch</button>
           </div>
 
+          {/* Property Filter */}
+          {propertyList.length > 1 && (
+            <div style={{ marginTop: '10px' }}>
+              <select value={propertyFilter}
+                onChange={e => { const v = e.target.value; setPropertyFilter(v); fetchWorkspace(coordinator, v); }}
+                style={{ width: '100%', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '7px', fontSize: '11px', color: '#1e293b', backgroundColor: '#ffffff', cursor: 'pointer' }}>
+                <option value="all">All Properties ({propertyList.length})</option>
+                {propertyList.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+          )}
+
           {/* KPI Strip */}
           {stats && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginTop: '14px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', marginTop: '14px' }}>
               {[
                 { label: 'Active', value: stats.total_active, color: '#1d4ed8' },
                 { label: 'High Priority', value: stats.high_priority, color: '#dc2626' },
                 { label: 'In Legal', value: stats.in_legal, color: '#7c3aed' },
                 { label: 'Notices Due', value: stats.notices_pending, color: '#ea580c' },
+                { label: 'Avg Balance', value: '$' + Number(stats.avg_balance || 0).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0}), color: '#0369a1' },
               ].map((k, i) => (
                 <div key={i} style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '7px 5px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
                   <div style={{ fontSize: '16px', fontWeight: '800', color: k.color }}>{k.value}</div>
@@ -2444,7 +2476,7 @@ function CollectionsWorkspaceTab({ token }) {
                     <span style={{ fontSize: '11px', color: '#cbd5e1' }}>{fmtDate(t.contacted_at)}</span>
                   </div>
                   <div style={{ fontSize: '11px', color: '#475569', marginBottom: t.notes ? '4px' : 0 }}>by {t.coordinator_name}</div>
-                  {t.notes && <div style={{ fontSize: '12px', color: '#cbd5e1' }}>{t.notes}</div>}
+                  {t.notes && <div style={{ fontSize: '12px', color: '#475569' }}>{t.notes}</div>}
                 </div>
               ))}
             </div>
