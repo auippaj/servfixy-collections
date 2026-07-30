@@ -307,6 +307,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
     { label: 'Active Payment Plans', value: plans.active_plans || 0, color: '#15803d', sub: `${plans.completed_plans || 0} completed \u00b7 ${plans.broken_plans || 0} broken`, icon: '\uD83D\uDDD3\uFE0F', onClick: () => navigate('Collections Reports', null) },
     { label: 'Promises to Pay', value: ptpStats.pending, color: '#7c3aed', sub: `${ptpStats.kept} kept \u00b7 ${ptpStats.broken} broken \u00b7 ${fmtCurrency(ptpStats.totalAmt)} promised`, icon: '\uD83E\uDD1D', onClick: () => navigate('Promise to Pay', null), highlight: ptpStats.broken > 0 },
     { label: 'Active Writs', value: writStats.total, color: '#dc2626', sub: writStats.upcoming > 0 ? `\u26A0\uFE0F ${writStats.upcoming} execution${writStats.upcoming > 1 ? 's' : ''} upcoming` : 'No executions in 48hrs', icon: '\u2696\uFE0F', onClick: () => navigate('Writ Tracker', null) },
+    { label: 'Est. Recoverable', value: fmtCurrency(s.estimated_recoverable || 0), color: '#15803d', sub: 'Probability-weighted balance', icon: '\uD83D\uDCCA', onClick: () => navigate('Collections Cases', { status: 'active', property_id: selectedProperty, aging_bucket: '' }) },
   ];
 
   const maxAgingBalance = Math.max(...byAging.map(r => Number(r.balance) || 0), 1);
@@ -967,9 +968,17 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                 </div>
                 <div style={{ fontSize: '15px', fontWeight: '700', color: '#dc2626' }}>{fmtCurrency(c.balance_owed)}</div>
               </div>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                 <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', backgroundColor: '#dbeafe', color: statusColor(c.status), fontWeight: '600' }}>{fmtStatus(c.status)}</span>
                 <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', backgroundColor: '#ffffff', color: AGING_COLORS[c.aging_bucket] || '#94a3b8', fontWeight: '600' }}>{c.aging_bucket} Days</span>
+                {c.payment_probability != null && (
+                  <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', fontWeight: '800',
+                    backgroundColor: c.payment_probability >= 70 ? '#dcfce7' : c.payment_probability >= 40 ? '#fef9c3' : '#fee2e2',
+                    color: c.payment_probability >= 70 ? '#15803d' : c.payment_probability >= 40 ? '#854d0e' : '#dc2626'
+                  }}>
+                    {c.payment_probability}% pay prob
+                  </span>
+                )}
               </div>
             </div>
           ))}
@@ -997,6 +1006,24 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '28px', fontWeight: '800', color: '#dc2626' }}>{fmtCurrency(caseDetail.balance_owed)}</div>
+                  {caseDetail.payment_probability != null && (
+                    <div style={{ marginTop: '10px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Payment Probability</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ flex: 1, height: '10px', backgroundColor: '#f1f5f9', borderRadius: '5px', overflow: 'hidden' }}>
+                          <div style={{ width: `${caseDetail.payment_probability}%`, height: '100%', borderRadius: '5px', transition: 'width 0.5s ease',
+                            backgroundColor: caseDetail.payment_probability >= 70 ? '#15803d' : caseDetail.payment_probability >= 40 ? '#eab308' : '#dc2626'
+                          }} />
+                        </div>
+                        <span style={{ fontSize: '16px', fontWeight: '800', minWidth: '40px',
+                          color: caseDetail.payment_probability >= 70 ? '#15803d' : caseDetail.payment_probability >= 40 ? '#854d0e' : '#dc2626'
+                        }}>{caseDetail.payment_probability}%</span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
+                        {caseDetail.payment_probability >= 70 ? 'High likelihood — prioritize contact' : caseDetail.payment_probability >= 40 ? 'Moderate — monitor closely' : 'Low likelihood — consider escalation'}
+                      </div>
+                    </div>
+                  )}
                   <div style={{ fontSize: '11px', color: '#475569' }}>Balance Owed</div>
                 </div>
               </div>
