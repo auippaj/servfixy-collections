@@ -135,7 +135,7 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
       {/* Logo */}
       <div style={{ padding: '20px 18px 14px', borderBottom: '1px solid #2d4fb5', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <img src="https://i.imgur.com/OKIqq0K.png" alt="Servfixy" style={{ height: '28px', objectFit: 'contain' }} />
+          <img src="https://i.imgur.com/OKIqq0K.png" alt="Servfixy" style={{ height: '40px', objectFit: 'contain' }} />
           <div style={{ marginTop: '6px', display: 'inline-block', background: '#0f766e', borderRadius: '5px', padding: '2px 8px', fontSize: '10px', fontWeight: '700', color: '#fff', letterSpacing: '0.08em' }}>COLLECTIONS</div>
         </div>
         {isMobile && (
