@@ -131,9 +131,9 @@ const NAV_ITEMS = [
 function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
   const isMobile = window.innerWidth < 768;
   const SidebarInner = () => (
-    <div style={{ width: '224px', minWidth: '224px', backgroundColor: '#1e3a5f', borderRight: '1px solid #162d4a', display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div style={{ width: '224px', minWidth: '224px', backgroundColor: '#1e3a8a', borderRight: '1px solid #1e3a8a', display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* Logo */}
-      <div style={{ padding: '20px 18px 14px', borderBottom: '1px solid #162d4a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ padding: '20px 18px 14px', borderBottom: '1px solid #2d4fb5', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <img src="https://i.imgur.com/OKIqq0K.png" alt="Servfixy" style={{ height: '28px', objectFit: 'contain' }} />
           <div style={{ marginTop: '6px', display: 'inline-block', background: '#0f766e', borderRadius: '5px', padding: '2px 8px', fontSize: '10px', fontWeight: '700', color: '#fff', letterSpacing: '0.08em' }}>COLLECTIONS</div>
@@ -161,11 +161,11 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
         ))}
       </div>
       {/* Footer */}
-      <div style={{ padding: '14px 18px', borderTop: '1px solid #162d4a' }}>
+      <div style={{ padding: '14px 18px', borderTop: '1px solid #2d4fb5' }}>
         <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</div>
         <div style={{ fontSize: '11px', color: '#14b8a6', textTransform: 'capitalize', marginBottom: '10px' }}>{user?.role}</div>
         <button onClick={onLogout}
-          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #162d4a', backgroundColor: 'transparent', color: '#94a3b8', fontSize: '12px', cursor: 'pointer' }}>
+          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #2d4fb5', backgroundColor: 'transparent', color: '#94a3b8', fontSize: '12px', cursor: 'pointer' }}>
           Sign Out
         </button>
       </div>
