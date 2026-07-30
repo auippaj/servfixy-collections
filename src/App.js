@@ -4935,15 +4935,15 @@ function ConnectorCard({ connector, catalogEntry, token, onRefresh }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
         <div style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '12px' }}>
           <div style={{ color: '#64748b', fontSize: '11px', marginBottom: '4px' }}>FULL SYNC</div>
-          <div style={{ color: '#374151', fontSize: '13px' }}>{fmt(connector.last_full_sync_at)}</div>
+          <div style={{ color: '#111827', fontSize: '13px' }}>{fmt(connector.last_full_sync_at)}</div>
         </div>
         <div style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '12px' }}>
           <div style={{ color: '#64748b', fontSize: '11px', marginBottom: '4px' }}>LAST INCREMENTAL</div>
-          <div style={{ color: '#374151', fontSize: '13px' }}>{fmt(connector.last_incremental_sync_at)}</div>
+          <div style={{ color: '#111827', fontSize: '13px' }}>{fmt(connector.last_incremental_sync_at)}</div>
         </div>
         <div style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '12px' }}>
           <div style={{ color: '#64748b', fontSize: '11px', marginBottom: '4px' }}>CONNECTED</div>
-          <div style={{ color: '#374151', fontSize: '13px' }}>{fmt(connector.created_at)}</div>
+          <div style={{ color: '#111827', fontSize: '13px' }}>{fmt(connector.created_at)}</div>
         </div>
       </div>
       {msg && <div style={{ backgroundColor: '#f8fafc', color: '#60a5fa', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', marginBottom: '12px' }}>{msg}</div>}
@@ -5501,7 +5501,7 @@ function IntegrationsTab({ token }) {
       <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 32px' }}>
         <div style={{ color: '#1e293b', fontSize: '22px', fontWeight: 'bold' }}>PMS Integrations</div>
       </div>
-      <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '32px', marginTop: '4px' }}>
+      <p style={{ color: '#111827', fontSize: '14px', marginBottom: '32px', marginTop: '4px' }}>
         Connect Servfixy to your property management system. Each connector syncs properties, units, residents, and work orders automatically.
       </p>
 
