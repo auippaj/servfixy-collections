@@ -928,7 +928,9 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
           ) : cases.map(c => (
             <div key={c.id}
               onClick={() => bulkMode ? toggleSelectId(c.id) : handleSelectCase(c)}
-              style={{ padding: '14px 16px', borderBottom: '1px solid #ffffff', cursor: 'pointer', backgroundColor: bulkMode && selectedIds.has(c.id) ? '#1B3A6B' : selectedCase?.id === c.id ? '#ffffff' : 'transparent', transition: 'background 0.15s' }}>
+              style={{ padding: '14px 16px', borderBottom: '1px solid #ffffff', cursor: 'pointer', backgroundColor: bulkMode && selectedIds.has(c.id) ? '#1B3A6B' : selectedCase?.id === c.id ? '#ffffff' : 'transparent', transition: 'background 0.15s' }}
+              onMouseEnter={e => { if (selectedCase?.id !== c.id) e.currentTarget.style.backgroundColor = '#dbeafe'; }}
+              onMouseLeave={e => { if (selectedCase?.id !== c.id) e.currentTarget.style.backgroundColor = bulkMode && selectedIds.has(c.id) ? '#1B3A6B' : 'transparent'; }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                   {bulkMode && (
