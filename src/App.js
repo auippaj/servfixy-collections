@@ -58,7 +58,7 @@ function Login({ onLogin }) {
     <div style={{ backgroundColor: '#f8fafc', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Arial, sans-serif' }}>
       <div style={{ backgroundColor: '#ffffff', padding: '48px', borderRadius: '12px', width: '100%', maxWidth: '420px', boxShadow: '0 4px 40px rgba(192,132,252,0.15)', border: '1px solid #1e293b' }}>
         <div style={{ marginBottom: '24px' }}>
-          <img src="https://i.imgur.com/An6s6sp.png" alt="Servfixy" style={{ height: '36px', objectFit: 'contain' }} />
+          <img src="https://i.imgur.com/OKIqq0K.png" alt="Servfixy" style={{ height: '36px', objectFit: 'contain' }} />
           <div style={{ display: 'inline-block', marginLeft: '10px', verticalAlign: 'middle', background: '#1d4ed8', borderRadius: '6px', padding: '3px 10px', fontSize: '12px', fontWeight: '700', color: '#fff', letterSpacing: '0.05em' }}>COLLECTIONS</div>
         </div>
         <h2 style={{ color: '#0f172a', margin: '0 0 6px 0', fontSize: '20px', fontWeight: '700' }}>Sign in</h2>
@@ -133,7 +133,7 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
       {/* Logo */}
       <div style={{ padding: '20px 18px 14px', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <img src="https://i.imgur.com/An6s6sp.png" alt="Servfixy" style={{ height: '28px', objectFit: 'contain' }} />
+          <img src="https://i.imgur.com/OKIqq0K.png" alt="Servfixy" style={{ height: '28px', objectFit: 'contain' }} />
           <div style={{ marginTop: '6px', display: 'inline-block', background: '#1d4ed8', borderRadius: '5px', padding: '2px 8px', fontSize: '10px', fontWeight: '700', color: '#fff', letterSpacing: '0.08em' }}>COLLECTIONS</div>
         </div>
         {isMobile && (
@@ -5604,7 +5604,7 @@ function App() {
         <div style={{ position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', flexShrink: 0 }}>
           <button onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#1e293b', padding: '4px 8px', borderRadius: '6px' }}>☰</button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <img src="https://i.imgur.com/An6s6sp.png" alt="Servfixy" style={{ height: '22px', objectFit: 'contain' }} />
+            <img src="https://i.imgur.com/OKIqq0K.png" alt="Servfixy" style={{ height: '22px', objectFit: 'contain' }} />
             <div style={{ background: '#1d4ed8', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', fontWeight: '700', color: '#fff', letterSpacing: '0.08em' }}>COLLECTIONS</div>
           </div>
           <div style={{ fontSize: '11px', color: '#94a3b8', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeTab.replace('Collections ', '')}</div>
