@@ -193,6 +193,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   const [selectedProperty, setSelectedProperty] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [ptpStats, setPtpStats] = useState({ pending: 0, kept: 0, broken: 0, totalAmt: 0 });
 
   const fetchData = async (propId) => {
     setLoading(true);
@@ -215,6 +216,18 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   useEffect(() => {
     fetch(`${API_URL}/api/properties`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(rows => setProperties(Array.isArray(rows) ? rows : [])).catch(() => {});
+    fetch(`${API_URL}/api/ptp`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(rows => {
+        if (Array.isArray(rows)) {
+          const today = new Date().toISOString().split('T')[0];
+          setPtpStats({
+            pending: rows.filter(p => p.status === 'pending' && p.promise_date >= today).length,
+            kept: rows.filter(p => p.status === 'kept').length,
+            broken: rows.filter(p => p.status === 'broken' || (p.status === 'pending' && p.promise_date < today)).length,
+            totalAmt: rows.filter(p => p.status === 'pending' && p.promise_date >= today).reduce((s, p) => s + Number(p.promise_amount), 0)
+          });
+        }
+      }).catch(() => {});
     fetchData('');
   }, [token]);
 
@@ -286,6 +299,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
     { label: 'Avg Balance / Case', value: fmtCurrency(avgBalance), color: '#7c3aed', sub: 'Per active case', icon: '\uD83E\uDDFE', onClick: () => navigate('Collections Reports', null) },
     { label: 'Avg Days Open', value: `${s.avg_days_open || 0}d`, color: '#0369a1', sub: 'Per active case', icon: '\u23F1\uFE0F', onClick: () => navigate('Collections Reports', null) },
     { label: 'Active Payment Plans', value: plans.active_plans || 0, color: '#15803d', sub: `${plans.completed_plans || 0} completed \u00b7 ${plans.broken_plans || 0} broken`, icon: '\uD83D\uDDD3\uFE0F', onClick: () => navigate('Collections Reports', null) },
+    { label: 'Promises to Pay', value: ptpStats.pending, color: '#7c3aed', sub: `${ptpStats.kept} kept \u00b7 ${ptpStats.broken} broken \u00b7 ${fmtCurrency(ptpStats.totalAmt)} promised`, icon: '\uD83E\uDD1D', onClick: () => navigate('Promise to Pay', null), highlight: ptpStats.broken > 0 },
   ];
 
   const maxAgingBalance = Math.max(...byAging.map(r => Number(r.balance) || 0), 1);
