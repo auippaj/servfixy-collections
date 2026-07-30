@@ -110,6 +110,7 @@ const NAV_ITEMS = [
     { label: 'Coordinator Workspace',icon: '🧑‍💼', tab: 'Coordinator Workspace' },
     { label: 'Court Calendar',       icon: '🗓️', tab: 'Court Calendar' },
     { label: 'Promise to Pay',       icon: '🤝', tab: 'Promise to Pay' },
+    { label: 'Writ Tracker',         icon: '⚖️', tab: 'Writ Tracker' },
     { label: 'Escalation Rules',     icon: '⚡', tab: 'Escalation Rules' },
   ]},
   { group: 'TOOLS', items: [
@@ -194,6 +195,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [ptpStats, setPtpStats] = useState({ pending: 0, kept: 0, broken: 0, totalAmt: 0 });
+  const [writStats, setWritStats] = useState({ total: 0, upcoming: 0 });
 
   const fetchData = async (propId) => {
     setLoading(true);
@@ -216,6 +218,10 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   useEffect(() => {
     fetch(`${API_URL}/api/properties`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(rows => setProperties(Array.isArray(rows) ? rows : [])).catch(() => {});
+    fetch(`${API_URL}/api/collections/writs/reminders`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(rows => { if (Array.isArray(rows)) setWritStats(prev => ({ ...prev, upcoming: rows.length })); }).catch(() => {});
+    fetch(`${API_URL}/api/collections/writs`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(rows => { if (Array.isArray(rows)) setWritStats(prev => ({ ...prev, total: rows.length })); }).catch(() => {});
     fetch(`${API_URL}/api/ptp`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(rows => {
         if (Array.isArray(rows)) {
@@ -3676,6 +3682,298 @@ function CollectionsImportTab({ token }) {
 
 
 // ── Promise to Pay Manager ─────────────────────────────────────────────────────
+
+// ── Writ Tracker ──────────────────────────────────────────────────────────────
+function WritTrackerTab({ token }) {
+  const API_URL = 'https://servfixy-production.up.railway.app';
+  const [writs, setWrits] = useState([]);
+  const [reminders, setReminders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState('calendar');
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedWrit, setSelectedWrit] = useState(null);
+  const [editingDates, setEditingDates] = useState(false);
+  const [dateForm, setDateForm] = useState({ writ_filed_date: '', writ_execution_date: '' });
+  const [saving, setSaving] = useState(false);
+  const [hoveredDay, setHoveredDay] = useState(null);
+
+  const fmtCurrency = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+  const today = new Date().toISOString().split('T')[0];
+
+  const fetchAll = async () => {
+    setLoading(true);
+    try {
+      const [wRes, rRes] = await Promise.all([
+        fetch(`${API_URL}/api/collections/writs`, { headers: { Authorization: 'Bearer ' + token } }),
+        fetch(`${API_URL}/api/collections/writs/reminders`, { headers: { Authorization: 'Bearer ' + token } })
+      ]);
+      if (wRes.ok) setWrits(await wRes.json());
+      if (rRes.ok) setReminders(await rRes.json());
+    } catch (e) { console.error(e); }
+    setLoading(false);
+  };
+
+  React.useEffect(() => { fetchAll(); }, []);
+
+  const handleSaveDates = async () => {
+    setSaving(true);
+    try {
+      await fetch(`${API_URL}/api/collections/cases/${selectedWrit.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({
+          writ_filed_date: dateForm.writ_filed_date || null,
+          writ_execution_date: dateForm.writ_execution_date || null
+        })
+      });
+      setEditingDates(false);
+      setSelectedWrit(null);
+      fetchAll();
+    } catch (e) { console.error(e); }
+    setSaving(false);
+  };
+
+  // Calendar
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const monthLabel = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  const executionsByDate = {};
+  writs.forEach(w => {
+    if (w.writ_execution_date) {
+      const d = w.writ_execution_date.split('T')[0];
+      if (!executionsByDate[d]) executionsByDate[d] = [];
+      executionsByDate[d].push(w);
+    }
+  });
+
+  const isReminder = (dateStr) => {
+    const diff = (new Date(dateStr) - new Date(today)) / 86400000;
+    return diff >= 0 && diff <= 2;
+  };
+
+  const pendingExecution = writs.filter(w => w.writ_execution_date && w.writ_execution_date.split('T')[0] >= today).length;
+  const noExecDate = writs.filter(w => !w.writ_execution_date).length;
+  const upcomingAmt = writs.filter(w => w.writ_execution_date && w.writ_execution_date.split('T')[0] >= today)
+    .reduce((s, w) => s + Number(w.balance_owed), 0);
+
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px', color: '#94a3b8', fontSize: '14px' }}>Loading writs...</div>
+  );
+
+  return (
+    <div style={{ padding: '24px', fontFamily: 'Arial, sans-serif', color: '#0f172a', maxWidth: '1200px' }}>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>Writ Tracker</h2>
+          <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>Filed writs, execution dates, and 48-hour execution reminders</p>
+        </div>
+        <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '7px', overflow: 'hidden' }}>
+          {['calendar', 'list'].map(v => (
+            <button key={v} onClick={() => setView(v)}
+              style={{ padding: '8px 16px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600', backgroundColor: view === v ? '#7c3aed' : '#fff', color: view === v ? '#fff' : '#64748b', transition: 'all 0.15s' }}>
+              {v === 'calendar' ? '📅 Calendar' : '☰ List'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 48-Hour Reminder Banner */}
+      {reminders.length > 0 && (
+        <div style={{ backgroundColor: '#fef2f2', border: '2px solid #dc2626', borderRadius: '10px', padding: '14px 18px', marginBottom: '20px' }}>
+          <div style={{ fontSize: '13px', fontWeight: '800', color: '#dc2626', marginBottom: '8px' }}>
+            ⚠️ {reminders.length} WRIT EXECUTION{reminders.length > 1 ? 'S' : ''} WITHIN 48 HOURS
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {reminders.map(r => {
+              const execDate = r.writ_execution_date?.split('T')[0];
+              const isToday = execDate === today;
+              return (
+                <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '13px', color: '#7f1d1d' }}>
+                  <span style={{ fontWeight: '800', backgroundColor: isToday ? '#dc2626' : '#fca5a5', color: isToday ? '#fff' : '#7f1d1d', padding: '2px 8px', borderRadius: '4px', fontSize: '11px' }}>
+                    {isToday ? 'TODAY' : 'TOMORROW'}
+                  </span>
+                  <span><strong>{r.resident_name}</strong> · Unit {r.unit_number} · {r.property_name}</span>
+                  <span style={{ color: '#dc2626', fontWeight: '700' }}>{fmtCurrency(r.balance_owed)}</span>
+                  {r.attorney_name && <span style={{ color: '#94a3b8' }}>Atty: {r.attorney_name}</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* KPI Strip */}
+      <div style={{ display: 'flex', gap: '14px', marginBottom: '22px', flexWrap: 'wrap' }}>
+        {[
+          { label: 'Active Writs', value: writs.length, color: '#7c3aed', bg: '#f5f3ff', icon: '⚖️' },
+          { label: 'Execution Pending', value: pendingExecution, color: '#dc2626', bg: '#fef2f2', icon: '📅' },
+          { label: 'Balance at Risk', value: fmtCurrency(upcomingAmt), color: '#ea580c', bg: '#fff7ed', icon: '💰' },
+          { label: 'Missing Exec Date', value: noExecDate, color: '#64748b', bg: '#f8fafc', icon: '⚠️' },
+        ].map((k, i) => (
+          <div key={i} style={{ flex: '1', minWidth: '140px', backgroundColor: k.bg, borderRadius: '10px', padding: '14px 16px', border: `1px solid ${k.color}22` }}>
+            <div style={{ fontSize: '11px', fontWeight: '600', color: k.color, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{k.icon} {k.label}</div>
+            <div style={{ fontSize: '22px', fontWeight: '800', color: k.color }}>{k.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar View */}
+      {view === 'calendar' && (
+        <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#7c3aed' }}>
+            <button onClick={() => setCurrentMonth(new Date(year, month - 1, 1))}
+              style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '6px', color: '#fff', width: '32px', height: '32px', cursor: 'pointer', fontSize: '16px' }}>‹</button>
+            <span style={{ fontSize: '16px', fontWeight: '700', color: '#fff' }}>{monthLabel} — Writ Execution Calendar</span>
+            <button onClick={() => setCurrentMonth(new Date(year, month + 1, 1))}
+              style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '6px', color: '#fff', width: '32px', height: '32px', cursor: 'pointer', fontSize: '16px' }}>›</button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+            {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
+              <div key={d} style={{ textAlign: 'center', padding: '8px', fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{d}</div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+            {Array.from({ length: firstDay }).map((_, i) => (
+              <div key={'e'+i} style={{ minHeight: '90px', borderRight: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', backgroundColor: '#fafafa' }} />
+            ))}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+              const dayWrits = executionsByDate[dateStr] || [];
+              const isToday = dateStr === today;
+              const isAlert = isReminder(dateStr) && dayWrits.length > 0;
+              const isHovered = hoveredDay === dateStr;
+              return (
+                <div key={day}
+                  onMouseEnter={() => setHoveredDay(dateStr)}
+                  onMouseLeave={() => setHoveredDay(null)}
+                  style={{ minHeight: '90px', borderRight: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', padding: '6px', backgroundColor: isAlert ? '#fef2f2' : isHovered ? '#f5f3ff' : '#fff', transition: 'background 0.1s' }}>
+                  <div style={{ fontSize: '12px', fontWeight: isToday ? '800' : '500', color: isToday ? '#7c3aed' : '#475569', width: '22px', height: '22px', borderRadius: '50%', backgroundColor: isToday ? '#ede9fe' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' }}>{day}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    {dayWrits.map(w => (
+                      <div key={w.id} onClick={() => { setSelectedWrit(w); setDateForm({ writ_filed_date: w.writ_filed_date?.split('T')[0] || '', writ_execution_date: w.writ_execution_date?.split('T')[0] || '' }); }}
+                        style={{ fontSize: '10px', padding: '3px 6px', borderRadius: '4px', backgroundColor: isAlert ? '#fee2e2' : '#ede9fe', color: isAlert ? '#dc2626' : '#7c3aed', fontWeight: '700', cursor: 'pointer', lineHeight: '1.3', border: `1px solid ${isAlert ? '#fca5a5' : '#c4b5fd'}` }}>
+                        {isAlert ? '⚠️ ' : ''}{w.resident_name.split(' ')[0]} · U{w.unit_number}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', gap: '20px', padding: '12px 20px', borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc', flexWrap: 'wrap' }}>
+            {[{ label: 'Execution Scheduled', bg: '#ede9fe', color: '#7c3aed' }, { label: '48-Hour Alert', bg: '#fee2e2', color: '#dc2626' }].map(l => (
+              <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#64748b' }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: l.bg, border: `1px solid ${l.color}55` }} />
+                {l.label}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* List View */}
+      {view === 'list' && (
+        <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                {['Resident', 'Unit', 'Property', 'Balance', 'Writ Filed', 'Execution Date', 'Attorney', ''].map(h => (
+                  <th key={h} style={{ padding: '11px 14px', textAlign: 'left', fontWeight: '700', color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {writs.length === 0 && (
+                <tr><td colSpan={8} style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No active writs. Cases with status "Writ Filed" will appear here.</td></tr>
+              )}
+              {writs.map((w, idx) => {
+                const execDate = w.writ_execution_date?.split('T')[0];
+                const alert = execDate && isReminder(execDate);
+                return (
+                  <tr key={w.id}
+                    onClick={() => { setSelectedWrit(w); setDateForm({ writ_filed_date: w.writ_filed_date?.split('T')[0] || '', writ_execution_date: w.writ_execution_date?.split('T')[0] || '' }); }}
+                    style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', backgroundColor: alert ? '#fef2f2' : idx % 2 === 0 ? '#fff' : '#fafafa' }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f5f3ff'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = alert ? '#fef2f2' : idx % 2 === 0 ? '#fff' : '#fafafa'}>
+                    <td style={{ padding: '11px 14px', fontWeight: '600', color: '#0f172a' }}>{alert ? '⚠️ ' : ''}{w.resident_name}</td>
+                    <td style={{ padding: '11px 14px', color: '#475569' }}>Unit {w.unit_number}</td>
+                    <td style={{ padding: '11px 14px', color: '#475569' }}>{w.property_name}</td>
+                    <td style={{ padding: '11px 14px', fontWeight: '700', color: '#dc2626' }}>{fmtCurrency(w.balance_owed)}</td>
+                    <td style={{ padding: '11px 14px', color: '#475569' }}>{fmtDate(w.writ_filed_date || w.writ_file_date)}</td>
+                    <td style={{ padding: '11px 14px', color: alert ? '#dc2626' : '#475569', fontWeight: alert ? '700' : '400' }}>{fmtDate(execDate) || <span style={{ color: '#f59e0b', fontWeight: '600' }}>Not set</span>}</td>
+                    <td style={{ padding: '11px 14px', color: '#475569' }}>{w.attorney_name || '—'}</td>
+                    <td style={{ padding: '11px 14px' }}>
+                      <button onClick={e => { e.stopPropagation(); setSelectedWrit(w); setDateForm({ writ_filed_date: w.writ_filed_date?.split('T')[0] || '', writ_execution_date: w.writ_execution_date?.split('T')[0] || '' }); setEditingDates(true); }}
+                        style={{ fontSize: '11px', padding: '4px 10px', border: '1px solid #c4b5fd', borderRadius: '5px', backgroundColor: '#f5f3ff', color: '#7c3aed', cursor: 'pointer', fontWeight: '600' }}>
+                        Set Dates
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Writ Detail / Date Modal */}
+      {selectedWrit && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => { setSelectedWrit(null); setEditingDates(false); }}>
+          <div style={{ backgroundColor: '#fff', borderRadius: '14px', padding: '28px', width: '440px', maxWidth: '92vw', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
+              <div>
+                <div style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a' }}>{selectedWrit.resident_name}</div>
+                <div style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>Unit {selectedWrit.unit_number} · {selectedWrit.property_name}</div>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: '#dc2626', marginTop: '4px' }}>{fmtCurrency(selectedWrit.balance_owed)}</div>
+              </div>
+              <button onClick={() => { setSelectedWrit(null); setEditingDates(false); }} style={{ background: 'none', border: 'none', fontSize: '20px', color: '#94a3b8', cursor: 'pointer' }}>✕</button>
+            </div>
+            {selectedWrit.attorney_name && (
+              <div style={{ fontSize: '13px', color: '#475569', marginBottom: '16px' }}>⚖️ Attorney: <strong>{selectedWrit.attorney_name}</strong></div>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px', display: 'block' }}>Writ Filed Date</label>
+                <input type="date" value={dateForm.writ_filed_date}
+                  onChange={e => setDateForm(f => ({ ...f, writ_filed_date: e.target.value }))}
+                  style={{ width: '100%', padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '7px', fontSize: '13px', color: '#0f172a', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: '600', color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px', display: 'block' }}>⚠️ Execution Date (Constable)</label>
+                <input type="date" value={dateForm.writ_execution_date}
+                  onChange={e => setDateForm(f => ({ ...f, writ_execution_date: e.target.value }))}
+                  style={{ width: '100%', padding: '9px 11px', border: '2px solid #fca5a5', borderRadius: '7px', fontSize: '13px', color: '#0f172a', boxSizing: 'border-box' }} />
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>A 48-hour reminder will fire automatically</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => { setSelectedWrit(null); setEditingDates(false); }}
+                style={{ flex: 1, padding: '10px', border: '1px solid #cbd5e1', borderRadius: '7px', backgroundColor: '#fff', color: '#475569', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button onClick={handleSaveDates} disabled={saving}
+                style={{ flex: 2, padding: '10px', backgroundColor: saving ? '#a78bfa' : '#7c3aed', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: saving ? 'not-allowed' : 'pointer' }}>
+                {saving ? 'Saving...' : 'Save Dates'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+// ── End Writ Tracker ──────────────────────────────────────────────────────────
+
+
 function PromisesToPayTab({ token }) {
   const API_URL = 'https://servfixy-production.up.railway.app';
   const [ptps, setPtps] = useState([]);
@@ -6075,6 +6373,7 @@ function App() {
         {activeTab === 'Import Cases' && <CollectionsImportTab token={token} />}
         {activeTab === 'Court Calendar' && <CollectionsCalendarTab token={token} />}
         {activeTab === 'Promise to Pay' && <PromisesToPayTab token={token} />}
+        {activeTab === 'Writ Tracker' && <WritTrackerTab token={token} />}
         {activeTab === 'Owner Summary' && <CollectionsOwnerSummaryTab token={token} />}
         {activeTab === 'Onboarding' && <CollectionsOnboardingTab token={token} />}
         {activeTab === 'Collections Risk' && <CollectionsRiskTab token={token} />}
