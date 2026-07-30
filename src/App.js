@@ -109,6 +109,7 @@ const NAV_ITEMS = [
   { group: 'OPERATIONS', items: [
     { label: 'Coordinator Workspace',icon: '🧑‍💼', tab: 'Coordinator Workspace' },
     { label: 'Court Calendar',       icon: '🗓️', tab: 'Court Calendar' },
+    { label: 'Promise to Pay',       icon: '🤝', tab: 'Promise to Pay' },
     { label: 'Escalation Rules',     icon: '⚡', tab: 'Escalation Rules' },
   ]},
   { group: 'TOOLS', items: [
@@ -3659,6 +3660,418 @@ function CollectionsImportTab({ token }) {
 }
 // ── End Collections CSV Import ─────────────────────────────────────────────────
 
+
+// ── Promise to Pay Manager ─────────────────────────────────────────────────────
+function PromisesToPayTab({ token }) {
+  const API_URL = 'https://servfixy-production.up.railway.app';
+  const [ptps, setPtps] = useState([]);
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState('calendar'); // calendar | list
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedPtp, setSelectedPtp] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [recap, setRecap] = useState(null);
+  const [filterProp, setFilterProp] = useState('');
+  const [form, setForm] = useState({ property_id: '', resident_name: '', unit_number: '', promise_amount: '', promise_date: '', payment_method: 'Portal', notes: '' });
+  const [formError, setFormError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [hoveredDay, setHoveredDay] = useState(null);
+
+  const fmtCurrency = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+
+  const fetchAll = async () => {
+    setLoading(true);
+    try {
+      const [ptpRes, propRes, recapRes] = await Promise.all([
+        fetch(`${API_URL}/api/ptp${filterProp ? '?property_id=' + filterProp : ''}`, { headers: { Authorization: 'Bearer ' + token } }),
+        fetch(`${API_URL}/api/properties`, { headers: { Authorization: 'Bearer ' + token } }),
+        fetch(`${API_URL}/api/ptp/recap`, { headers: { Authorization: 'Bearer ' + token } })
+      ]);
+      if (ptpRes.ok) setPtps(await ptpRes.json());
+      if (propRes.ok) setProperties(await propRes.json());
+      if (recapRes.ok) setRecap(await recapRes.json());
+    } catch (e) { console.error(e); }
+    setLoading(false);
+  };
+
+  React.useEffect(() => { fetchAll(); }, [filterProp]);
+
+  const handleAdd = async () => {
+    if (!form.property_id || !form.resident_name || !form.unit_number || !form.promise_amount || !form.promise_date) {
+      setFormError('All fields except notes are required.'); return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/api/ptp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ ...form, promise_amount: parseFloat(form.promise_amount) })
+      });
+      if (res.ok) { setShowAddModal(false); setForm({ property_id: '', resident_name: '', unit_number: '', promise_amount: '', promise_date: '', payment_method: 'Portal', notes: '' }); setFormError(''); fetchAll(); }
+    } catch (e) { setFormError('Save failed.'); }
+    setSaving(false);
+  };
+
+  const handleStatusChange = async (id, status) => {
+    await fetch(`${API_URL}/api/ptp/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ status })
+    });
+    setSelectedPtp(null);
+    fetchAll();
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this PTP?')) return;
+    await fetch(`${API_URL}/api/ptp/${id}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
+    setSelectedPtp(null);
+    fetchAll();
+  };
+
+  // Calendar helpers
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date().toISOString().split('T')[0];
+
+  const ptpsByDate = {};
+  ptps.forEach(p => {
+    if (!ptpsByDate[p.promise_date]) ptpsByDate[p.promise_date] = [];
+    ptpsByDate[p.promise_date].push(p);
+  });
+
+  const statusColor = (s, date) => {
+    if (s === 'kept') return '#15803d';
+    if (s === 'broken' || (s === 'pending' && date < today)) return '#dc2626';
+    return '#1d4ed8';
+  };
+
+  const statusBg = (s, date) => {
+    if (s === 'kept') return '#dcfce7';
+    if (s === 'broken' || (s === 'pending' && date < today)) return '#fee2e2';
+    return '#dbeafe';
+  };
+
+  const monthLabel = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  const inputStyle = { width: '100%', padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '7px', fontSize: '13px', color: '#0f172a', backgroundColor: '#fff', boxSizing: 'border-box' };
+  const labelStyle = { fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px', display: 'block' };
+
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px', color: '#94a3b8', fontSize: '14px' }}>Loading PTPs...</div>
+  );
+
+  const pendingCount = ptps.filter(p => p.status === 'pending' && p.promise_date >= today).length;
+  const brokenCount = ptps.filter(p => p.status === 'broken' || (p.status === 'pending' && p.promise_date < today)).length;
+  const keptCount = ptps.filter(p => p.status === 'kept').length;
+  const totalAmt = ptps.filter(p => p.status === 'pending' && p.promise_date >= today).reduce((s, p) => s + Number(p.promise_amount), 0);
+
+  return (
+    <div style={{ padding: '24px', fontFamily: 'Arial, sans-serif', color: '#0f172a', maxWidth: '1200px' }}>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>Promise to Pay Manager</h2>
+          <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>Track resident payment promises, monitor kept and broken commitments</p>
+        </div>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <select value={filterProp} onChange={e => setFilterProp(e.target.value)}
+            style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '7px', fontSize: '13px', color: '#0f172a', backgroundColor: '#fff' }}>
+            <option value="">All Properties</option>
+            {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+          <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '7px', overflow: 'hidden' }}>
+            {['calendar', 'list'].map(v => (
+              <button key={v} onClick={() => setView(v)}
+                style={{ padding: '8px 16px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600', backgroundColor: view === v ? '#1d4ed8' : '#fff', color: view === v ? '#fff' : '#64748b', transition: 'all 0.15s' }}>
+                {v === 'calendar' ? '📅 Calendar' : '☰ List'}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => setShowAddModal(true)}
+            style={{ padding: '8px 18px', backgroundColor: '#1d4ed8', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+            + Add PTP
+          </button>
+        </div>
+      </div>
+
+      {/* KPI Strip */}
+      <div style={{ display: 'flex', gap: '14px', marginBottom: '22px', flexWrap: 'wrap' }}>
+        {[
+          { label: 'Pending PTPs', value: pendingCount, color: '#1d4ed8', bg: '#eff6ff', icon: '🕐' },
+          { label: 'Total Promised', value: fmtCurrency(totalAmt), color: '#1d4ed8', bg: '#eff6ff', icon: '💵' },
+          { label: 'Kept', value: keptCount, color: '#15803d', bg: '#f0fdf4', icon: '✅' },
+          { label: 'Broken', value: brokenCount, color: '#dc2626', bg: '#fef2f2', icon: '❌' },
+        ].map((k, i) => (
+          <div key={i} style={{ flex: '1', minWidth: '140px', backgroundColor: k.bg, borderRadius: '10px', padding: '14px 16px', border: `1px solid ${k.color}22` }}>
+            <div style={{ fontSize: '11px', fontWeight: '600', color: k.color, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{k.icon} {k.label}</div>
+            <div style={{ fontSize: '22px', fontWeight: '800', color: k.color }}>{k.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Nightly Recap Card */}
+      {recap && (
+        <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px 20px', marginBottom: '22px' }}>
+          <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', marginBottom: '10px' }}>📋 Nightly Recap — {fmtDate(recap.recap_date)}</div>
+          <div style={{ display: 'flex', gap: '28px', flexWrap: 'wrap', fontSize: '13px', color: '#475569' }}>
+            <div><span style={{ fontWeight: '700', color: '#1d4ed8' }}>{recap.due_today?.length || 0}</span> due today</div>
+            <div><span style={{ fontWeight: '700', color: '#ea580c' }}>{recap.due_tomorrow?.length || 0}</span> due tomorrow</div>
+            <div><span style={{ fontWeight: '700', color: '#dc2626' }}>{recap.broken_mtd}</span> broken MTD</div>
+            <div><span style={{ fontWeight: '700', color: '#15803d' }}>{recap.created_today}</span> created today</div>
+          </div>
+          {recap.due_today?.length > 0 && (
+            <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {recap.due_today.map(p => (
+                <div key={p.id} style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '5px', backgroundColor: p.status === 'kept' ? '#dcfce7' : p.status === 'broken' ? '#fee2e2' : '#fef9c3', color: p.status === 'kept' ? '#15803d' : p.status === 'broken' ? '#dc2626' : '#854d0e', fontWeight: '600' }}>
+                  {p.resident_name} · Unit {p.unit_number} · {fmtCurrency(p.promise_amount)} · {p.status}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Calendar View */}
+      {view === 'calendar' && (
+        <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
+          {/* Month nav */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#1d4ed8' }}>
+            <button onClick={() => setCurrentMonth(new Date(year, month - 1, 1))}
+              style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '6px', color: '#fff', width: '32px', height: '32px', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
+            <span style={{ fontSize: '16px', fontWeight: '700', color: '#fff' }}>{monthLabel}</span>
+            <button onClick={() => setCurrentMonth(new Date(year, month + 1, 1))}
+              style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '6px', color: '#fff', width: '32px', height: '32px', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
+          </div>
+          {/* Day headers */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+            {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
+              <div key={d} style={{ textAlign: 'center', padding: '8px', fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{d}</div>
+            ))}
+          </div>
+          {/* Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+            {Array.from({ length: firstDay }).map((_, i) => (
+              <div key={'e' + i} style={{ minHeight: '90px', borderRight: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', backgroundColor: '#fafafa' }} />
+            ))}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              const dayPtps = ptpsByDate[dateStr] || [];
+              const isToday = dateStr === today;
+              const isHovered = hoveredDay === dateStr;
+              return (
+                <div key={day}
+                  onMouseEnter={() => setHoveredDay(dateStr)}
+                  onMouseLeave={() => setHoveredDay(null)}
+                  style={{ minHeight: '90px', borderRight: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', padding: '6px', backgroundColor: isHovered ? '#eff6ff' : '#fff', transition: 'background 0.1s', cursor: dayPtps.length ? 'pointer' : 'default' }}>
+                  <div style={{ fontSize: '12px', fontWeight: isToday ? '800' : '500', color: isToday ? '#1d4ed8' : '#475569', width: '22px', height: '22px', borderRadius: '50%', backgroundColor: isToday ? '#dbeafe' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' }}>{day}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    {dayPtps.map(p => {
+                      const sc = statusColor(p.status, dateStr);
+                      const sb = statusBg(p.status, dateStr);
+                      return (
+                        <div key={p.id} onClick={() => setSelectedPtp(p)}
+                          style={{ fontSize: '10px', padding: '3px 6px', borderRadius: '4px', backgroundColor: sb, color: sc, fontWeight: '700', cursor: 'pointer', lineHeight: '1.3', border: `1px solid ${sc}33` }}>
+                          {p.resident_name.split(' ')[0]} · {fmtCurrency(p.promise_amount)}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {/* Legend */}
+          <div style={{ display: 'flex', gap: '20px', padding: '12px 20px', borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc', flexWrap: 'wrap' }}>
+            {[{ label: 'Pending', bg: '#dbeafe', color: '#1d4ed8' }, { label: 'Kept', bg: '#dcfce7', color: '#15803d' }, { label: 'Broken / Overdue', bg: '#fee2e2', color: '#dc2626' }].map(l => (
+              <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#64748b' }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: l.bg, border: `1px solid ${l.color}55` }} />
+                {l.label}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* List View */}
+      {view === 'list' && (
+        <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                {['Resident', 'Unit', 'Property', 'Amount', 'Promise Date', 'Method', 'Status', ''].map(h => (
+                  <th key={h} style={{ padding: '11px 14px', textAlign: 'left', fontWeight: '700', color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {ptps.length === 0 && (
+                <tr><td colSpan={8} style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No PTPs found. Add one above.</td></tr>
+              )}
+              {ptps.map((p, idx) => {
+                const isOverdue = p.status === 'pending' && p.promise_date < today;
+                const sc = statusColor(p.status, p.promise_date);
+                const sb = statusBg(p.status, p.promise_date);
+                const propName = properties.find(pr => pr.id === p.property_id)?.name || '—';
+                return (
+                  <tr key={p.id}
+                    onClick={() => setSelectedPtp(p)}
+                    style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', backgroundColor: idx % 2 === 0 ? '#fff' : '#fafafa', transition: 'background 0.1s' }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#dbeafe'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = idx % 2 === 0 ? '#fff' : '#fafafa'}>
+                    <td style={{ padding: '11px 14px', fontWeight: '600', color: '#0f172a' }}>{p.resident_name}</td>
+                    <td style={{ padding: '11px 14px', color: '#475569' }}>Unit {p.unit_number}</td>
+                    <td style={{ padding: '11px 14px', color: '#475569' }}>{propName}</td>
+                    <td style={{ padding: '11px 14px', fontWeight: '700', color: '#dc2626' }}>{fmtCurrency(p.promise_amount)}</td>
+                    <td style={{ padding: '11px 14px', color: isOverdue ? '#dc2626' : '#475569', fontWeight: isOverdue ? '700' : '400' }}>{fmtDate(p.promise_date)}{isOverdue ? ' ⚠️' : ''}</td>
+                    <td style={{ padding: '11px 14px', color: '#475569' }}>{p.payment_method || '—'}</td>
+                    <td style={{ padding: '11px 14px' }}>
+                      <span style={{ fontSize: '11px', padding: '3px 9px', borderRadius: '5px', backgroundColor: sb, color: sc, fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        {isOverdue ? 'Overdue' : p.status}
+                      </span>
+                    </td>
+                    <td style={{ padding: '11px 14px' }}>
+                      <button onClick={e => { e.stopPropagation(); setSelectedPtp(p); }}
+                        style={{ fontSize: '11px', padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '5px', backgroundColor: '#fff', color: '#475569', cursor: 'pointer' }}>
+                        Manage
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* PTP Detail Modal */}
+      {selectedPtp && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setSelectedPtp(null)}>
+          <div style={{ backgroundColor: '#fff', borderRadius: '14px', padding: '28px', width: '420px', maxWidth: '92vw', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
+              <div>
+                <div style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a' }}>{selectedPtp.resident_name}</div>
+                <div style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>Unit {selectedPtp.unit_number} · {properties.find(p => p.id === selectedPtp.property_id)?.name || '—'}</div>
+              </div>
+              <button onClick={() => setSelectedPtp(null)} style={{ background: 'none', border: 'none', fontSize: '20px', color: '#94a3b8', cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '20px' }}>
+              {[
+                { label: 'Promise Amount', value: fmtCurrency(selectedPtp.promise_amount) },
+                { label: 'Promise Date', value: fmtDate(selectedPtp.promise_date) },
+                { label: 'Payment Method', value: selectedPtp.payment_method || '—' },
+                { label: 'Status', value: selectedPtp.status },
+              ].map(f => (
+                <div key={f.label}>
+                  <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>{f.label}</div>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{f.value}</div>
+                </div>
+              ))}
+            </div>
+            {selectedPtp.notes && (
+              <div style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '10px 12px', marginBottom: '18px', fontSize: '13px', color: '#475569' }}>
+                <strong>Notes:</strong> {selectedPtp.notes}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button onClick={() => handleStatusChange(selectedPtp.id, 'kept')}
+                style={{ flex: 1, padding: '9px', backgroundColor: '#15803d', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
+                ✅ Mark Kept
+              </button>
+              <button onClick={() => handleStatusChange(selectedPtp.id, 'broken')}
+                style={{ flex: 1, padding: '9px', backgroundColor: '#dc2626', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
+                ❌ Mark Broken
+              </button>
+              <button onClick={() => handleStatusChange(selectedPtp.id, 'pending')}
+                style={{ flex: 1, padding: '9px', backgroundColor: '#1d4ed8', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
+                🕐 Reset
+              </button>
+            </div>
+            <button onClick={() => handleDelete(selectedPtp.id)}
+              style={{ width: '100%', marginTop: '10px', padding: '8px', backgroundColor: 'transparent', border: '1px solid #fca5a5', borderRadius: '7px', color: '#dc2626', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+              🗑 Delete PTP
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Add PTP Modal */}
+      {showAddModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setShowAddModal(false)}>
+          <div style={{ backgroundColor: '#fff', borderRadius: '14px', padding: '28px', width: '460px', maxWidth: '92vw', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>Add Promise to Pay</div>
+              <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', fontSize: '20px', color: '#94a3b8', cursor: 'pointer' }}>✕</button>
+            </div>
+            {formError && <div style={{ backgroundColor: '#fef2f2', color: '#dc2626', padding: '10px 12px', borderRadius: '7px', marginBottom: '14px', fontSize: '13px' }}>{formError}</div>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={labelStyle}>Property</label>
+                <select value={form.property_id} onChange={e => setForm(f => ({ ...f, property_id: e.target.value }))} style={inputStyle}>
+                  <option value="">Select property...</option>
+                  {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>Resident Name</label>
+                  <input value={form.resident_name} onChange={e => setForm(f => ({ ...f, resident_name: e.target.value }))} placeholder="Full name" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Unit Number</label>
+                  <input value={form.unit_number} onChange={e => setForm(f => ({ ...f, unit_number: e.target.value }))} placeholder="e.g. 104" style={inputStyle} />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>Promise Amount ($)</label>
+                  <input type="number" value={form.promise_amount} onChange={e => setForm(f => ({ ...f, promise_amount: e.target.value }))} placeholder="0.00" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Promise Date</label>
+                  <input type="date" value={form.promise_date} onChange={e => setForm(f => ({ ...f, promise_date: e.target.value }))} style={inputStyle} />
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>Payment Method</label>
+                <select value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))} style={inputStyle}>
+                  {['Portal', 'Check', 'Money Order', 'Cash', 'Bank Transfer', 'Other'].map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Notes (optional)</label>
+                <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Any context about this promise..." rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+              <button onClick={() => setShowAddModal(false)}
+                style={{ flex: 1, padding: '10px', border: '1px solid #cbd5e1', borderRadius: '7px', backgroundColor: '#fff', color: '#475569', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button onClick={handleAdd} disabled={saving}
+                style={{ flex: 2, padding: '10px', backgroundColor: saving ? '#93c5fd' : '#1d4ed8', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: saving ? 'not-allowed' : 'pointer' }}>
+                {saving ? 'Saving...' : 'Save PTP'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+// ── End Promise to Pay Manager ─────────────────────────────────────────────────
+
+
 // ── Collections Court Date Calendar ───────────────────────────────────────────
 function CollectionsCalendarTab({ token }) {
   const [cases, setCases] = useState([]);
@@ -5647,6 +6060,7 @@ function App() {
         {activeTab === 'Document Vault' && <CollectionsDocumentVault token={token} />}
         {activeTab === 'Import Cases' && <CollectionsImportTab token={token} />}
         {activeTab === 'Court Calendar' && <CollectionsCalendarTab token={token} />}
+        {activeTab === 'Promise to Pay' && <PromisesToPayTab token={token} />}
         {activeTab === 'Owner Summary' && <CollectionsOwnerSummaryTab token={token} />}
         {activeTab === 'Onboarding' && <CollectionsOnboardingTab token={token} />}
         {activeTab === 'Collections Risk' && <CollectionsRiskTab token={token} />}
