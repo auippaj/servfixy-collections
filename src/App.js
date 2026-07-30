@@ -306,6 +306,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
     { label: 'Avg Days Open', value: `${s.avg_days_open || 0}d`, color: '#0369a1', sub: 'Per active case', icon: '\u23F1\uFE0F', onClick: () => navigate('Collections Reports', null) },
     { label: 'Active Payment Plans', value: plans.active_plans || 0, color: '#15803d', sub: `${plans.completed_plans || 0} completed \u00b7 ${plans.broken_plans || 0} broken`, icon: '\uD83D\uDDD3\uFE0F', onClick: () => navigate('Collections Reports', null) },
     { label: 'Promises to Pay', value: ptpStats.pending, color: '#7c3aed', sub: `${ptpStats.kept} kept \u00b7 ${ptpStats.broken} broken \u00b7 ${fmtCurrency(ptpStats.totalAmt)} promised`, icon: '\uD83E\uDD1D', onClick: () => navigate('Promise to Pay', null), highlight: ptpStats.broken > 0 },
+    { label: 'Active Writs', value: writStats.total, color: '#dc2626', sub: writStats.upcoming > 0 ? `\u26A0\uFE0F ${writStats.upcoming} execution${writStats.upcoming > 1 ? 's' : ''} upcoming` : 'No executions in 48hrs', icon: '\u2696\uFE0F', onClick: () => navigate('Writ Tracker', null) },
   ];
 
   const maxAgingBalance = Math.max(...byAging.map(r => Number(r.balance) || 0), 1);
