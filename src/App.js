@@ -131,15 +131,15 @@ const NAV_ITEMS = [
 function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
   const isMobile = window.innerWidth < 768;
   const SidebarInner = () => (
-    <div style={{ width: '224px', minWidth: '224px', backgroundColor: '#ffffff', borderRight: '1px solid #1e293b', display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div style={{ width: '224px', minWidth: '224px', backgroundColor: '#080f1e', borderRight: '1px solid #1e3a5f', display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* Logo */}
-      <div style={{ padding: '20px 18px 14px', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ padding: '20px 18px 14px', borderBottom: '1px solid #1e3a5f', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <img src="https://i.imgur.com/OKIqq0K.png" alt="Servfixy" style={{ height: '28px', objectFit: 'contain' }} />
-          <div style={{ marginTop: '6px', display: 'inline-block', background: '#1d4ed8', borderRadius: '5px', padding: '2px 8px', fontSize: '10px', fontWeight: '700', color: '#fff', letterSpacing: '0.08em' }}>COLLECTIONS</div>
+          <div style={{ marginTop: '6px', display: 'inline-block', background: '#0f766e', borderRadius: '5px', padding: '2px 8px', fontSize: '10px', fontWeight: '700', color: '#fff', letterSpacing: '0.08em' }}>COLLECTIONS</div>
         </div>
         {isMobile && (
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '22px', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '22px', color: '#64748b', cursor: 'pointer', padding: '4px' }}>✕</button>
         )}
       </div>
       {/* Nav groups */}
@@ -151,7 +151,7 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
               const active = activeTab === item.tab;
               return (
                 <div key={item.tab} onClick={() => { setActiveTab(item.tab); if (isMobile) onClose(); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 18px', cursor: 'pointer', borderLeft: active ? '3px solid #3b82f6' : '3px solid transparent', backgroundColor: active ? '#eff6ff' : 'transparent', color: active ? '#1d4ed8' : '#94a3b8', fontSize: '14px', fontWeight: active ? '600' : '400', transition: 'all 0.15s' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 18px', cursor: 'pointer', borderLeft: active ? '3px solid #14b8a6' : '3px solid transparent', backgroundColor: active ? 'rgba(20,184,166,0.12)' : 'transparent', color: active ? '#ffffff' : '#94a3b8', fontSize: '14px', fontWeight: active ? '600' : '400', transition: 'all 0.15s' }}>
                   <span style={{ fontSize: '18px' }}>{item.icon}</span>
                   {item.label}
                 </div>
@@ -161,11 +161,11 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
         ))}
       </div>
       {/* Footer */}
-      <div style={{ padding: '14px 18px', borderTop: '1px solid #1e293b' }}>
+      <div style={{ padding: '14px 18px', borderTop: '1px solid #1e3a5f' }}>
         <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</div>
-        <div style={{ fontSize: '11px', color: '#1e40af', textTransform: 'capitalize', marginBottom: '10px' }}>{user?.role}</div>
+        <div style={{ fontSize: '11px', color: '#14b8a6', textTransform: 'capitalize', marginBottom: '10px' }}>{user?.role}</div>
         <button onClick={onLogout}
-          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', backgroundColor: 'transparent', color: '#94a3b8', fontSize: '12px', cursor: 'pointer' }}>
+          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #1e3a5f', backgroundColor: 'transparent', color: '#94a3b8', fontSize: '12px', cursor: 'pointer' }}>
           Sign Out
         </button>
       </div>
