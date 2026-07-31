@@ -4021,8 +4021,116 @@ function WritTrackerTab({ token }) {
         ))}
       </div>
 
+      {/* Approval Queue View */}
+      {activeView === 'approval' && (
+        <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#854d0e' }}>
+            <div style={{ fontSize: '15px', fontWeight: '700', color: '#fff' }}>🤝 Resident PTP Requests — Pending Approval</div>
+            <div style={{ fontSize: '12px', color: '#fef9c3', marginTop: '2px' }}>Review and approve, counter, or decline resident payment promises</div>
+          </div>
+          {pendingRequests.length === 0 ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No pending requests. Residents haven't submitted any PTPs yet.</div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                  {['Resident', 'Unit', 'Property', 'Type', 'Amount', 'Requested Date', 'Method', 'Submitted', ''].map(h => (
+                    <th key={h} style={{ padding: '11px 14px', textAlign: 'left', fontWeight: '700', color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {pendingRequests.map((r, idx) => (
+                  <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: idx % 2 === 0 ? '#fff' : '#fafafa' }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fef9c3'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = idx % 2 === 0 ? '#fff' : '#fafafa'}>
+                    <td style={{ padding: '11px 14px', fontWeight: '600', color: '#0f172a' }}>{r.resident_name}</td>
+                    <td style={{ padding: '11px 14px', color: '#475569' }}>Unit {r.unit_number}</td>
+                    <td style={{ padding: '11px 14px', color: '#475569' }}>{r.property_name}</td>
+                    <td style={{ padding: '11px 14px' }}>
+                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '4px', backgroundColor: r.request_type === 'payment_plan' ? '#ede9fe' : '#dbeafe', color: r.request_type === 'payment_plan' ? '#7c3aed' : '#1d4ed8', fontWeight: '700' }}>
+                        {r.request_type === 'payment_plan' ? 'Payment Plan' : 'PTP'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '11px 14px', fontWeight: '700', color: '#dc2626' }}>{r.requested_amount ? fmtCurrency(r.requested_amount) : '—'}</td>
+                    <td style={{ padding: '11px 14px', color: '#475569' }}>{r.requested_date ? fmtDate(r.requested_date) : 'See installments'}</td>
+                    <td style={{ padding: '11px 14px', color: '#475569' }}>{r.payment_method || '—'}</td>
+                    <td style={{ padding: '11px 14px', color: '#94a3b8', fontSize: '12px' }}>{fmtDate(r.created_at)}</td>
+                    <td style={{ padding: '11px 14px' }}>
+                      <button onClick={() => { setReviewingReq(r); setReviewForm({ coordinator_notes: '', counter_date: '' }); }}
+                        style={{ fontSize: '11px', padding: '5px 12px', backgroundColor: '#854d0e', border: 'none', borderRadius: '5px', color: '#fff', cursor: 'pointer', fontWeight: '700' }}>
+                        Review
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* Review Modal */}
+      {reviewingReq && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setReviewingReq(null)}>
+          <div style={{ backgroundColor: '#fff', borderRadius: '14px', padding: '28px', width: '460px', maxWidth: '92vw', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
+              <div>
+                <div style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>Review Request — {reviewingReq.resident_name}</div>
+                <div style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>Unit {reviewingReq.unit_number} · {reviewingReq.property_name}</div>
+              </div>
+              <button onClick={() => setReviewingReq(null)} style={{ background: 'none', border: 'none', fontSize: '20px', color: '#94a3b8', cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '18px' }}>
+              {[
+                { label: 'Request Type', value: reviewingReq.request_type === 'payment_plan' ? 'Payment Plan' : 'Promise to Pay' },
+                { label: 'Amount', value: reviewingReq.requested_amount ? fmtCurrency(reviewingReq.requested_amount) : '—' },
+                { label: 'Requested Date', value: reviewingReq.requested_date ? fmtDate(reviewingReq.requested_date) : 'See installments' },
+                { label: 'Payment Method', value: reviewingReq.payment_method || '—' },
+              ].map(f => (
+                <div key={f.label} style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '10px 12px' }}>
+                  <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>{f.label}</div>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{f.value}</div>
+                </div>
+              ))}
+            </div>
+            {reviewingReq.notes && (
+              <div style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '10px 12px', marginBottom: '16px', fontSize: '13px', color: '#475569' }}>
+                <strong>Resident Note:</strong> {reviewingReq.notes}
+              </div>
+            )}
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px', display: 'block' }}>Coordinator Notes (optional)</label>
+              <textarea value={reviewForm.coordinator_notes} onChange={e => setReviewForm(f => ({ ...f, coordinator_notes: e.target.value }))}
+                rows={2} placeholder="Add a note for the resident..." style={{ width: '100%', padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '7px', fontSize: '13px', resize: 'vertical', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: '18px' }}>
+              <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px', display: 'block' }}>Counter Date (if countering)</label>
+              <input type="date" value={reviewForm.counter_date} onChange={e => setReviewForm(f => ({ ...f, counter_date: e.target.value }))}
+                style={{ width: '100%', padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '7px', fontSize: '13px', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => handleReview(reviewingReq.id, 'approved')} disabled={reviewSaving}
+                style={{ flex: 1, padding: '10px', backgroundColor: '#15803d', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
+                ✅ Approve
+              </button>
+              <button onClick={() => handleReview(reviewingReq.id, 'countered')} disabled={reviewSaving || !reviewForm.counter_date}
+                style={{ flex: 1, padding: '10px', backgroundColor: reviewForm.counter_date ? '#d97706' : '#94a3b8', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: reviewForm.counter_date ? 'pointer' : 'not-allowed' }}>
+                📅 Counter
+              </button>
+              <button onClick={() => handleReview(reviewingReq.id, 'declined')} disabled={reviewSaving}
+                style={{ flex: 1, padding: '10px', backgroundColor: '#dc2626', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
+                ❌ Decline
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Calendar View */}
-      {view === 'calendar' && (
+      {activeView === 'manager' && view === 'calendar' && (
         <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#7c3aed' }}>
             <button onClick={() => setCurrentMonth(new Date(year, month - 1, 1))}
@@ -4077,7 +4185,7 @@ function WritTrackerTab({ token }) {
       )}
 
       {/* List View */}
-      {view === 'list' && (
+      {activeView === 'manager' && view === 'list' && (
         <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
@@ -4176,7 +4284,12 @@ function PromisesToPayTab({ token }) {
   const API_URL = 'https://servfixy-production.up.railway.app';
   const [ptps, setPtps] = useState([]);
   const [properties, setProperties] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [activeView, setActiveView] = useState('manager'); // manager | approval
+  const [reviewingReq, setReviewingReq] = useState(null);
+  const [reviewForm, setReviewForm] = useState({ coordinator_notes: '', counter_date: '' });
+  const [reviewSaving, setReviewSaving] = useState(false);
+  const const [loading, setLoading] = useState(true);
   const [view, setView] = useState('calendar'); // calendar | list
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedPtp, setSelectedPtp] = useState(null);
@@ -4190,6 +4303,29 @@ function PromisesToPayTab({ token }) {
 
   const fmtCurrency = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+
+  const fetchRequests = async () => {
+    try {
+      const r = await fetch(`${API_URL}/api/ptp-requests?status=pending`, { headers: { Authorization: 'Bearer ' + token } });
+      if (r.ok) setPendingRequests(await r.json());
+    } catch (e) { console.error(e); }
+  };
+
+  const handleReview = async (id, status) => {
+    setReviewSaving(true);
+    try {
+      await fetch(`${API_URL}/api/ptp-requests/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ status, coordinator_notes: reviewForm.coordinator_notes, counter_date: reviewForm.counter_date || null })
+      });
+      setReviewingReq(null);
+      setReviewForm({ coordinator_notes: '', counter_date: '' });
+      fetchRequests();
+      fetchAll();
+    } catch (e) { console.error(e); }
+    setReviewSaving(false);
+  };
 
   const fetchAll = async () => {
     setLoading(true);
@@ -4206,7 +4342,7 @@ function PromisesToPayTab({ token }) {
     setLoading(false);
   };
 
-  React.useEffect(() => { fetchAll(); }, [filterProp]);
+  React.useEffect(() => { fetchAll(); fetchRequests(); }, [filterProp]);
 
   const handleAdd = async () => {
     if (!form.property_id || !form.resident_name || !form.unit_number || !form.promise_amount || !form.promise_date) {
@@ -4306,6 +4442,10 @@ function PromisesToPayTab({ token }) {
           <button onClick={() => setShowAddModal(true)}
             style={{ padding: '8px 18px', backgroundColor: '#1d4ed8', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
             + Add PTP
+          </button>
+          <button onClick={() => setActiveView(v => v === 'approval' ? 'manager' : 'approval')}
+            style={{ padding: '8px 18px', backgroundColor: pendingRequests.length > 0 ? '#854d0e' : '#64748b', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: 'pointer', position: 'relative' }}>
+            Approval Queue {pendingRequests.length > 0 && <span style={{ marginLeft: '6px', backgroundColor: '#dc2626', color: '#fff', fontSize: '10px', padding: '1px 6px', borderRadius: '10px', fontWeight: '800' }}>{pendingRequests.length}</span>}
           </button>
         </div>
       </div>
