@@ -308,6 +308,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
     { label: 'Promises to Pay', value: ptpStats.pending, color: '#7c3aed', sub: `${ptpStats.kept} kept \u00b7 ${ptpStats.broken} broken \u00b7 ${fmtCurrency(ptpStats.totalAmt)} promised`, icon: '\uD83E\uDD1D', onClick: () => navigate('Promise to Pay', null), highlight: ptpStats.broken > 0 },
     { label: 'Active Writs', value: writStats.total, color: '#dc2626', sub: writStats.upcoming > 0 ? `\u26A0\uFE0F ${writStats.upcoming} execution${writStats.upcoming > 1 ? 's' : ''} upcoming` : 'No executions in 48hrs', icon: '\u2696\uFE0F', onClick: () => navigate('Writ Tracker', null) },
     { label: 'Est. Recoverable', value: fmtCurrency(s.estimated_recoverable || 0), color: '#15803d', sub: 'Probability-weighted balance', icon: '\uD83D\uDCCA', onClick: () => navigate('Collections Cases', { status: 'active', property_id: selectedProperty, aging_bucket: '' }) },
+    { label: 'Avg Pay Probability', value: `${s.avg_payment_probability || 0}%`, color: s.avg_payment_probability >= 70 ? '#15803d' : s.avg_payment_probability >= 40 ? '#d97706' : '#dc2626', sub: s.avg_payment_probability >= 70 ? 'Portfolio in good shape' : s.avg_payment_probability >= 40 ? 'Monitor closely' : 'High escalation risk', icon: '\uD83C\uDFAF', onClick: () => navigate('Collections Cases', { status: 'active', property_id: selectedProperty, aging_bucket: '' }) },
   ];
 
   const maxAgingBalance = Math.max(...byAging.map(r => Number(r.balance) || 0), 1);
