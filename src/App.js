@@ -6322,11 +6322,66 @@ function IntegrationsTab({ token }) {
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 32px' }}>
-        <div style={{ color: '#1e293b', fontSize: '22px', fontWeight: 'bold' }}>PMS Integrations</div>
+        <div style={{ color: '#1e293b', fontSize: '22px', fontWeight: 'bold' }}>Integrations</div>
       </div>
-      <p style={{ color: '#111827', fontSize: '14px', marginBottom: '32px', marginTop: '4px' }}>
-        Connect Servfixy to your property management system. Each connector syncs properties, units, residents, and work orders automatically.
-      </p>
+      <div style={{ padding: '24px 32px', maxWidth: '1100px' }}>
+
+        {/* Debt Collections Agencies */}
+        <div style={{ marginBottom: '40px' }}>
+          <div style={{ fontSize: '13px', fontWeight: '700', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>DEBT COLLECTIONS AGENCIES</div>
+          <p style={{ fontSize: '13px', color: '#475569', marginBottom: '20px', lineHeight: '1.6' }}>
+            Submit closed cases directly to a collections agency with one click. Servfixy packages the full resident file — balance ledger, notices served, lease summary, and case history — and transmits it in the agency's required format. No PMS required.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+            {[
+              { name: 'National Credit Systems', region: 'National — Multifamily Specialist', method: 'API', status: 'available', color: '#1d4ed8', desc: 'Direct API submission. Confirmation and reference number returned instantly.' },
+              { name: 'Credit Bureau Connection', region: 'Texas / Sun Belt Focus', method: 'API', status: 'available', color: '#0369a1', desc: 'Widely used across Houston, Dallas, and Austin multifamily portfolios.' },
+              { name: 'Rent Recovery Solutions', region: 'National', method: 'SFTP', status: 'available', color: '#7c3aed', desc: 'SFTP file submission in standard CSV format. Confirmation via email.' },
+              { name: 'AFNI', region: 'National', method: 'API', status: 'coming_soon', color: '#64748b', desc: 'Large national agency. API integration coming Q1 2027.' },
+              { name: "Renter's Acceptance", region: 'Multifamily Only', method: 'Portal', status: 'coming_soon', color: '#64748b', desc: 'Multifamily-exclusive. Portal submission. Integration in roadmap.' },
+            ].map(agency => (
+              <div key={agency.name} style={{ backgroundColor: '#fff', borderRadius: '10px', padding: '20px', border: `1px solid ${agency.status === 'available' ? '#e2e8f0' : '#f1f5f9'}`, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '700', color: agency.status === 'available' ? '#0f172a' : '#94a3b8' }}>{agency.name}</span>
+                  <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', fontWeight: '700',
+                    backgroundColor: agency.method === 'API' ? '#dbeafe' : agency.method === 'SFTP' ? '#ede9fe' : '#f0fdf4',
+                    color: agency.method === 'API' ? '#1d4ed8' : agency.method === 'SFTP' ? '#7c3aed' : '#15803d'
+                  }}>{agency.method}</span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>{agency.region}</div>
+                <div style={{ fontSize: '12px', color: '#475569', lineHeight: '1.5' }}>{agency.desc}</div>
+                {agency.status === 'available' ? (
+                  <button
+                    onClick={() => alert('Connect to ' + agency.name + ': Enter your agency account credentials in the setup dialog. Once connected, a "Send to Collections" button will appear on eligible closed cases.')}
+                    style={{ marginTop: '6px', padding: '8px 16px', backgroundColor: agency.color, color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', alignSelf: 'flex-start' }}>
+                    Connect Agency
+                  </button>
+                ) : (
+                  <span style={{ marginTop: '6px', fontSize: '11px', color: '#94a3b8', fontWeight: '600' }}>Coming Soon</span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* One-Click Export Info Box */}
+          <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '16px 20px' }}>
+            <div style={{ fontSize: '13px', fontWeight: '700', color: '#15803d', marginBottom: '6px' }}>📦 What gets sent with every submission</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', fontSize: '12px', color: '#166534' }}>
+              {['Resident name, unit & contact info', 'Itemized balance ledger', 'Move-in / move-out dates', 'Lease summary', 'All notices served (with dates)', 'Case timeline & touchpoint log', 'Court dates & attorney name', 'Supporting documents from Document Vault'].map(item => (
+                <span key={item} style={{ backgroundColor: '#dcfce7', padding: '3px 10px', borderRadius: '4px', fontWeight: '600' }}>✓ {item}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div style={{ borderTop: '1px solid #e2e8f0', marginBottom: '32px' }} />
+
+        {/* PMS Integrations */}
+        <div style={{ fontSize: '13px', fontWeight: '700', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>PMS INTEGRATIONS</div>
+        <p style={{ color: '#475569', fontSize: '13px', marginBottom: '24px', lineHeight: '1.6' }}>
+          Connect Servfixy to your property management system. Each connector syncs properties, units, residents, and work orders automatically.
+        </p>
 
       {loading ? (
         <div style={{ color: '#475569', fontSize: '14px' }}>Loading connectors...</div>
@@ -6371,6 +6426,7 @@ function IntegrationsTab({ token }) {
       )}
 
       {modal && <ConnectModal entry={modal} token={token} onClose={() => setModal(null)} onConnected={load} />}
+      </div>
     </div>
   );
 }
