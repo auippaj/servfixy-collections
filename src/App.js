@@ -192,6 +192,7 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
 // ── App Shell ──────────────────────────────────────────────────────────────────
 // ── Collections Analytics Tab ──────────────────────────────────────────────────
 function CollectionsAnalyticsTab({ token, onNavigate }) {
+  const [pendingRequests, setPendingRequests] = useState(0);
   const [data, setData] = useState(null);
   const [properties, setProperties] = useState([]);
   const [selectedProperty, setSelectedProperty] = useState('');
@@ -322,7 +323,20 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
     <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', color: '#1e293b' }}>
 
       {/* Header */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', flexWrap: 'wrap', gap: '12px' }}>
+       {pendingRequests > 0 && (
+        <div style={{ backgroundColor: '#fef9c3', border: '1px solid #fde047', borderRadius: '10px', padding: '12px 18px', marginBottom: '18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '20px' }}>🤝</span>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: '800', color: '#854d0e' }}>{pendingRequests} Resident PTP Request{pendingRequests > 1 ? 's' : ''} Awaiting Approval</div>
+              <div style={{ fontSize: '12px', color: '#92400e' }}>Residents have submitted payment promises that need your review.</div>
+            </div>
+          </div>
+          <button onClick={() => onNavigate('Promise to Pay', null)}
+            style={{ padding: '8px 16px', backgroundColor: '#854d0e', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>Review Requests →</button>
+        </div>
+      )}
+     <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>Collections Analytics</h1>
           <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#94a3b8' }}>Portfolio-wide delinquency intelligence</p>
