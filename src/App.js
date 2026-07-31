@@ -26,6 +26,8 @@ function Login({ onLogin }) {
       }
       localStorage.setItem('collections_token', data.token);
       localStorage.setItem('collections_user', JSON.stringify(data.user));
+      fetch(`${API_URL}/api/ptp-requests/pending-count`, { headers: { Authorization: `Bearer ${data.token}` } })
+        .then(r => r.json()).then(d => { if (d.count !== undefined) setPendingPtpCount(d.count); }).catch(() => {});
       if (isDemo) {
         setSeedingDemo(true);
         try {
@@ -109,7 +111,7 @@ const NAV_ITEMS = [
   { group: 'OPERATIONS', items: [
     { label: 'Coordinator Workspace',icon: '🧑‍💼', tab: 'Coordinator Workspace' },
     { label: 'Court Calendar',       icon: '🗓️', tab: 'Court Calendar' },
-    { label: 'Promise to Pay',       icon: '🤝', tab: 'Promise to Pay' },
+    { label: 'Promise to Pay',       icon: '🤝', tab: 'Promise to Pay', badge: pendingPtpCount },
     { label: 'Writ Tracker',         icon: '⚖️', tab: 'Writ Tracker' },
     { label: 'Escalation Rules',     icon: '⚡', tab: 'Escalation Rules' },
   ]},
@@ -153,6 +155,7 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
                 <div key={item.tab} onClick={() => { setActiveTab(item.tab); if (isMobile) onClose(); }}
                   style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 18px', cursor: 'pointer', borderLeft: active ? '3px solid #14b8a6' : '3px solid transparent', backgroundColor: active ? 'rgba(20,184,166,0.12)' : 'transparent', color: active ? '#ffffff' : '#94a3b8', fontSize: '14px', fontWeight: active ? '600' : '400', transition: 'all 0.15s' }}>
                   <span style={{ fontSize: '18px' }}>{item.icon}</span>
+                  {item.badge > 0 && <span style={{ marginLeft: 'auto', backgroundColor: '#dc2626', color: '#fff', fontSize: '10px', fontWeight: '800', padding: '1px 6px', borderRadius: '10px' }}>{item.badge}</span>}
                   {item.label}
                 </div>
               );
@@ -218,6 +221,8 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   useEffect(() => {
     fetch(`${API_URL}/api/properties`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(rows => setProperties(Array.isArray(rows) ? rows : [])).catch(() => {});
+    fetch(`${API_URL}/api/ptp-requests/pending-count`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => { if (d.count !== undefined) setPendingRequests(d.count); }).catch(() => {});
     fetch(`${API_URL}/api/collections/writs/reminders`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(rows => { if (Array.isArray(rows)) setWritStats(prev => ({ ...prev, upcoming: rows.length })); }).catch(() => {});
     fetch(`${API_URL}/api/collections/writs`, { headers: { Authorization: `Bearer ${token}` } })
@@ -6524,6 +6529,7 @@ function App() {
   });
   const [token, setToken] = useState(() => localStorage.getItem('collections_token') || '');
   const [activeTab, setActiveTab] = useState('Collections Analytics');
+  const [pendingPtpCount, setPendingPtpCount] = useState(0);
   const [collectionsCaseFilter, setCollectionsCaseFilter] = useState({ status: '', property_id: '', aging_bucket: '' });
   const [scoringToast, setScoringToast] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
