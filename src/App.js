@@ -668,8 +668,19 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
     finally { setSubmitting(false); }
   };
 
+  const [showResolutionModal, setShowResolutionModal] = useState(false);
+  const [pendingCloseStatus, setPendingCloseStatus] = useState(null);
+  const [resolutionStage, setResolutionStage] = useState('');
+
   const handleAdvanceStatus = async (newStatus) => {
     if (!selectedCase) return;
+    // Intercept close statuses to capture resolution stage
+    if (newStatus === 'closed_paid') {
+      setPendingCloseStatus(newStatus);
+      setResolutionStage('');
+      setShowResolutionModal(true);
+      return;
+    }
     try {
       const res = await fetch(`${API_URL}/api/collections/cases/${selectedCase.id}`, {
         method: 'PATCH',
@@ -682,6 +693,25 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
       fetchCaseDetail(selectedCase.id);
       fetchCases();
     } catch (err) { alert('Status update failed: ' + err.message); }
+  };
+
+  const handleConfirmClose = async () => {
+    if (!resolutionStage) { alert('Please select when payment was received.'); return; }
+    try {
+      const res = await fetch(`${API_URL}/api/collections/cases/${selectedCase.id}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: pendingCloseStatus, resolution_stage: resolutionStage })
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      setSelectedCase(json);
+      setShowResolutionModal(false);
+      setPendingCloseStatus(null);
+      setResolutionStage('');
+      fetchCaseDetail(selectedCase.id);
+      fetchCases();
+    } catch (err) { alert('Close failed: ' + err.message); }
   };
 
   const handleLogTouchpoint = async () => {
@@ -1492,6 +1522,43 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
           </div>
         </div>
       )}
+
+      {/* Resolution Stage Modal */}
+      {showResolutionModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setShowResolutionModal(false)}>
+          <div style={{ backgroundColor: '#fff', borderRadius: '14px', padding: '28px', width: '440px', maxWidth: '92vw', boxShadow: '0 8px 40px rgba(0,0,0,0.2)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', marginBottom: '6px' }}>Close Case — Mark as Paid</div>
+            <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px' }}>When did the resident pay? This helps train our probability model.</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '22px' }}>
+              {[
+                { value: 'paid_before_attorney', label: 'Paid Before Attorney Referral', desc: 'Resolved during notice or demand phase', color: '#15803d' },
+                { value: 'paid_before_eviction', label: 'Paid Before Eviction Filing', desc: 'Paid after attorney referral but before court filing', color: '#0369a1' },
+                { value: 'paid_before_writ', label: 'Paid Before Writ Execution', desc: 'Paid after court ruling but before constable arrived', color: '#d97706' },
+                { value: 'paid_after_possession', label: 'Paid After Possession Granted', desc: 'Paid after unit was legally recovered', color: '#dc2626' },
+              ].map(opt => (
+                <div key={opt.value} onClick={() => setResolutionStage(opt.value)}
+                  style={{ padding: '12px 16px', borderRadius: '8px', border: `2px solid ${resolutionStage === opt.value ? opt.color : '#e2e8f0'}`, backgroundColor: resolutionStage === opt.value ? opt.color + '11' : '#fff', cursor: 'pointer', transition: 'all 0.15s' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: resolutionStage === opt.value ? opt.color : '#0f172a' }}>{opt.label}</div>
+                  <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>{opt.desc}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setShowResolutionModal(false)}
+                style={{ flex: 1, padding: '10px', border: '1px solid #cbd5e1', borderRadius: '7px', backgroundColor: '#fff', color: '#475569', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button onClick={handleConfirmClose}
+                style={{ flex: 2, padding: '10px', backgroundColor: '#15803d', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+                Confirm & Close Case
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
