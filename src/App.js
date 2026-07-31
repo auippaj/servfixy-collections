@@ -559,6 +559,9 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
   const [noteForm, setNoteForm] = useState({ note_text: '', note_type: 'general', author: '' });
   const [noteSubmitting, setNoteSubmitting] = useState(false);
   const [showNoteForm, setShowNoteForm] = useState(false);
+  const [showAttorneyModal, setShowAttorneyModal] = useState(false);
+  const [attorneySubmitting, setAttorneySubmitting] = useState(false);
+  const [attorneyResult, setAttorneyResult] = useState(null);
   const [paymentLogForm, setPaymentLogForm] = useState({ amount: '', due_date: new Date().toISOString().split('T')[0], paid_date: new Date().toISOString().split('T')[0], status: 'paid', notes: '' });
   const [paymentLogSubmitting, setPaymentLogSubmitting] = useState(false);
   const [noticeForm, setNoticeForm] = useState({ notice_type: 'pay_or_quit', jurisdiction_state: '', generated_by: '' });
@@ -1083,6 +1086,8 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                   { label: 'Court Hearing', value: fmtDate(caseDetail.court_hearing_date) },
                   { label: 'Possession Granted', value: fmtDate(caseDetail.possession_granted_date) },
                   { label: 'Attorney', value: caseDetail.attorney_name || '—' },
+                   { label: 'Atty Email', value: caseDetail.attorney_email || '—' },
+                   { label: 'Atty Phone', value: caseDetail.attorney_phone || '—' },
                 ].map((item, i) => (
                   <div key={i} style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '10px 12px' }}>
                     <div style={{ fontSize: '10px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{item.label}</div>
@@ -1104,6 +1109,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
               <button onClick={() => { setShowPaymentPlan(true); setShowTouchpoint(false); setShowNoticeForm(false); setFormError(''); }} style={{ ...btnPrimary, backgroundColor: '#1d4ed8' }}>+ Payment Plan</button>
               <button onClick={() => { setShowNoticeForm(true); setShowTouchpoint(false); setShowPaymentPlan(false); setShowNoteForm(false); setFormError(''); }} style={{ ...btnPrimary, backgroundColor: '#b45309' }}>Generate Notice</button>
               <button onClick={() => { setShowNoteForm(true); setShowTouchpoint(false); setShowPaymentPlan(false); setShowNoticeForm(false); setFormError(''); }} style={{ ...btnPrimary, backgroundColor: '#0f4c75' }}>+ Internal Note</button>
+              <button onClick={() => setShowAttorneyModal(true)} style={{ ...btnPrimary, backgroundColor: '#7c3aed' }}>⚖️ Send to Attorney</button>
             </div>
 
             {/* Log Touchpoint Form */}
@@ -1519,6 +1525,83 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
               <button onClick={handleCreateCase} disabled={submitting} style={btnPrimary}>{submitting ? 'Creating...' : 'Create Case'}</button>
               <button onClick={() => { setShowNewCase(false); setFormError(''); }} style={btnSecondary}>Cancel</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send to Attorney Modal */}
+      {showAttorneyModal && caseDetail && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => { setShowAttorneyModal(false); setAttorneyResult(null); }}>
+          <div style={{ backgroundColor: '#fff', borderRadius: '14px', padding: '28px', width: '480px', maxWidth: '92vw', boxShadow: '0 8px 40px rgba(0,0,0,0.2)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
+              <div>
+                <div style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a' }}>⚖️ Send Attorney Referral Packet</div>
+                <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>{caseDetail.resident_name} · Unit {caseDetail.unit_number}</div>
+              </div>
+              <button onClick={() => { setShowAttorneyModal(false); setAttorneyResult(null); }} style={{ background: 'none', border: 'none', fontSize: '20px', color: '#94a3b8', cursor: 'pointer' }}>✕</button>
+            </div>
+            {attorneyResult ? (
+              <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '20px', textAlign: 'center' }}>
+                <div style={{ fontSize: '32px', marginBottom: '8px' }}>✅</div>
+                <div style={{ fontSize: '15px', fontWeight: '700', color: '#15803d' }}>Packet Sent Successfully</div>
+                <div style={{ fontSize: '13px', color: '#166534', marginTop: '4px' }}>Delivered to {attorneyResult.sent_to}</div>
+                <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '8px' }}>Case status updated to Filed with Attorney. Contact logged automatically.</div>
+                <button onClick={() => { setShowAttorneyModal(false); setAttorneyResult(null); fetchCaseDetail(caseDetail.id); fetchCases(); }}
+                  style={{ marginTop: '14px', padding: '9px 20px', backgroundColor: '#15803d', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>Done</button>
+              </div>
+            ) : (
+              <>
+                <div style={{ backgroundColor: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#7c3aed', marginBottom: '8px' }}>PACKET INCLUDES</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {['Case summary','Balance ledger','All notices served','Full contact log','PTP history','Legal & writ dates'].map(item => (
+                      <span key={item} style={{ fontSize: '11px', padding: '2px 8px', backgroundColor: '#ede9fe', color: '#7c3aed', borderRadius: '4px', fontWeight: '600' }}>✓ {item}</span>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Attorney</div>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>{caseDetail.attorney_name || '—'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Sending To</div>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: caseDetail.attorney_email ? '#7c3aed' : '#dc2626' }}>
+                      {caseDetail.attorney_email || '⚠️ No email on file'}
+                    </div>
+                  </div>
+                </div>
+                {!caseDetail.attorney_email && (
+                  <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '12px', color: '#dc2626', fontWeight: '600' }}>
+                    ⚠️ Edit this case to add the attorney email address before sending.
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button onClick={() => setShowAttorneyModal(false)}
+                    style={{ flex: 1, padding: '10px', border: '1px solid #cbd5e1', borderRadius: '7px', backgroundColor: '#fff', color: '#475569', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>Cancel</button>
+                  <button disabled={!caseDetail.attorney_email || attorneySubmitting}
+                    onClick={async () => {
+                      setAttorneySubmitting(true);
+                      try {
+                        const r = await fetch(`${API_URL}/api/collections/cases/${caseDetail.id}/send-to-attorney`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                          body: JSON.stringify({ coordinator_name: localStorage.getItem('collections_coordinator_name') || 'Coordinator' })
+                        });
+                        const d = await r.json();
+                        if (!r.ok) throw new Error(d.error);
+                        setAttorneyResult(d);
+                      } catch (err) { alert('Send failed: ' + err.message); }
+                      finally { setAttorneySubmitting(false); }
+                    }}
+                    style={{ flex: 2, padding: '10px', backgroundColor: !caseDetail.attorney_email || attorneySubmitting ? '#a78bfa' : '#7c3aed', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: !caseDetail.attorney_email || attorneySubmitting ? 'not-allowed' : 'pointer' }}>
+                    {attorneySubmitting ? 'Sending...' : '⚡ Send Packet Now'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
