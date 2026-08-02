@@ -57,7 +57,7 @@ function Login({ onLogin }) {
   };
 
   return (
-    <div style={{ backgroundColor: '#f8fafc', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Arial, sans-serif' }}>
+    <div style={{ backgroundColor: '#F0F4F8', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Arial, sans-serif' }}>
       <div style={{ backgroundColor: '#ffffff', padding: '48px', borderRadius: '12px', width: '100%', maxWidth: '420px', boxShadow: '0 4px 40px rgba(192,132,252,0.15)', border: '1px solid #111827' }}>
         <div style={{ marginBottom: '24px' }}>
           <img src="https://i.imgur.com/OKIqq0K.png" alt="Servfixy" style={{ height: '36px', objectFit: 'contain' }} />
@@ -267,7 +267,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
             <div style={{ width: '130px', fontSize: '12px', color: '#94a3b8', textAlign: 'right', flexShrink: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {fmtStatus(row[labelKey])}
             </div>
-            <div style={{ flex: 1, height: '22px', backgroundColor: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
+            <div style={{ flex: 1, height: '22px', backgroundColor: '#F0F4F8', borderRadius: '4px', overflow: 'hidden' }}>
               <div style={{ width: `${Math.min(100, (Number(row[valueKey]) / max) * 100)}%`, height: '100%', backgroundColor: colorMap ? (colorMap[row[labelKey]] || '#14B8A6') : '#14B8A6', borderRadius: '4px', transition: 'width 0.4s ease' }} />
             </div>
             <div style={{ width: '40px', fontSize: '12px', color: '#111827', fontWeight: '600', flexShrink: 0 }}>{row[valueKey]}</div>
@@ -362,7 +362,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
         {kpis.map((k, i) => (
           <div key={i} onClick={k.onClick}
             style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '18px 20px', borderLeft: `4px solid ${k.color}`, cursor: 'pointer', transition: 'all 0.15s', userSelect: 'none', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#f8fafc'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#F0F4F8'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
             onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
               <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '600', lineHeight: '1.3', maxWidth: '75%' }}>{k.label}</div>
@@ -393,7 +393,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
                     <span style={{ fontSize: '13px', fontWeight: '600', color: AGING_COLORS[row.aging_bucket] || '#14B8A6' }}>{row.aging_bucket} Days</span>
                     <span style={{ fontSize: '13px', color: '#94a3b8' }}>{row.count} cases &nbsp;·&nbsp; {fmtCurrency(row.balance)} <span style={{ color: '#cbd5e1', fontSize: '11px' }}>→</span></span>
                   </div>
-                  <div style={{ height: '10px', backgroundColor: '#f1f5f9', borderRadius: '5px', overflow: 'hidden' }}>
+                  <div style={{ height: '10px', backgroundColor: '#F0F4F8', borderRadius: '5px', overflow: 'hidden' }}>
                     <div style={{ width: `${Math.min(100, (Number(row.balance) / maxAgingBalance) * 100)}%`, height: '100%', backgroundColor: AGING_COLORS[row.aging_bucket] || '#14B8A6', borderRadius: '5px', transition: 'width 0.4s ease' }} />
                   </div>
                 </div>
@@ -471,7 +471,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
             { label: 'Completed', value: plans.completed_plans || 0, color: '#14B8A6' },
             { label: 'Broken', value: plans.broken_plans || 0, color: '#dc2626' },
           ].map((item, i) => (
-            <div key={i} style={{ textAlign: 'center', padding: '16px', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+            <div key={i} style={{ textAlign: 'center', padding: '16px', backgroundColor: '#F0F4F8', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
               <div style={{ fontSize: '28px', fontWeight: '800', color: item.color }}>{item.value}</div>
               <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>{item.label}</div>
             </div>
@@ -1063,7 +1063,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                     <div style={{ marginTop: '10px' }}>
                       <div style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Payment Probability</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ flex: 1, height: '10px', backgroundColor: '#f1f5f9', borderRadius: '5px', overflow: 'hidden' }}>
+                        <div style={{ flex: 1, height: '10px', backgroundColor: '#F0F4F8', borderRadius: '5px', overflow: 'hidden' }}>
                           <div style={{ width: `${caseDetail.payment_probability}%`, height: '100%', borderRadius: '5px', transition: 'width 0.5s ease',
                             backgroundColor: caseDetail.payment_probability >= 70 ? '#15803d' : caseDetail.payment_probability >= 40 ? '#eab308' : '#dc2626'
                           }} />
@@ -2343,7 +2343,7 @@ function CollectionsWorkspaceTab({ token }) {
               { label: 'Priority', value: stats.high_priority, color: '#dc2626' },
               { label: 'Legal', value: stats.in_legal, color: '#7c3aed' },
             ].map((k, i) => (
-              <div key={i} style={{ flex: 1, backgroundColor: '#f8fafc', borderRadius: '6px', padding: '6px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+              <div key={i} style={{ flex: 1, backgroundColor: '#F0F4F8', borderRadius: '6px', padding: '6px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
                 <div style={{ fontSize: '16px', fontWeight: '800', color: k.color }}>{k.value}</div>
                 <div style={{ fontSize: '10px', color: '#475569' }}>{k.label}</div>
               </div>
@@ -2451,7 +2451,7 @@ function CollectionsWorkspaceTab({ token }) {
                 {(caseDetail.touchpoints || []).length === 0 ? (
                   <div style={{ fontSize: '12px', color: '#475569' }}>No contacts yet.</div>
                 ) : (caseDetail.touchpoints || []).slice(0, 5).map((t, i) => (
-                  <div key={i} style={{ padding: '8px 10px', backgroundColor: '#f8fafc', borderRadius: '7px', marginBottom: '6px', border: '1px solid #e2e8f0' }}>
+                  <div key={i} style={{ padding: '8px 10px', backgroundColor: '#F0F4F8', borderRadius: '7px', marginBottom: '6px', border: '1px solid #e2e8f0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
                       <span style={{ fontSize: '10px', color: '#1B3A6B', fontWeight: '700', textTransform: 'uppercase' }}>{t.contact_method}</span>
                       <span style={{ fontSize: '10px', color: '#cbd5e1' }}>{new Date(t.contacted_at).toLocaleDateString()}</span>
@@ -2476,7 +2476,7 @@ function CollectionsWorkspaceTab({ token }) {
       <div style={{ width: '380px', minWidth: '380px', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
         {/* Coordinator Header */}
-        <div style={{ padding: '16px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
+        <div style={{ padding: '16px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#F0F4F8' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: '11px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Coordinator</div>
@@ -2508,7 +2508,7 @@ function CollectionsWorkspaceTab({ token }) {
                 { label: 'Notices Due', value: stats.notices_pending, color: '#ea580c' },
                 { label: 'Avg Balance', value: '$' + Number(stats.avg_balance || 0).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0}), color: '#0369a1' },
               ].map((k, i) => (
-                <div key={i} style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '7px 5px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                <div key={i} style={{ backgroundColor: '#F0F4F8', borderRadius: '8px', padding: '7px 5px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
                   <div style={{ fontSize: '16px', fontWeight: '800', color: k.color }}>{k.value}</div>
                   <div style={{ fontSize: '9px', color: '#475569' }}>{k.label}</div>
                 </div>
@@ -2632,7 +2632,7 @@ function CollectionsWorkspaceTab({ token }) {
                   { label: 'Notice Issued', value: fmtDate(caseDetail.notice_issued_date) },
                   { label: 'Attorney', value: caseDetail.attorney_name || '—' },
                 ].map((item, i) => (
-                  <div key={i} style={{ backgroundColor: '#f8fafc', borderRadius: '7px', padding: '8px 10px', border: '1px solid #e2e8f0' }}>
+                  <div key={i} style={{ backgroundColor: '#F0F4F8', borderRadius: '7px', padding: '8px 10px', border: '1px solid #e2e8f0' }}>
                     <div style={{ fontSize: '10px', color: '#475569', textTransform: 'uppercase', marginBottom: '3px' }}>{item.label}</div>
                     <div style={{ fontSize: '12px', fontWeight: '600', color: item.color || '#111827' }}>{item.value}</div>
                   </div>
@@ -2688,7 +2688,7 @@ function CollectionsWorkspaceTab({ token }) {
               {(caseDetail.touchpoints || []).length === 0 ? (
                 <div style={{ color: '#475569', fontSize: '13px' }}>No contacts logged yet — be the first.</div>
               ) : (caseDetail.touchpoints || []).map((t, i) => (
-                <div key={i} style={{ padding: '10px 12px', backgroundColor: '#f8fafc', borderRadius: '8px', marginBottom: '8px', border: '1px solid #e2e8f0' }}>
+                <div key={i} style={{ padding: '10px 12px', backgroundColor: '#F0F4F8', borderRadius: '8px', marginBottom: '8px', border: '1px solid #e2e8f0' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <span style={{ fontSize: '10px', backgroundColor: 'rgba(20,184,166,0.12)', color: '#1B3A6B', padding: '2px 7px', borderRadius: '4px', fontWeight: '600', textTransform: 'uppercase' }}>{t.contact_method}</span>
@@ -4012,7 +4012,7 @@ function WritTrackerTab({ token }) {
           { label: 'Active Writs', value: writs.length, color: '#7c3aed', bg: '#f5f3ff', icon: '⚖️' },
           { label: 'Execution Pending', value: pendingExecution, color: '#dc2626', bg: '#fef2f2', icon: '📅' },
           { label: 'Balance at Risk', value: fmtCurrency(upcomingAmt), color: '#ea580c', bg: '#fff7ed', icon: '💰' },
-          { label: 'Missing Exec Date', value: noExecDate, color: '#64748b', bg: '#f8fafc', icon: '⚠️' },
+          { label: 'Missing Exec Date', value: noExecDate, color: '#64748b', bg: '#F0F4F8', icon: '⚠️' },
         ].map((k, i) => (
           <div key={i} style={{ flex: '1', minWidth: '140px', backgroundColor: k.bg, borderRadius: '10px', padding: '14px 16px', border: `1px solid ${k.color}22` }}>
             <div style={{ fontSize: '11px', fontWeight: '600', color: k.color, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{k.icon} {k.label}</div>
@@ -4033,7 +4033,7 @@ function WritTrackerTab({ token }) {
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
-                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                <tr style={{ backgroundColor: '#F0F4F8', borderBottom: '2px solid #e2e8f0' }}>
                   {['Resident', 'Unit', 'Property', 'Type', 'Amount', 'Requested Date', 'Method', 'Submitted', ''].map(h => (
                     <th key={h} style={{ padding: '11px 14px', textAlign: 'left', fontWeight: '700', color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                   ))}
@@ -4041,9 +4041,9 @@ function WritTrackerTab({ token }) {
               </thead>
               <tbody>
                 {pendingRequests.map((r, idx) => (
-                  <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: idx % 2 === 0 ? '#fff' : '#fafafa' }}
+                  <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: idx % 2 === 0 ? '#fff' : '#F0F4F8' }}
                     onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fef9c3'}
-                    onMouseLeave={e => e.currentTarget.style.backgroundColor = idx % 2 === 0 ? '#fff' : '#fafafa'}>
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = idx % 2 === 0 ? '#fff' : '#F0F4F8'}>
                     <td style={{ padding: '11px 14px', fontWeight: '600', color: '#0f172a' }}>{r.resident_name}</td>
                     <td style={{ padding: '11px 14px', color: '#475569' }}>Unit {r.unit_number}</td>
                     <td style={{ padding: '11px 14px', color: '#475569' }}>{r.property_name}</td>
@@ -4090,14 +4090,14 @@ function WritTrackerTab({ token }) {
                 { label: 'Requested Date', value: reviewingReq.requested_date ? fmtDate(reviewingReq.requested_date) : 'See installments' },
                 { label: 'Payment Method', value: reviewingReq.payment_method || '—' },
               ].map(f => (
-                <div key={f.label} style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '10px 12px' }}>
+                <div key={f.label} style={{ backgroundColor: '#F0F4F8', borderRadius: '8px', padding: '10px 12px' }}>
                   <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>{f.label}</div>
                   <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{f.value}</div>
                 </div>
               ))}
             </div>
             {reviewingReq.notes && (
-              <div style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '10px 12px', marginBottom: '16px', fontSize: '13px', color: '#475569' }}>
+              <div style={{ backgroundColor: '#F0F4F8', borderRadius: '8px', padding: '10px 12px', marginBottom: '16px', fontSize: '13px', color: '#475569' }}>
                 <strong>Resident Note:</strong> {reviewingReq.notes}
               </div>
             )}
@@ -4139,14 +4139,14 @@ function WritTrackerTab({ token }) {
             <button onClick={() => setCurrentMonth(new Date(year, month + 1, 1))}
               style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '6px', color: '#fff', width: '32px', height: '32px', cursor: 'pointer', fontSize: '16px' }}>›</button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', backgroundColor: '#F0F4F8', borderBottom: '1px solid #e2e8f0' }}>
             {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
               <div key={d} style={{ textAlign: 'center', padding: '8px', fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{d}</div>
             ))}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
             {Array.from({ length: firstDay }).map((_, i) => (
-              <div key={'e'+i} style={{ minHeight: '90px', borderRight: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', backgroundColor: '#fafafa' }} />
+              <div key={'e'+i} style={{ minHeight: '90px', borderRight: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', backgroundColor: '#F0F4F8' }} />
             ))}
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
@@ -4173,7 +4173,7 @@ function WritTrackerTab({ token }) {
               );
             })}
           </div>
-          <div style={{ display: 'flex', gap: '20px', padding: '12px 20px', borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '20px', padding: '12px 20px', borderTop: '1px solid #e2e8f0', backgroundColor: '#F0F4F8', flexWrap: 'wrap' }}>
             {[{ label: 'Execution Scheduled', bg: '#ede9fe', color: '#7c3aed' }, { label: '48-Hour Alert', bg: '#fee2e2', color: '#dc2626' }].map(l => (
               <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#64748b' }}>
                 <div style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: l.bg, border: `1px solid ${l.color}55` }} />
@@ -4189,7 +4189,7 @@ function WritTrackerTab({ token }) {
         <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
-              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+              <tr style={{ backgroundColor: '#F0F4F8', borderBottom: '2px solid #e2e8f0' }}>
                 {['Resident', 'Unit', 'Property', 'Balance', 'Writ Filed', 'Execution Date', 'Attorney', ''].map(h => (
                   <th key={h} style={{ padding: '11px 14px', textAlign: 'left', fontWeight: '700', color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                 ))}
@@ -4205,9 +4205,9 @@ function WritTrackerTab({ token }) {
                 return (
                   <tr key={w.id}
                     onClick={() => { setSelectedWrit(w); setDateForm({ writ_filed_date: w.writ_filed_date?.split('T')[0] || '', writ_execution_date: w.writ_execution_date?.split('T')[0] || '' }); }}
-                    style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', backgroundColor: alert ? '#fef2f2' : idx % 2 === 0 ? '#fff' : '#fafafa' }}
+                    style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', backgroundColor: alert ? '#fef2f2' : idx % 2 === 0 ? '#fff' : '#F0F4F8' }}
                     onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f5f3ff'}
-                    onMouseLeave={e => e.currentTarget.style.backgroundColor = alert ? '#fef2f2' : idx % 2 === 0 ? '#fff' : '#fafafa'}>
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = alert ? '#fef2f2' : idx % 2 === 0 ? '#fff' : '#F0F4F8'}>
                     <td style={{ padding: '11px 14px', fontWeight: '600', color: '#0f172a' }}>{alert ? '⚠️ ' : ''}{w.resident_name}</td>
                     <td style={{ padding: '11px 14px', color: '#475569' }}>Unit {w.unit_number}</td>
                     <td style={{ padding: '11px 14px', color: '#475569' }}>{w.property_name}</td>
@@ -4467,7 +4467,7 @@ function PromisesToPayTab({ token }) {
 
       {/* Nightly Recap Card */}
       {recap && (
-        <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px 20px', marginBottom: '22px' }}>
+        <div style={{ backgroundColor: '#F0F4F8', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px 20px', marginBottom: '22px' }}>
           <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', marginBottom: '10px' }}>📋 Nightly Recap — {fmtDate(recap.recap_date)}</div>
           <div style={{ display: 'flex', gap: '28px', flexWrap: 'wrap', fontSize: '13px', color: '#475569' }}>
             <div><span style={{ fontWeight: '700', color: '#1B3A6B' }}>{recap.due_today?.length || 0}</span> due today</div>
@@ -4499,7 +4499,7 @@ function PromisesToPayTab({ token }) {
               style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '6px', color: '#fff', width: '32px', height: '32px', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
           </div>
           {/* Day headers */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', backgroundColor: '#F0F4F8', borderBottom: '1px solid #e2e8f0' }}>
             {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
               <div key={d} style={{ textAlign: 'center', padding: '8px', fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{d}</div>
             ))}
@@ -4507,7 +4507,7 @@ function PromisesToPayTab({ token }) {
           {/* Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
             {Array.from({ length: firstDay }).map((_, i) => (
-              <div key={'e' + i} style={{ minHeight: '90px', borderRight: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', backgroundColor: '#fafafa' }} />
+              <div key={'e' + i} style={{ minHeight: '90px', borderRight: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', backgroundColor: '#F0F4F8' }} />
             ))}
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
@@ -4538,7 +4538,7 @@ function PromisesToPayTab({ token }) {
             })}
           </div>
           {/* Legend */}
-          <div style={{ display: 'flex', gap: '20px', padding: '12px 20px', borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '20px', padding: '12px 20px', borderTop: '1px solid #e2e8f0', backgroundColor: '#F0F4F8', flexWrap: 'wrap' }}>
             {[{ label: 'Pending', bg: 'rgba(20,184,166,0.12)', color: '#1B3A6B' }, { label: 'Kept', bg: '#dcfce7', color: '#15803d' }, { label: 'Broken / Overdue', bg: '#fee2e2', color: '#dc2626' }].map(l => (
               <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#64748b' }}>
                 <div style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: l.bg, border: `1px solid ${l.color}55` }} />
@@ -4554,7 +4554,7 @@ function PromisesToPayTab({ token }) {
         <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
-              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+              <tr style={{ backgroundColor: '#F0F4F8', borderBottom: '2px solid #e2e8f0' }}>
                 {['Resident', 'Unit', 'Property', 'Amount', 'Promise Date', 'Method', 'Status', ''].map(h => (
                   <th key={h} style={{ padding: '11px 14px', textAlign: 'left', fontWeight: '700', color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                 ))}
@@ -4572,9 +4572,9 @@ function PromisesToPayTab({ token }) {
                 return (
                   <tr key={p.id}
                     onClick={() => setSelectedPtp(p)}
-                    style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', backgroundColor: idx % 2 === 0 ? '#fff' : '#fafafa', transition: 'background 0.1s' }}
+                    style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', backgroundColor: idx % 2 === 0 ? '#fff' : '#F0F4F8', transition: 'background 0.1s' }}
                     onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(20,184,166,0.12)'}
-                    onMouseLeave={e => e.currentTarget.style.backgroundColor = idx % 2 === 0 ? '#fff' : '#fafafa'}>
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = idx % 2 === 0 ? '#fff' : '#F0F4F8'}>
                     <td style={{ padding: '11px 14px', fontWeight: '600', color: '#0f172a' }}>{p.resident_name}</td>
                     <td style={{ padding: '11px 14px', color: '#475569' }}>Unit {p.unit_number}</td>
                     <td style={{ padding: '11px 14px', color: '#475569' }}>{propName}</td>
@@ -4627,7 +4627,7 @@ function PromisesToPayTab({ token }) {
               ))}
             </div>
             {selectedPtp.notes && (
-              <div style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '10px 12px', marginBottom: '18px', fontSize: '13px', color: '#475569' }}>
+              <div style={{ backgroundColor: '#F0F4F8', borderRadius: '8px', padding: '10px 12px', marginBottom: '18px', fontSize: '13px', color: '#475569' }}>
                 <strong>Notes:</strong> {selectedPtp.notes}
               </div>
             )}
@@ -5998,20 +5998,20 @@ function ConnectorCard({ connector, catalogEntry, token, onRefresh }) {
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-        <div style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '12px' }}>
+        <div style={{ backgroundColor: '#F0F4F8', borderRadius: '8px', padding: '12px' }}>
           <div style={{ color: '#64748b', fontSize: '11px', marginBottom: '4px' }}>FULL SYNC</div>
           <div style={{ color: '#111827', fontSize: '13px' }}>{fmt(connector.last_full_sync_at)}</div>
         </div>
-        <div style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '12px' }}>
+        <div style={{ backgroundColor: '#F0F4F8', borderRadius: '8px', padding: '12px' }}>
           <div style={{ color: '#64748b', fontSize: '11px', marginBottom: '4px' }}>LAST INCREMENTAL</div>
           <div style={{ color: '#111827', fontSize: '13px' }}>{fmt(connector.last_incremental_sync_at)}</div>
         </div>
-        <div style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '12px' }}>
+        <div style={{ backgroundColor: '#F0F4F8', borderRadius: '8px', padding: '12px' }}>
           <div style={{ color: '#64748b', fontSize: '11px', marginBottom: '4px' }}>CONNECTED</div>
           <div style={{ color: '#111827', fontSize: '13px' }}>{fmt(connector.created_at)}</div>
         </div>
       </div>
-      {msg && <div style={{ backgroundColor: '#f8fafc', color: '#60a5fa', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', marginBottom: '12px' }}>{msg}</div>}
+      {msg && <div style={{ backgroundColor: '#F0F4F8', color: '#60a5fa', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', marginBottom: '12px' }}>{msg}</div>}
       <button onClick={() => { setShowJobs(!showJobs); if (!showJobs) loadJobs(); }}
         style={{ backgroundColor: 'transparent', border: 'none', color: '#94a3b8', fontSize: '13px', cursor: 'pointer', padding: '0' }}>
         {showJobs ? '▲ Hide' : '▼ Show'} sync history
@@ -6096,14 +6096,14 @@ function ConnectModal({ entry, token, onClose, onConnected }) {
           <h3 style={{ color: '#111827', margin: 0, fontSize: '18px' }}>Connect {entry.label}</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '20px', cursor: 'pointer' }}>×</button>
         </div>
-        <div style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#94a3b8', fontSize: '13px' }}>
+        <div style={{ backgroundColor: '#F0F4F8', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#94a3b8', fontSize: '13px' }}>
           {entry.note}
         </div>
         {(fields[entry.name] || []).map(f => (
           <div key={f.key} style={{ marginBottom: '14px' }}>
             <label style={{ color: '#94a3b8', fontSize: '12px', display: 'block', marginBottom: '5px' }}>{f.label}</label>
             <input type={f.type} value={form[f.key] || ''} onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-              style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e5e7eb', backgroundColor: '#f8fafc', color: 'white', fontSize: '13px', boxSizing: 'border-box' }} />
+              style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e5e7eb', backgroundColor: '#F0F4F8', color: 'white', fontSize: '13px', boxSizing: 'border-box' }} />
           </div>
         ))}
         {error && <div style={{ color: '#fca5a5', fontSize: '13px', marginBottom: '14px' }}>{error}</div>}
@@ -6271,7 +6271,7 @@ function ComplianceTab({ token }) {
 
   const dpaBadge = (d) => {
     if (d === 'MISSING') return <span style={{backgroundColor:'#fee2e2',color:'#991b1b',padding:'2px 8px',borderRadius:'4px',fontSize:'11px',fontWeight:'bold'}}>Missing</span>;
-    if (d === 'Not required') return <span style={{backgroundColor:'#f1f5f9',color:'#64748b',padding:'2px 8px',borderRadius:'4px',fontSize:'11px'}}>N/A</span>;
+    if (d === 'Not required') return <span style={{backgroundColor: '#F0F4F8',color:'#64748b',padding:'2px 8px',borderRadius:'4px',fontSize:'11px'}}>N/A</span>;
     return <span style={{backgroundColor:'#fef9c3',color:'#854d0e',padding:'2px 8px',borderRadius:'4px',fontSize:'11px',fontWeight:'bold'}}>{d}</span>;
   };
 
@@ -6294,8 +6294,8 @@ function ComplianceTab({ token }) {
     subnav: { display:'flex', gap:'4px', marginBottom:'20px', borderBottom:'1px solid #e2e8f0', paddingBottom:'0' },
     snbtn: (active) => ({ padding:'10px 16px', background:'none', border:'none', borderBottom: active ? '2px solid #14B8A6' : '2px solid transparent', color: active ? '#14B8A6' : '#94a3b8', fontSize:'13px', fontWeight: active ? '600' : 'normal', cursor:'pointer' }),
     saveBtn: { padding:'8px 16px', backgroundColor:'#14B8A6', color:'#fff', border:'none', borderRadius:'6px', fontSize:'13px', fontWeight:'bold', cursor:'pointer' },
-    card: { backgroundColor:'#f8fafc', borderRadius:'8px', padding:'16px', marginBottom:'12px', border:'1px solid #e2e8f0' },
-    metaCard: { backgroundColor:'#f8fafc', borderRadius:'8px', padding:'16px 20px', border:'1px solid #e2e8f0' },
+    card: { backgroundColor:'#F0F4F8', borderRadius:'8px', padding:'16px', marginBottom:'12px', border:'1px solid #e2e8f0' },
+    metaCard: { backgroundColor:'#F0F4F8', borderRadius:'8px', padding:'16px 20px', border:'1px solid #e2e8f0' },
     metaNum: { fontSize:'26px', fontWeight:'bold', color:'#0f172a', marginBottom:'4px' },
     metaLbl: { fontSize:'12px', color:'#64748b' },
     grid4: { display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'12px', marginBottom:'20px' },
@@ -6720,7 +6720,7 @@ function App() {
   if (!user || !token) return <Login onLogin={handleLogin} />;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'Arial, sans-serif' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#F0F4F8', fontFamily: 'Arial, sans-serif' }}>
       {/* Mobile top bar */}
       {isMobileApp && (
         <div style={{ position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', flexShrink: 0 }}>
