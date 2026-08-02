@@ -58,7 +58,7 @@ function Login({ onLogin }) {
 
   return (
     <div style={{ backgroundColor: '#f8fafc', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Arial, sans-serif' }}>
-      <div style={{ backgroundColor: '#ffffff', padding: '48px', borderRadius: '12px', width: '100%', maxWidth: '420px', boxShadow: '0 4px 40px rgba(192,132,252,0.15)', border: '1px solid #1e293b' }}>
+      <div style={{ backgroundColor: '#ffffff', padding: '48px', borderRadius: '12px', width: '100%', maxWidth: '420px', boxShadow: '0 4px 40px rgba(192,132,252,0.15)', border: '1px solid #111827' }}>
         <div style={{ marginBottom: '24px' }}>
           <img src="https://i.imgur.com/OKIqq0K.png" alt="Servfixy" style={{ height: '36px', objectFit: 'contain' }} />
           <div style={{ display: 'inline-block', marginLeft: '10px', verticalAlign: 'middle', background: '#1B3A6B', borderRadius: '6px', padding: '3px 10px', fontSize: '12px', fontWeight: '700', color: '#fff', letterSpacing: '0.05em' }}>COLLECTIONS</div>
@@ -71,14 +71,14 @@ function Login({ onLogin }) {
           <input type="email" value={email} onChange={e => setEmail(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleLogin()}
             placeholder="you@servfixy.com"
-            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #1e293b', backgroundColor: '#ffffff', color: '#0f172a', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }} />
+            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #111827', backgroundColor: '#ffffff', color: '#0f172a', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }} />
         </div>
         <div style={{ marginBottom: '28px' }}>
           <label style={{ color: '#94a3b8', fontSize: '12px', display: 'block', marginBottom: '6px' }}>Password</label>
           <input type="password" value={password} onChange={e => setPassword(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleLogin()}
             placeholder="••••••••"
-            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #1e293b', backgroundColor: '#ffffff', color: '#0f172a', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }} />
+            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #111827', backgroundColor: '#ffffff', color: '#0f172a', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }} />
         </div>
         <button onClick={handleLogin} disabled={loading}
           style={{ width: '100%', padding: '13px', borderRadius: '8px', border: 'none', background: loading ? '#152d54' : '#1B3A6B', color: '#fff', fontSize: '15px', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer', letterSpacing: '0.02em' }}>
@@ -270,7 +270,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
             <div style={{ flex: 1, height: '22px', backgroundColor: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
               <div style={{ width: `${Math.min(100, (Number(row[valueKey]) / max) * 100)}%`, height: '100%', backgroundColor: colorMap ? (colorMap[row[labelKey]] || '#14B8A6') : '#14B8A6', borderRadius: '4px', transition: 'width 0.4s ease' }} />
             </div>
-            <div style={{ width: '40px', fontSize: '12px', color: '#1e293b', fontWeight: '600', flexShrink: 0 }}>{row[valueKey]}</div>
+            <div style={{ width: '40px', fontSize: '12px', color: '#111827', fontWeight: '600', flexShrink: 0 }}>{row[valueKey]}</div>
           </div>
         ))}
       </div>
@@ -320,7 +320,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   const maxAgingBalance = Math.max(...byAging.map(r => Number(r.balance) || 0), 1);
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', color: '#1e293b' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', color: '#111827' }}>
 
       {/* Header */}
        {pendingRequests > 0 && (
@@ -343,7 +343,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <select value={selectedProperty} onChange={handlePropertyChange}
-            style={{ padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#1e293b', fontSize: '13px' }}>
+            style={{ padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#111827', fontSize: '13px' }}>
             <option value=''>All Properties</option>
             {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
@@ -429,7 +429,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
               onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
               onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>{row.property_name}</div>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#111827' }}>{row.property_name}</div>
                     <div style={{ fontSize: '11px', color: '#475569' }}>{row.state} &nbsp;·&nbsp; {row.case_count} cases <span style={{ color: '#cbd5e1' }}>→</span></div>
                   </div>
                   <div style={{ fontSize: '14px', fontWeight: '700', color: '#dc2626' }}>{fmtCurrency(row.total_balance)}</div>
@@ -520,7 +520,7 @@ function CoordinatorAssignField({ caseId, currentCoordinator, token, onAssigned 
         list='coordinator-list'
         placeholder='Type or select coordinator...'
         autoFocus
-        style={{ flex: 1, padding: '6px 10px', backgroundColor: '#ffffff', border: '1px solid #14B8A6', borderRadius: '6px', color: '#1e293b', fontSize: '13px' }}
+        style={{ flex: 1, padding: '6px 10px', backgroundColor: '#ffffff', border: '1px solid #14B8A6', borderRadius: '6px', color: '#111827', fontSize: '13px' }}
       />
       <datalist id='coordinator-list'>
         {KNOWN_COORDINATORS.map(n => <option key={n} value={n} />)}
@@ -911,7 +911,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
     } catch (err) { console.error(err); }
   };
 
-  const inputStyle = { width: '100%', padding: '9px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#1e293b', fontSize: '13px', boxSizing: 'border-box' };
+  const inputStyle = { width: '100%', padding: '9px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px', boxSizing: 'border-box' };
   const labelStyle = { fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' };
   const btnPrimary = { padding: '9px 18px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '7px', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer' };
   const btnSecondary = { padding: '9px 18px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#94a3b8', fontSize: '13px', cursor: 'pointer' };
@@ -961,7 +961,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
           {bulkMode && selectedIds.size > 0 && (
             <>
               <select value={bulkStatus} onChange={e => setBulkStatus(e.target.value)}
-                style={{ fontSize: '11px', padding: '4px 8px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '5px', color: '#1e293b' }}>
+                style={{ fontSize: '11px', padding: '4px 8px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '5px', color: '#111827' }}>
                 <option value=''>Advance status to...</option>
                 {[{key:'active',label:'Active'},{key:'notice_issued',label:'Notice Issued'},{key:'filed_with_attorney',label:'Filed w/ Attorney'},{key:'fed',label:'FED'},{key:'writ_filed',label:'Writ Filed'},{key:'hearing_scheduled',label:'Hearing Scheduled'},{key:'possession_granted',label:'Possession Granted'},{key:'closed_paid',label:'Closed - Paid'},{key:'closed_written_off',label:'Written Off'}].map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
               </select>
@@ -1110,7 +1110,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                 ].map((item, i) => (
                   <div key={i} style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '10px 12px' }}>
                     <div style={{ fontSize: '10px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{item.label}</div>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: item.color || '#1e293b' }}>{item.value}</div>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: item.color || '#111827' }}>{item.value}</div>
                   </div>
                 ))}
               </div>
@@ -1127,7 +1127,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
               <button onClick={() => { setShowTouchpoint(true); setShowPaymentPlan(false); setFormError(''); }} style={btnPrimary}>+ Log Contact</button>
               <button onClick={() => { setShowPaymentPlan(true); setShowTouchpoint(false); setShowNoticeForm(false); setFormError(''); }} style={{ ...btnPrimary, backgroundColor: '#1B3A6B' }}>+ Payment Plan</button>
               <button onClick={() => { setShowNoticeForm(true); setShowTouchpoint(false); setShowPaymentPlan(false); setShowNoteForm(false); setFormError(''); }} style={{ ...btnPrimary, backgroundColor: '#b45309' }}>Generate Notice</button>
-              <button onClick={() => { setShowNoteForm(true); setShowTouchpoint(false); setShowPaymentPlan(false); setShowNoticeForm(false); setFormError(''); }} style={{ ...btnPrimary, backgroundColor: '#0f4c75' }}>+ Internal Note</button>
+              <button onClick={() => { setShowNoteForm(true); setShowTouchpoint(false); setShowPaymentPlan(false); setShowNoticeForm(false); setFormError(''); }} style={{ ...btnPrimary, backgroundColor: '#1B3A6B' }}>+ Internal Note</button>
               <button onClick={() => setShowAttorneyModal(true)} style={{ ...btnPrimary, backgroundColor: '#7c3aed' }}>⚖️ Send to Attorney</button>
             </div>
 
@@ -1252,7 +1252,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                     <div style={{ fontSize: '12px', fontWeight: '700', color: '#dc2626', marginBottom: '4px', textTransform: 'uppercase' }}>{noticePreview.title}</div>
                     <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '10px' }}>{noticePreview.state_name} · {noticePreview.days > 0 ? `${noticePreview.days}-Day Notice` : 'Immediate'}</div>
                     {noticePreview.body_lines.map((line, i) => (
-                      <div key={i} style={{ fontSize: '11px', color: line === '' ? 'transparent' : line.startsWith('TO:') || line.startsWith('PREMISES:') || line.startsWith('AMOUNT') || line.startsWith('TOTAL') || line.startsWith('IMPORTANT') ? '#1e293b' : '#94a3b8', marginBottom: line === '' ? '6px' : '2px', fontWeight: line.startsWith('TO:') || line.startsWith('PREMISES:') ? '600' : '400' }}>
+                      <div key={i} style={{ fontSize: '11px', color: line === '' ? 'transparent' : line.startsWith('TO:') || line.startsWith('PREMISES:') || line.startsWith('AMOUNT') || line.startsWith('TOTAL') || line.startsWith('IMPORTANT') ? '#111827' : '#94a3b8', marginBottom: line === '' ? '6px' : '2px', fontWeight: line.startsWith('TO:') || line.startsWith('PREMISES:') ? '600' : '400' }}>
                         {line || ' '}
                       </div>
                     ))}
@@ -1270,7 +1270,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
 
             {/* Internal Notes Form */}
             {showNoteForm && (
-              <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginBottom: '20px', borderLeft: '4px solid #0f4c75' }}>
+              <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginBottom: '20px', borderLeft: '4px solid #1B3A6B' }}>
                 <h3 style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>Add Internal Note</h3>
                 {formError && <div style={{ color: '#dc2626', fontSize: '13px', marginBottom: '10px' }}>{formError}</div>}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
@@ -1295,7 +1295,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                     style={{ ...inputStyle, resize: 'vertical' }} placeholder='Internal memo, attorney instructions, supervisor direction, legal strategy...' />
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={handleAddNote} disabled={noteSubmitting} style={{ ...btnPrimary, backgroundColor: '#0f4c75' }}>{noteSubmitting ? 'Saving...' : 'Save Note'}</button>
+                  <button onClick={handleAddNote} disabled={noteSubmitting} style={{ ...btnPrimary, backgroundColor: '#1B3A6B' }}>{noteSubmitting ? 'Saving...' : 'Save Note'}</button>
                   <button onClick={() => { setShowNoteForm(false); setFormError(''); }} style={btnSecondary}>Cancel</button>
                 </div>
               </div>
@@ -1329,7 +1329,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                   <div key={idx} style={{ padding: '14px', backgroundColor: '#ffffff', borderRadius: '8px', marginBottom: '10px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                       <div>
-                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>{fmtCurrency(plan.installment_amount)} / {plan.frequency}</span>
+                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#111827' }}>{fmtCurrency(plan.installment_amount)} / {plan.frequency}</span>
                         <span style={{ fontSize: '11px', color: '#475569', marginLeft: '10px' }}>Total: {fmtCurrency(plan.total_amount)}</span>
                       </div>
                       <span style={{ fontSize: '11px', padding: '2px 10px', borderRadius: '4px', backgroundColor: plan.status === 'active' ? '#1c3a2e' : plan.status === 'broken' ? '#3a1e1e' : '#ffffff', color: plan.status === 'active' ? '#15803d' : plan.status === 'broken' ? '#dc2626' : '#94a3b8', fontWeight: '600' }}>{fmtStatus(plan.status)}</span>
@@ -1361,7 +1361,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                               <div>
                                 <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '3px', textTransform: 'uppercase' }}>Status</div>
                                 <select value={paymentLogForm.status} onChange={e => setPaymentLogForm(p => ({...p, status: e.target.value}))}
-                                  style={{ width: '100%', padding: '7px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#1e293b', fontSize: '12px' }}>
+                                  style={{ width: '100%', padding: '7px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#111827', fontSize: '12px' }}>
                                   <option value='paid'>Paid</option>
                                   <option value='missed'>Missed</option>
                                   <option value='waived'>Waived</option>
@@ -1371,23 +1371,23 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                                 <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '3px', textTransform: 'uppercase' }}>Amount ($)</div>
                                 <input type='number' value={paymentLogForm.amount} onChange={e => setPaymentLogForm(p => ({...p, amount: e.target.value}))}
                                   placeholder={String(plan.installment_amount || '')}
-                                  style={{ width: '100%', padding: '7px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#1e293b', fontSize: '12px', boxSizing: 'border-box' }} />
+                                  style={{ width: '100%', padding: '7px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#111827', fontSize: '12px', boxSizing: 'border-box' }} />
                               </div>
                               <div>
                                 <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '3px', textTransform: 'uppercase' }}>Due Date</div>
                                 <input type='date' value={paymentLogForm.due_date} onChange={e => setPaymentLogForm(p => ({...p, due_date: e.target.value}))}
-                                  style={{ width: '100%', padding: '7px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#1e293b', fontSize: '12px', boxSizing: 'border-box' }} />
+                                  style={{ width: '100%', padding: '7px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#111827', fontSize: '12px', boxSizing: 'border-box' }} />
                               </div>
                               {paymentLogForm.status === 'paid' && (
                                 <div>
                                   <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '3px', textTransform: 'uppercase' }}>Paid Date</div>
                                   <input type='date' value={paymentLogForm.paid_date} onChange={e => setPaymentLogForm(p => ({...p, paid_date: e.target.value}))}
-                                    style={{ width: '100%', padding: '7px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#1e293b', fontSize: '12px', boxSizing: 'border-box' }} />
+                                    style={{ width: '100%', padding: '7px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#111827', fontSize: '12px', boxSizing: 'border-box' }} />
                                 </div>
                               )}
                             </div>
                             <input value={paymentLogForm.notes} onChange={e => setPaymentLogForm(p => ({...p, notes: e.target.value}))}
-                              placeholder='Notes (optional)' style={{ width: '100%', padding: '7px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#1e293b', fontSize: '12px', boxSizing: 'border-box', marginBottom: '10px' }} />
+                              placeholder='Notes (optional)' style={{ width: '100%', padding: '7px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#111827', fontSize: '12px', boxSizing: 'border-box', marginBottom: '10px' }} />
                             <div style={{ display: 'flex', gap: '8px' }}>
                               <button onClick={() => handleLogPayment(plan.id)} disabled={paymentLogSubmitting}
                                 style={{ padding: '7px 16px', backgroundColor: paymentLogForm.status === 'paid' ? '#14B8A6' : '#dc2626', border: 'none', borderRadius: '6px', color: 'white', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
@@ -1422,7 +1422,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                 {caseDetail.notices.map((n, i) => (
                   <div key={i} style={{ padding: '12px', backgroundColor: '#ffffff', borderRadius: '8px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>{fmtStatus(n.notice_type)}</div>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#111827' }}>{fmtStatus(n.notice_type)}</div>
                       <div style={{ fontSize: '11px', color: '#475569' }}>{n.jurisdiction_state} &nbsp;·&nbsp; Generated by {n.generated_by} &nbsp;·&nbsp; {fmtDate(n.created_at)}</div>
                     </div>
                     {n.pdf_url && <a href={n.pdf_url} target='_blank' rel='noreferrer' style={{ fontSize: '12px', color: '#14B8A6', textDecoration: 'none', fontWeight: '600' }}>View PDF</a>}
@@ -1433,13 +1433,13 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
 
             {/* Internal Notes */}
             {(caseDetail.case_notes || []).length > 0 && (
-              <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginBottom: '20px', borderLeft: '4px solid #0f4c75' }}>
+              <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginBottom: '20px', borderLeft: '4px solid #1B3A6B' }}>
                 <h3 style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>Internal Notes ({caseDetail.case_notes.length})</h3>
                 {caseDetail.case_notes.map((note, i) => (
-                  <div key={i} style={{ padding: '12px 14px', backgroundColor: '#ffffff', borderRadius: '8px', marginBottom: '8px', borderLeft: '3px solid #0f4c75' }}>
+                  <div key={i} style={{ padding: '12px 14px', backgroundColor: '#ffffff', borderRadius: '8px', marginBottom: '8px', borderLeft: '3px solid #1B3A6B' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', backgroundColor: '#0f4c75', color: '#93c5fd', fontWeight: '700', textTransform: 'uppercase' }}>
+                        <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', backgroundColor: '#1B3A6B', color: '#93c5fd', fontWeight: '700', textTransform: 'uppercase' }}>
                           {note.note_type === 'attorney' ? '⚖️ Attorney' : note.note_type === 'supervisor' ? '👤 Supervisor' : note.note_type === 'legal_strategy' ? '📋 Legal Strategy' : '📝 ' + (note.note_type || 'General')}
                         </span>
                         <span style={{ fontSize: '12px', color: '#94a3b8' }}>by {note.author}</span>
@@ -1452,7 +1452,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                         </button>
                       </div>
                     </div>
-                    <div style={{ fontSize: '13px', color: '#1e293b', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>{note.note_text}</div>
+                    <div style={{ fontSize: '13px', color: '#111827', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>{note.note_text}</div>
                   </div>
                 ))}
               </div>
@@ -1465,7 +1465,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                 {caseDetail.documents.map((d, i) => (
                   <div key={i} style={{ padding: '12px', backgroundColor: '#ffffff', borderRadius: '8px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>{d.file_name}</div>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#111827' }}>{d.file_name}</div>
                       <div style={{ fontSize: '11px', color: '#475569' }}>{fmtStatus(d.document_type)} &nbsp;·&nbsp; {d.uploaded_by} &nbsp;·&nbsp; {fmtDate(d.created_at)}</div>
                     </div>
                     <a href={d.file_url} target='_blank' rel='noreferrer' style={{ fontSize: '12px', color: '#14B8A6', textDecoration: 'none', fontWeight: '600' }}>Open</a>
@@ -1739,7 +1739,7 @@ function CollectionsReportsTab({ token, onBack }) {
     URL.revokeObjectURL(url);
   };
 
-  const inputStyle = { padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#1e293b', fontSize: '13px' };
+  const inputStyle = { padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px' };
 
   // ── Report Renderers ──────────────────────────────────────────────────────────
 
@@ -1758,7 +1758,7 @@ function CollectionsReportsTab({ token, onBack }) {
             <tr key={i} style={{ borderBottom: '1px solid #ffffff', backgroundColor: i % 2 === 0 ? 'transparent' : '#ffffff11' }}>
               <td style={{ padding: '10px 12px', color: '#0f172a', fontWeight: '600' }}>{row.property_name}</td>
               <td style={{ padding: '10px 12px', color: '#94a3b8' }}>{row.state}</td>
-              <td style={{ padding: '10px 12px', color: '#1e293b', textAlign: 'center' }}>{fmtNum(row.total_cases)}</td>
+              <td style={{ padding: '10px 12px', color: '#111827', textAlign: 'center' }}>{fmtNum(row.total_cases)}</td>
               <td style={{ padding: '10px 12px', color: '#dc2626', fontWeight: '700' }}>{fmtCurrency(row.total_balance)}</td>
               <td style={{ padding: '10px 12px', color: '#facc15', textAlign: 'center' }}>{row.bucket_30_60 || 0}</td>
               <td style={{ padding: '10px 12px', color: '#ea580c', textAlign: 'center' }}>{row.bucket_61_90 || 0}</td>
@@ -1775,7 +1775,7 @@ function CollectionsReportsTab({ token, onBack }) {
           <tr style={{ backgroundColor: '#ffffff', borderTop: '2px solid #cbd5e1' }}>
             <td style={{ padding: '10px 12px', color: '#0f172a', fontWeight: '700' }}>TOTAL</td>
             <td style={{ padding: '10px 12px' }}></td>
-            <td style={{ padding: '10px 12px', color: '#1e293b', fontWeight: '700', textAlign: 'center' }}>{fmtNum(rows.reduce((s, r) => s + Number(r.total_cases || 0), 0))}</td>
+            <td style={{ padding: '10px 12px', color: '#111827', fontWeight: '700', textAlign: 'center' }}>{fmtNum(rows.reduce((s, r) => s + Number(r.total_cases || 0), 0))}</td>
             <td style={{ padding: '10px 12px', color: '#dc2626', fontWeight: '800' }}>{fmtCurrency(rows.reduce((s, r) => s + Number(r.total_balance || 0), 0))}</td>
             <td style={{ padding: '10px 12px', color: '#facc15', fontWeight: '700', textAlign: 'center' }}>{rows.reduce((s, r) => s + Number(r.bucket_30_60 || 0), 0)}</td>
             <td style={{ padding: '10px 12px', color: '#ea580c', fontWeight: '700', textAlign: 'center' }}>{rows.reduce((s, r) => s + Number(r.bucket_61_90 || 0), 0)}</td>
@@ -1895,7 +1895,7 @@ function CollectionsReportsTab({ token, onBack }) {
               <td style={{ padding: '10px 12px', color: '#94a3b8' }}>{row.unit_number}</td>
               <td style={{ padding: '10px 12px', color: '#cbd5e1' }}>{row.property_name}</td>
               <td style={{ padding: '10px 12px', color: '#dc2626', fontWeight: '700' }}>{fmtCurrency(row.total_amount)}</td>
-              <td style={{ padding: '10px 12px', color: '#1e293b' }}>{fmtCurrency(row.installment_amount)}</td>
+              <td style={{ padding: '10px 12px', color: '#111827' }}>{fmtCurrency(row.installment_amount)}</td>
               <td style={{ padding: '10px 12px', color: '#94a3b8' }}>{fmtStatus(row.frequency)}</td>
               <td style={{ padding: '10px 12px', color: '#94a3b8', fontSize: '12px' }}>{fmtDate(row.start_date)}</td>
               <td style={{ padding: '10px 12px' }}><span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '4px', backgroundColor: row.status === 'active' ? '#1c3a2e' : row.status === 'broken' ? '#3a1e1e' : '#ffffff', color: row.status === 'active' ? '#15803d' : row.status === 'broken' ? '#dc2626' : '#94a3b8', fontWeight: '700' }}>{fmtStatus(row.status)}</span></td>
@@ -1966,7 +1966,7 @@ function CollectionsReportsTab({ token, onBack }) {
   const showDateFilter      = activeReport === 'coordinator_activity';
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', color: '#1e293b' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', color: '#111827' }}>
 
       {/* Header */}
       <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', marginBottom: '0', padding: '20px 24px', display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
@@ -2274,7 +2274,7 @@ function CollectionsWorkspaceTab({ token }) {
     fetchWorkspace(name);
   };
 
-  const inputStyle  = { padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#1e293b', fontSize: '13px', width: '100%', boxSizing: 'border-box' };
+  const inputStyle  = { padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px', width: '100%', boxSizing: 'border-box' };
   const btnPrimary  = { padding: '8px 16px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '7px', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer' };
   const btnSmall    = { padding: '5px 12px', border: 'none', borderRadius: '5px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' };
 
@@ -2381,7 +2381,7 @@ function CollectionsWorkspaceTab({ token }) {
             <div style={{ padding: '24px', textAlign: 'center', color: '#475569', fontSize: '13px' }}>Loading...</div>
           ) : (view === 'queue' ? taskQueue : myCases).map((c, idx) => (
             <div key={c.id} onClick={() => { handleSelectCase(c); setMobileView('detail'); }}
-              style={{ padding: '14px 16px', borderBottom: '1px solid #e2e8f0', cursor: 'pointer', backgroundColor: selectedCase?.id === c.id ? '#eff6ff' : 'transparent' }}>
+              style={{ padding: '14px 16px', borderBottom: '1px solid #e2e8f0', cursor: 'pointer', backgroundColor: selectedCase?.id === c.id ? 'rgba(20,184,166,0.08)' : 'transparent' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                 <div style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>{c.resident_name}</div>
                 <div style={{ fontSize: '14px', fontWeight: '700', color: '#dc2626' }}>${Number(c.balance_owed).toFixed(0)}</div>
@@ -2429,16 +2429,16 @@ function CollectionsWorkspaceTab({ token }) {
                 {quickError && <div style={{ color: '#dc2626', fontSize: '12px', marginBottom: '8px' }}>{quickError}</div>}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
                   <select value={quickNoteForm.contact_method} onChange={e => setQuickNoteForm(p => ({...p, contact_method: e.target.value}))}
-                    style={{ padding: '8px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#1e293b', fontSize: '12px' }}>
+                    style={{ padding: '8px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#111827', fontSize: '12px' }}>
                     {['call','text','email','letter','in_person','other'].map(m => <option key={m} value={m}>{fmtStatus(m)}</option>)}
                   </select>
                   <select value={quickNoteForm.outcome} onChange={e => setQuickNoteForm(p => ({...p, outcome: e.target.value}))}
-                    style={{ padding: '8px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#1e293b', fontSize: '12px' }}>
+                    style={{ padding: '8px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#111827', fontSize: '12px' }}>
                     {['left_voicemail','payment_promise','no_answer','payment_received','refused_to_pay','disconnected','in_person_contact','other'].map(o => <option key={o} value={o}>{fmtStatus(o)}</option>)}
                   </select>
                 </div>
                 <textarea value={quickNoteForm.notes} onChange={e => setQuickNoteForm(p => ({...p, notes: e.target.value}))} rows={3}
-                  placeholder='Notes...' style={{ width: '100%', padding: '8px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#1e293b', fontSize: '12px', resize: 'none', boxSizing: 'border-box', marginBottom: '8px' }} />
+                  placeholder='Notes...' style={{ width: '100%', padding: '8px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#111827', fontSize: '12px', resize: 'none', boxSizing: 'border-box', marginBottom: '8px' }} />
                 <button onClick={handleQuickLog} disabled={quickSubmitting}
                   style={{ width: '100%', padding: '12px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '8px', color: 'white', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}>
                   {quickSubmitting ? 'Logging...' : 'Log Contact'}
@@ -2491,7 +2491,7 @@ function CollectionsWorkspaceTab({ token }) {
             <div style={{ marginTop: '10px' }}>
               <select value={propertyFilter}
                 onChange={e => { const v = e.target.value; setPropertyFilter(v); fetchWorkspace(coordinator, v); }}
-                style={{ width: '100%', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '7px', fontSize: '11px', color: '#1e293b', backgroundColor: '#ffffff', cursor: 'pointer' }}>
+                style={{ width: '100%', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '7px', fontSize: '11px', color: '#111827', backgroundColor: '#ffffff', cursor: 'pointer' }}>
                 <option value="all">All Properties ({propertyList.length})</option>
                 {propertyList.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
@@ -2543,7 +2543,7 @@ function CollectionsWorkspaceTab({ token }) {
             <div style={{ padding: '24px', textAlign: 'center', color: '#475569', fontSize: '13px' }}>No cases to show.</div>
           ) : (view === 'queue' ? taskQueue : myCases).map((c, idx) => (
             <div key={c.id} onClick={() => handleSelectCase(c)}
-              style={{ padding: '14px 16px', borderBottom: '1px solid #e2e8f0', cursor: 'pointer', backgroundColor: selectedCase?.id === c.id ? '#eff6ff' : 'transparent' }}>
+              style={{ padding: '14px 16px', borderBottom: '1px solid #e2e8f0', cursor: 'pointer', backgroundColor: selectedCase?.id === c.id ? 'rgba(20,184,166,0.08)' : 'transparent' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
                 <div style={{ flex: 1 }}>
                   {view === 'queue' && (
@@ -2634,7 +2634,7 @@ function CollectionsWorkspaceTab({ token }) {
                 ].map((item, i) => (
                   <div key={i} style={{ backgroundColor: '#f8fafc', borderRadius: '7px', padding: '8px 10px', border: '1px solid #e2e8f0' }}>
                     <div style={{ fontSize: '10px', color: '#475569', textTransform: 'uppercase', marginBottom: '3px' }}>{item.label}</div>
-                    <div style={{ fontSize: '12px', fontWeight: '600', color: item.color || '#1e293b' }}>{item.value}</div>
+                    <div style={{ fontSize: '12px', fontWeight: '600', color: item.color || '#111827' }}>{item.value}</div>
                   </div>
                 ))}
               </div>
@@ -2941,12 +2941,12 @@ function CollectionsEscalationTab({ token }) {
     flag_escalate:          '#ea580c',
   };
 
-  const inputStyle = { padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#1e293b', fontSize: '13px', width: '100%', boxSizing: 'border-box' };
+  const inputStyle = { padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px', width: '100%', boxSizing: 'border-box' };
   const labelStyle = { fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' };
   const btnPrimary = { padding: '9px 18px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '7px', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer' };
 
   return (
-    <div style={{ padding: '24px', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', minHeight: '100vh', color: '#1e293b' }}>
+    <div style={{ padding: '24px', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', minHeight: '100vh', color: '#111827' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
@@ -3058,7 +3058,7 @@ function CollectionsEscalationTab({ token }) {
             ].map((item, i) => (
               <div key={i} style={{ backgroundColor: '#ffffff', borderRadius: '7px', padding: '8px 12px', fontSize: '11px' }}>
                 <div style={{ color: '#475569', marginBottom: '2px', textTransform: 'uppercase' }}>{item.label}</div>
-                <div style={{ color: item.value.startsWith('✓') ? '#15803d' : item.value.startsWith('✗') ? '#dc2626' : '#1e293b', fontWeight: '600' }}>{item.value}</div>
+                <div style={{ color: item.value.startsWith('✓') ? '#15803d' : item.value.startsWith('✗') ? '#dc2626' : '#111827', fontWeight: '600' }}>{item.value}</div>
               </div>
             ))}
           </div>
@@ -3070,7 +3070,7 @@ function CollectionsEscalationTab({ token }) {
             <input value={supervisorEmail}
               onChange={e => { setSupervisorEmail(e.target.value); localStorage.setItem('collections_supervisor_email', e.target.value); }}
               placeholder='supervisor@company.com'
-              style={{ width: '100%', padding: '9px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#1e293b', fontSize: '13px', boxSizing: 'border-box' }} />
+              style={{ width: '100%', padding: '9px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px', boxSizing: 'border-box' }} />
           </div>
           <button onClick={handleTestEmail} disabled={testingEmail}
             style={{ padding: '9px 16px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#94a3b8', fontSize: '13px', cursor: 'pointer' }}>
@@ -3126,7 +3126,7 @@ function CollectionsEscalationTab({ token }) {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <input type='checkbox' id='notify_sup' checked={form.notify_supervisor} onChange={e => setForm(p => ({...p, notify_supervisor: e.target.checked}))} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
-                <label htmlFor='notify_sup' style={{ fontSize: '13px', color: '#1e293b', cursor: 'pointer' }}>Flag for supervisor notification</label>
+                <label htmlFor='notify_sup' style={{ fontSize: '13px', color: '#111827', cursor: 'pointer' }}>Flag for supervisor notification</label>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
@@ -3278,7 +3278,7 @@ function CollectionsDocumentVault({ token }) {
     !searchTerm || c.resident_name.toLowerCase().includes(searchTerm.toLowerCase()) || c.unit_number.includes(searchTerm)
   );
 
-  const inputStyle = { padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#1e293b', fontSize: '13px', width: '100%', boxSizing: 'border-box' };
+  const inputStyle = { padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px', width: '100%', boxSizing: 'border-box' };
 
   // Summary stats
   const totalDocs = cases.reduce((s) => s, 0);
@@ -3414,7 +3414,7 @@ function CollectionsDocumentVault({ token }) {
                         {typeDocs.map((doc, i) => (
                           <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', backgroundColor: '#ffffff', borderRadius: '8px', marginBottom: '6px', borderLeft: `3px solid ${dt.color}` }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{doc.file_name}</div>
+                              <div style={{ fontSize: '13px', fontWeight: '600', color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{doc.file_name}</div>
                               <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px' }}>{doc.uploaded_by} · {fmtDate(doc.created_at)}</div>
                             </div>
                             <div style={{ display: 'flex', gap: '8px', marginLeft: '12px', flexShrink: 0 }}>
@@ -3658,7 +3658,7 @@ function CollectionsImportTab({ token }) {
     setMapping({}); setImportResults(null); setParseError(''); setSelectedProperty('');
   };
 
-  const inputStyle  = { padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#1e293b', fontSize: '13px', width: '100%', boxSizing: 'border-box' };
+  const inputStyle  = { padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px', width: '100%', boxSizing: 'border-box' };
   const labelStyle  = { fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' };
   const btnPrimary  = { padding: '10px 22px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '8px', color: 'white', fontSize: '13px', fontWeight: '700', cursor: 'pointer' };
   const btnSecondary = { padding: '10px 18px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#94a3b8', fontSize: '13px', cursor: 'pointer' };
@@ -3666,7 +3666,7 @@ function CollectionsImportTab({ token }) {
   const STEPS = ['Upload File', 'Map Columns', 'Preview & Confirm', 'Done'];
 
   return (
-    <div style={{ padding: '24px', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', minHeight: '100vh', color: '#1e293b' }}>
+    <div style={{ padding: '24px', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', minHeight: '100vh', color: '#111827' }}>
 
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>
@@ -3682,7 +3682,7 @@ function CollectionsImportTab({ token }) {
               <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: step > i + 1 ? '#14B8A6' : step === i + 1 ? '#1B3A6B' : '#ffffff', border: `2px solid ${step >= i + 1 ? '#14B8A6' : '#cbd5e1'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: step >= i + 1 ? '#14B8A6' : '#475569', flexShrink: 0 }}>
                 {step > i + 1 ? '✓' : i + 1}
               </div>
-              <span style={{ fontSize: '12px', fontWeight: step === i + 1 ? '700' : '400', color: step >= i + 1 ? '#1e293b' : '#475569', whiteSpace: 'nowrap' }}>{s}</span>
+              <span style={{ fontSize: '12px', fontWeight: step === i + 1 ? '700' : '400', color: step >= i + 1 ? '#111827' : '#475569', whiteSpace: 'nowrap' }}>{s}</span>
             </div>
             {i < STEPS.length - 1 && <div style={{ flex: 1, height: '2px', backgroundColor: step > i + 1 ? '#14B8A6' : '#ffffff', margin: '0 12px' }} />}
           </div>
@@ -3719,7 +3719,7 @@ function CollectionsImportTab({ token }) {
               {FIELDS.map(f => (
                 <div key={f.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
                   <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: f.required ? '#14B8A6' : '#cbd5e1', flexShrink: 0 }} />
-                  <span style={{ color: f.required ? '#1e293b' : '#94a3b8' }}>{f.label}{f.required ? ' *' : ''}</span>
+                  <span style={{ color: f.required ? '#111827' : '#94a3b8' }}>{f.label}{f.required ? ' *' : ''}</span>
                 </div>
               ))}
             </div>
@@ -3741,7 +3741,7 @@ function CollectionsImportTab({ token }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {FIELDS.map(field => (
                 <div key={field.key} style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '16px', alignItems: 'center' }}>
-                  <div style={{ fontSize: '13px', color: field.required ? '#1e293b' : '#94a3b8', fontWeight: field.required ? '600' : '400' }}>
+                  <div style={{ fontSize: '13px', color: field.required ? '#111827' : '#94a3b8', fontWeight: field.required ? '600' : '400' }}>
                     {field.label}{field.required ? <span style={{ color: '#14B8A6' }}> *</span> : ''}
                   </div>
                   <select
@@ -3815,7 +3815,7 @@ function CollectionsImportTab({ token }) {
                         ? <span style={{ fontSize: '10px', color: '#15803d', fontWeight: '700' }}>✓ OK</span>
                         : <span style={{ fontSize: '10px', color: '#dc2626', fontWeight: '700' }}>✗ Error</span>}
                     </td>
-                    <td style={{ padding: '8px 12px', color: '#1e293b', fontWeight: '600' }}>{row.resident_name || <span style={{ color: '#dc2626' }}>Missing</span>}</td>
+                    <td style={{ padding: '8px 12px', color: '#111827', fontWeight: '600' }}>{row.resident_name || <span style={{ color: '#dc2626' }}>Missing</span>}</td>
                     <td style={{ padding: '8px 12px', color: '#94a3b8' }}>{row.unit_number || <span style={{ color: '#dc2626' }}>Missing</span>}</td>
                     <td style={{ padding: '8px 12px', color: '#dc2626', fontWeight: '700', textAlign: 'right' }}>${Number(row.balance_owed || 0).toFixed(2)}</td>
                     <td style={{ padding: '8px 12px' }}>
@@ -4453,8 +4453,8 @@ function PromisesToPayTab({ token }) {
       {/* KPI Strip */}
       <div style={{ display: 'flex', gap: '14px', marginBottom: '22px', flexWrap: 'wrap' }}>
         {[
-          { label: 'Pending PTPs', value: pendingCount, color: '#1B3A6B', bg: '#eff6ff', icon: '🕐' },
-          { label: 'Total Promised', value: fmtCurrency(totalAmt), color: '#1B3A6B', bg: '#eff6ff', icon: '💵' },
+          { label: 'Pending PTPs', value: pendingCount, color: '#1B3A6B', bg: 'rgba(20,184,166,0.08)', icon: '🕐' },
+          { label: 'Total Promised', value: fmtCurrency(totalAmt), color: '#1B3A6B', bg: 'rgba(20,184,166,0.08)', icon: '💵' },
           { label: 'Kept', value: keptCount, color: '#15803d', bg: '#f0fdf4', icon: '✅' },
           { label: 'Broken', value: brokenCount, color: '#dc2626', bg: '#fef2f2', icon: '❌' },
         ].map((k, i) => (
@@ -4519,7 +4519,7 @@ function PromisesToPayTab({ token }) {
                 <div key={day}
                   onMouseEnter={() => setHoveredDay(dateStr)}
                   onMouseLeave={() => setHoveredDay(null)}
-                  style={{ minHeight: '90px', borderRight: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', padding: '6px', backgroundColor: isHovered ? '#eff6ff' : '#fff', transition: 'background 0.1s', cursor: dayPtps.length ? 'pointer' : 'default' }}>
+                  style={{ minHeight: '90px', borderRight: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', padding: '6px', backgroundColor: isHovered ? 'rgba(20,184,166,0.08)' : '#fff', transition: 'background 0.1s', cursor: dayPtps.length ? 'pointer' : 'default' }}>
                   <div style={{ fontSize: '12px', fontWeight: isToday ? '800' : '500', color: isToday ? '#1B3A6B' : '#475569', width: '22px', height: '22px', borderRadius: '50%', backgroundColor: isToday ? 'rgba(20,184,166,0.12)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' }}>{day}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                     {dayPtps.map(p => {
@@ -4802,7 +4802,7 @@ function CollectionsCalendarTab({ token }) {
   const selectedEvents = selectedDate ? (eventsByDate[selectedDate] || []) : [];
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', color: '#1e293b' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', color: '#111827' }}>
 
       {/* Header */}
       <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '20px 24px', flexWrap: 'wrap', gap: '12px' }}>
@@ -4931,7 +4931,7 @@ function CollectionsCalendarTab({ token }) {
                       <span style={{ fontSize: '10px', color: e.color, fontWeight: '700', textTransform: 'uppercase' }}>{e.icon} {e.label}</span>
                       <span style={{ fontSize: '11px', color: '#94a3b8' }}>{new Date(e.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                     </div>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>{e.case.resident_name}</div>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#111827' }}>{e.case.resident_name}</div>
                     <div style={{ fontSize: '11px', color: '#475569' }}>Unit {e.case.unit_number} · {e.case.property_name}</div>
                   </div>
                 ))}
@@ -5041,7 +5041,7 @@ function CollectionsOwnerSummaryTab({ token }) {
   const maxAging = summaryData ? Math.max(...Object.values(summaryData.aging), 1) : 1;
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', minHeight: '100vh', color: '#1e293b' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', minHeight: '100vh', color: '#111827' }}>
       {/* Controls bar — hidden in share mode */}
       {!shareMode && (
         <div style={{ padding: '24px 24px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
@@ -5051,13 +5051,13 @@ function CollectionsOwnerSummaryTab({ token }) {
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
             <select value={selectedProperty} onChange={handlePropertyChange}
-              style={{ padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#1e293b', fontSize: '13px' }}>
+              style={{ padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px' }}>
               <option value='all'>All Properties</option>
               {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
             <input value={ownerName} onChange={e => setOwnerName(e.target.value)}
               placeholder='Owner name (optional)'
-              style={{ padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#1e293b', fontSize: '13px', width: '180px' }} />
+              style={{ padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px', width: '180px' }} />
             <button onClick={handlePrint}
               style={{ padding: '8px 16px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '7px', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
               🖨️ Print / Save PDF
@@ -5323,7 +5323,7 @@ function CollectionsOnboardingTab({ token }) {
   const propState = propData?.state;
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', color: '#1e293b' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', color: '#111827' }}>
 
       <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', padding: '20px 24px', marginBottom: '0' }}>
         <h1 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0f172a' }}>Collections Onboarding</h1>
@@ -5334,7 +5334,7 @@ function CollectionsOnboardingTab({ token }) {
       <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
         <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Select Property to Onboard</label>
         <select value={selectedProperty} onChange={handlePropertyChange}
-          style={{ padding: '9px 14px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#1e293b', fontSize: '14px', width: '100%', maxWidth: '400px' }}>
+          style={{ padding: '9px 14px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#111827', fontSize: '14px', width: '100%', maxWidth: '400px' }}>
           <option value=''>Choose property...</option>
           {properties.map(p => <option key={p.id} value={p.id}>{p.name} ({p.state})</option>)}
         </select>
@@ -5552,10 +5552,10 @@ function CollectionsRiskTab({ token }) {
   const fmtCurrency = (v) => `$${parseFloat(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
-  const panelStyle = { backgroundColor: '#ffffff', border: '1px solid #1e293b', borderRadius: '10px', padding: '20px', marginBottom: '16px' };
-  const inputStyle = { backgroundColor: '#ffffff', border: '1px solid #1e293b', borderRadius: '6px', color: '#0f172a', padding: '8px 10px', fontSize: '13px', width: '100%', boxSizing: 'border-box' };
+  const panelStyle = { backgroundColor: '#ffffff', border: '1px solid #111827', borderRadius: '10px', padding: '20px', marginBottom: '16px' };
+  const inputStyle = { backgroundColor: '#ffffff', border: '1px solid #111827', borderRadius: '6px', color: '#0f172a', padding: '8px 10px', fontSize: '13px', width: '100%', boxSizing: 'border-box' };
   const btnPrimary = { background: '#1B3A6B', border: 'none', borderRadius: '6px', color: '#fff', padding: '8px 16px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' };
-  const btnGhost = { backgroundColor: 'transparent', border: '1px solid #1e293b', borderRadius: '6px', color: '#94a3b8', padding: '7px 14px', fontSize: '12px', cursor: 'pointer' };
+  const btnGhost = { backgroundColor: 'transparent', border: '1px solid #111827', borderRadius: '6px', color: '#94a3b8', padding: '7px 14px', fontSize: '12px', cursor: 'pointer' };
 
   const subTabs = [
     { id: 'dashboard',  label: '📊 Dashboard' },
@@ -5578,7 +5578,7 @@ function CollectionsRiskTab({ token }) {
       </div>
 
       {/* Sub-tabs */}
-      <div style={{ display: 'flex', gap: '6px', marginBottom: '24px', borderBottom: '1px solid #1e293b', paddingBottom: '0' }}>
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '24px', borderBottom: '1px solid #111827', paddingBottom: '0' }}>
         {subTabs.map(t => (
           <div key={t.id} onClick={() => setSubView(t.id)}
             style={{ padding: '9px 16px', cursor: 'pointer', fontSize: '13px', fontWeight: subView === t.id ? '700' : '400',
@@ -5617,7 +5617,7 @@ function CollectionsRiskTab({ token }) {
             <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '16px' }}>🔴 Highest Risk Cases</div>
             {!dashboard.top_cases?.length && <div style={{ color: '#94a3b8', fontSize: '13px' }}>No scored cases yet. Click "Rescore All Cases" to generate scores.</div>}
             {dashboard.top_cases?.map((c, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 0', borderBottom: '1px solid #eff6ff' }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 0', borderBottom: '1px solid rgba(20,184,166,0.08)' }}>
                 {/* Risk badge */}
                 <div style={{ minWidth: '48px', textAlign: 'center', background: scoreColor(c.total_score) + '22', border: `1px solid ${scoreColor(c.total_score)}`, borderRadius: '8px', padding: '6px 4px' }}>
                   <div style={{ fontSize: '16px', fontWeight: '800', color: scoreColor(c.total_score) }}>{c.total_score ?? '—'}</div>
@@ -5634,7 +5634,7 @@ function CollectionsRiskTab({ token }) {
                   {[['F', c.financial_score,'#7c3aed'],['L', c.legal_score,'#dc2626'],['R', c.recovery_score,'#ea580c'],['E', c.escalation_score,'#d97706']].map(([lbl,val,col]) => (
                     <div key={lbl} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                       <div style={{ width: '10px', fontSize: '9px', color: '#94a3b8' }}>{lbl}</div>
-                      <div style={{ flex: 1, height: '5px', backgroundColor: '#eff6ff', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ flex: 1, height: '5px', backgroundColor: 'rgba(20,184,166,0.08)', borderRadius: '3px', overflow: 'hidden' }}>
                         <div style={{ width: `${val || 0}%`, height: '100%', backgroundColor: col, borderRadius: '3px' }} />
                       </div>
                       <div style={{ width: '22px', fontSize: '9px', color: col, textAlign: 'right' }}>{val ?? '—'}</div>
@@ -5650,7 +5650,7 @@ function CollectionsRiskTab({ token }) {
             <div style={panelStyle}>
               <div style={{ fontSize: '14px', fontWeight: '700', color: '#dc2626', marginBottom: '14px' }}>⏰ Deadlines This Week</div>
               {dashboard.upcoming_deadlines.map((d, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #eff6ff' }}>
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(20,184,166,0.08)' }}>
                   <div>
                     <div style={{ fontSize: '13px', color: '#0f172a', fontWeight: '600' }}>{d.resident_name} · Unit {d.unit_number}</div>
                     <div style={{ fontSize: '11px', color: '#94a3b8' }}>{d.property_name}</div>
@@ -5754,8 +5754,8 @@ function CollectionsRiskTab({ token }) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '3px' }}>
                   <span style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>{f.flag_type.replace(/_/g,' ')}</span>
-                  <span style={{ fontSize: '10px', color: '#1B3A6B', backgroundColor: '#eff6ff', borderRadius: '4px', padding: '2px 6px' }}>{dimensionLabel(f.dimension)}</span>
-                  <span style={{ fontSize: '10px', color: '#94a3b8', backgroundColor: f.triggered_by === 'auto' ? '#eff6ff' : '#ffffff', borderRadius: '4px', padding: '2px 6px' }}>{f.triggered_by === 'auto' ? '🤖 Auto' : '✍️ Manual'}</span>
+                  <span style={{ fontSize: '10px', color: '#1B3A6B', backgroundColor: 'rgba(20,184,166,0.08)', borderRadius: '4px', padding: '2px 6px' }}>{dimensionLabel(f.dimension)}</span>
+                  <span style={{ fontSize: '10px', color: '#94a3b8', backgroundColor: f.triggered_by === 'auto' ? 'rgba(20,184,166,0.08)' : '#ffffff', borderRadius: '4px', padding: '2px 6px' }}>{f.triggered_by === 'auto' ? '🤖 Auto' : '✍️ Manual'}</span>
                 </div>
                 <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>{f.description}</div>
                 <div style={{ fontSize: '11px', color: '#475569' }}>{f.resident_name} · Unit {f.unit_number} · {f.property_name} · {fmtDate(f.created_at)}</div>
@@ -5786,7 +5786,7 @@ function CollectionsRiskTab({ token }) {
             <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '14px' }}>Cases with an active payment plan and at least one prior broken plan — statistically high re-break probability.</div>
             {!predictive.payment_plan_risk?.length && <div style={{ color: '#94a3b8', fontSize: '13px' }}>No cases flagged.</div>}
             {predictive.payment_plan_risk?.map((c, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #eff6ff' }}>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(20,184,166,0.08)' }}>
                 <div>
                   <div style={{ fontSize: '13px', color: '#0f172a', fontWeight: '600' }}>{c.resident_name} · Unit {c.unit_number}</div>
                   <div style={{ fontSize: '11px', color: '#94a3b8' }}>{c.property_name} · {c.broken_count} prior broken plan(s)</div>
@@ -5805,7 +5805,7 @@ function CollectionsRiskTab({ token }) {
             <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '14px' }}>Active cases open 45+ days with fewer than 3 touchpoints — at risk of falling through the cracks.</div>
             {!predictive.stalled_cases?.length && <div style={{ color: '#94a3b8', fontSize: '13px' }}>No stalled cases.</div>}
             {predictive.stalled_cases?.map((c, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #eff6ff' }}>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(20,184,166,0.08)' }}>
                 <div>
                   <div style={{ fontSize: '13px', color: '#0f172a', fontWeight: '600' }}>{c.resident_name} · Unit {c.unit_number}</div>
                   <div style={{ fontSize: '11px', color: '#94a3b8' }}>{c.property_name} · {Math.round(c.days_open)} days open · {c.touchpoint_count} touchpoints</div>
@@ -5821,7 +5821,7 @@ function CollectionsRiskTab({ token }) {
             <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '14px' }}>Open cases with no successful contact in 14+ days — recovery probability drops significantly beyond 21 days.</div>
             {!predictive.no_contact_risk?.length && <div style={{ color: '#94a3b8', fontSize: '13px' }}>No cases flagged.</div>}
             {predictive.no_contact_risk?.map((c, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #eff6ff' }}>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(20,184,166,0.08)' }}>
                 <div>
                   <div style={{ fontSize: '13px', color: '#0f172a', fontWeight: '600' }}>{c.resident_name} · Unit {c.unit_number}</div>
                   <div style={{ fontSize: '11px', color: '#94a3b8' }}>{c.property_name}</div>
@@ -5848,14 +5848,14 @@ function CollectionsRiskTab({ token }) {
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
                   <span style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>{r.rule_name.replace(/_/g,' ')}</span>
-                  <span style={{ fontSize: '10px', color: '#1B3A6B', backgroundColor: '#eff6ff', borderRadius: '4px', padding: '2px 6px' }}>{dimensionLabel(r.dimension)}</span>
+                  <span style={{ fontSize: '10px', color: '#1B3A6B', backgroundColor: 'rgba(20,184,166,0.08)', borderRadius: '4px', padding: '2px 6px' }}>{dimensionLabel(r.dimension)}</span>
                   <span style={{ fontSize: '10px', color: severityColor(r.severity), backgroundColor: severityColor(r.severity) + '22', borderRadius: '4px', padding: '2px 6px', textTransform: 'uppercase' }}>{r.severity}</span>
                 </div>
                 <div style={{ fontSize: '11px', color: '#94a3b8' }}>Score impact: +{r.score_impact} pts</div>
               </div>
               {/* Toggle */}
               <div onClick={() => handleToggleRule(r.id, !r.enabled)}
-                style={{ width: '40px', height: '22px', borderRadius: '11px', backgroundColor: r.enabled ? '#1B3A6B' : '#ffffff', position: 'relative', cursor: 'pointer', transition: 'background 0.2s', border: '1px solid #1e293b' }}>
+                style={{ width: '40px', height: '22px', borderRadius: '11px', backgroundColor: r.enabled ? '#1B3A6B' : '#ffffff', position: 'relative', cursor: 'pointer', transition: 'background 0.2s', border: '1px solid #111827' }}>
                 <div style={{ position: 'absolute', top: '2px', left: r.enabled ? '18px' : '2px', width: '16px', height: '16px', borderRadius: '50%', backgroundColor: r.enabled ? '#fff' : '#475569', transition: 'left 0.2s' }} />
               </div>
             </div>
@@ -5878,7 +5878,7 @@ const PMS_CATALOG = [
 function ConnectorStatusBadge({ status }) {
   const map = {
     active:   { bg: '#064e3b', color: '#34d399', label: 'Active' },
-    inactive: { bg: '#1e293b', color: '#94a3b8', label: 'Inactive' },
+    inactive: { bg: '#111827', color: '#94a3b8', label: 'Inactive' },
     error:    { bg: '#7f1d1d', color: '#fca5a5', label: 'Error' },
   };
   const s = map[status] || map.inactive;
@@ -5893,7 +5893,7 @@ function SyncJobRow({ job }) {
   const statusColor = { completed: '#34d399', failed: '#fca5a5', running: '#60a5fa', pending: '#94a3b8' };
   const d = s => s ? new Date(s).toLocaleString() : '—';
   return (
-    <tr style={{ borderBottom: '1px solid #1e293b' }}>
+    <tr style={{ borderBottom: '1px solid #111827' }}>
       <td style={{ padding: '10px 12px', color: '#94a3b8', fontSize: '12px' }}>{d(job.created_at)}</td>
       <td style={{ padding: '10px 12px', color: '#374151', fontSize: '12px', textTransform: 'capitalize' }}>{job.job_type}</td>
       <td style={{ padding: '10px 12px', color: '#94a3b8', fontSize: '12px' }}>{job.entity_type || 'all'}</td>
@@ -5971,7 +5971,7 @@ function ConnectorCard({ connector, catalogEntry, token, onRefresh }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: catalogEntry.color }} />
-          <span style={{ color: '#1e293b', fontSize: '16px', fontWeight: 'bold' }}>{catalogEntry.label}</span>
+          <span style={{ color: '#111827', fontSize: '16px', fontWeight: 'bold' }}>{catalogEntry.label}</span>
           <ConnectorStatusBadge status={connector.status} />
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -6093,7 +6093,7 @@ function ConnectModal({ entry, token, onClose, onConnected }) {
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
       <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '32px', width: '480px', maxWidth: '90vw' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-          <h3 style={{ color: '#1e293b', margin: 0, fontSize: '18px' }}>Connect {entry.label}</h3>
+          <h3 style={{ color: '#111827', margin: 0, fontSize: '18px' }}>Connect {entry.label}</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '20px', cursor: 'pointer' }}>×</button>
         </div>
         <div style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#94a3b8', fontSize: '13px' }}>
@@ -6302,7 +6302,7 @@ function ComplianceTab({ token }) {
     grid2: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px' },
     sectionTitle: { fontSize:'13px', fontWeight:'600', color:'#475569', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'12px' },
     table: { width:'100%', borderCollapse:'collapse', fontSize:'13px' },
-    th: { textAlign:'left', padding:'8px 10px', fontSize:'11px', fontWeight:'600', textTransform:'uppercase', letterSpacing:'0.04em', color:'#475569', borderBottom:'1px solid #1e293b' },
+    th: { textAlign:'left', padding:'8px 10px', fontSize:'11px', fontWeight:'600', textTransform:'uppercase', letterSpacing:'0.04em', color:'#475569', borderBottom:'1px solid #111827' },
     td: { padding:'9px 10px', borderBottom:'1px solid #e2e8f0', color:'#0f172a', verticalAlign:'top' },
     select: { background:'#ffffff', border:'1px solid #e2e8f0', borderRadius:'4px', color:'#0f172a', padding:'3px 6px', fontSize:'12px', width:'100%' },
     textarea: { background:'#ffffff', border:'1px solid #e2e8f0', borderRadius:'4px', color:'#0f172a', padding:'4px 6px', fontSize:'12px', width:'100%', minHeight:'40px', resize:'vertical' },
@@ -6401,7 +6401,7 @@ function ComplianceTab({ token }) {
             const dc = controls.filter(c => c.domain === domain);
             return (
               <div key={domain} style={{marginBottom:'24px'}}>
-                <div style={{fontSize:'12px',fontWeight:'600',color:domainColors[domain]||'#94a3b8',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'8px',paddingBottom:'6px',borderBottom:'1px solid #1e293b'}}>{domain}</div>
+                <div style={{fontSize:'12px',fontWeight:'600',color:domainColors[domain]||'#94a3b8',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'8px',paddingBottom:'6px',borderBottom:'1px solid #111827'}}>{domain}</div>
                 <table style={sty.table}>
                   <thead><tr>
                     <th style={{...sty.th,width:'35%'}}>Control</th>
@@ -6564,7 +6564,7 @@ function IntegrationsTab({ token }) {
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 32px' }}>
-        <div style={{ color: '#1e293b', fontSize: '22px', fontWeight: 'bold' }}>Integrations</div>
+        <div style={{ color: '#111827', fontSize: '22px', fontWeight: 'bold' }}>Integrations</div>
       </div>
       <div style={{ padding: '24px 32px', maxWidth: '1100px' }}>
 
@@ -6650,7 +6650,7 @@ function IntegrationsTab({ token }) {
                 <div key={entry.name} style={{ backgroundColor: '#ffffff', borderRadius: '10px', padding: '20px', border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: entry.color }} />
-                    <span style={{ color: '#1e293b', fontSize: '15px', fontWeight: 'bold' }}>{entry.label}</span>
+                    <span style={{ color: '#111827', fontSize: '15px', fontWeight: 'bold' }}>{entry.label}</span>
                   </div>
                   <div style={{ color: '#475569', fontSize: '12px' }}>{entry.note}</div>
                   <button onClick={() => setModal(entry)}
@@ -6724,7 +6724,7 @@ function App() {
       {/* Mobile top bar */}
       {isMobileApp && (
         <div style={{ position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', flexShrink: 0 }}>
-          <button onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#1e293b', padding: '4px 8px', borderRadius: '6px' }}>☰</button>
+          <button onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#111827', padding: '4px 8px', borderRadius: '6px' }}>☰</button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <img src="https://i.imgur.com/OKIqq0K.png" alt="Servfixy" style={{ height: '22px', objectFit: 'contain' }} />
             <div style={{ background: '#1B3A6B', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', fontWeight: '700', color: '#fff', letterSpacing: '0.08em' }}>COLLECTIONS</div>
@@ -6737,7 +6737,7 @@ function App() {
       {scoringToast && (
         <div style={{
           position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999,
-          backgroundColor: scoringToast === 'done' ? '#f0fdf4' : '#eff6ff',
+          backgroundColor: scoringToast === 'done' ? '#f0fdf4' : 'rgba(20,184,166,0.08)',
           border: `1px solid ${scoringToast === 'done' ? '#86efac' : '#93c5fd'}`,
           borderRadius: '10px', padding: '12px 18px',
           display: 'flex', alignItems: 'center', gap: '10px',
