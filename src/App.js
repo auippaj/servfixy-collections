@@ -3894,6 +3894,9 @@ function WritTrackerTab({ token }) {
   const [hoveredDay, setHoveredDay] = useState(null);
   const [activeView, setActiveView] = useState('manager');
   const [pendingRequests, setPendingRequests] = useState([]);
+  const [reviewingReq, setReviewingReq] = useState(null);
+  const [reviewForm, setReviewForm] = useState({ coordinator_notes: '', counter_date: '' });
+  const [reviewSaving, setReviewSaving] = useState(false);
 
   const fmtCurrency = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
