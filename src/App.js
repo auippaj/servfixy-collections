@@ -3892,6 +3892,8 @@ function WritTrackerTab({ token }) {
   const [dateForm, setDateForm] = useState({ writ_filed_date: '', writ_execution_date: '' });
   const [saving, setSaving] = useState(false);
   const [hoveredDay, setHoveredDay] = useState(null);
+  const [activeView, setActiveView] = useState('manager');
+  const [pendingRequests, setPendingRequests] = useState([]);
 
   const fmtCurrency = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
