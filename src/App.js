@@ -111,7 +111,7 @@ const NAV_ITEMS = [
   { group: 'OPERATIONS', items: [
     { label: 'Coordinator Workspace',icon: '🧑‍💼', tab: 'Coordinator Workspace' },
     { label: 'Court Calendar',       icon: '🗓️', tab: 'Court Calendar' },
-    { label: 'Promise to Pay',       icon: '🤝', tab: 'Promise to Pay', badge: pendingPtpCount },
+    { label: 'Promise to Pay',       icon: '🤝', tab: 'Promise to Pay' },
     { label: 'Writ Tracker',         icon: '⚖️', tab: 'Writ Tracker' },
     { label: 'Escalation Rules',     icon: '⚡', tab: 'Escalation Rules' },
   ]},
