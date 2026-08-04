@@ -3917,6 +3917,20 @@ function WritTrackerTab({ token }) {
 
   React.useEffect(() => { fetchAll(); }, []);
 
+  const handleReview = async (id, action) => {
+    setReviewSaving(true);
+    try {
+      await fetch(`${API_URL}/api/ptp-requests/${id}/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ action, coordinator_notes: reviewForm.coordinator_notes, counter_date: reviewForm.counter_date })
+      });
+      setReviewingReq(null);
+      setReviewForm({ coordinator_notes: '', counter_date: '' });
+    } catch (e) { console.error(e); }
+    setReviewSaving(false);
+  };
+
   const handleSaveDates = async () => {
     setSaving(true);
     try {
