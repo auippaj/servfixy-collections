@@ -4287,7 +4287,7 @@ function PromisesToPayTab({ token }) {
   const [reviewingReq, setReviewingReq] = useState(null);
   const [reviewForm, setReviewForm] = useState({ coordinator_notes: '', counter_date: '' });
   const [reviewSaving, setReviewSaving] = useState(false);
-  const const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [view, setView] = useState('calendar'); // calendar | list
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedPtp, setSelectedPtp] = useState(null);
