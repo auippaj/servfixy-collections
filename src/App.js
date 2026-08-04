@@ -26,8 +26,6 @@ function Login({ onLogin }) {
       }
       localStorage.setItem('collections_token', data.token);
       localStorage.setItem('collections_user', JSON.stringify(data.user));
-      fetch(`${API_URL}/api/ptp-requests/pending-count`, { headers: { Authorization: `Bearer ${data.token}` } })
-        .then(r => r.json()).then(d => { if (d.count !== undefined) setPendingPtpCount(d.count); }).catch(() => {});
       if (isDemo) {
         setSeedingDemo(true);
         try {
