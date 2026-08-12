@@ -2107,8 +2107,22 @@ function CollectionsWorkspaceTab({ token }) {
         let cases = d.top_cases;
         if (typeof cases === 'string') { try { cases = JSON.parse(cases); } catch(e) { cases = []; } }
         if (!Array.isArray(cases)) cases = [];
-        if (cases.length > 0) setAgentBriefing({ ...d, top_cases: cases });
+        if (cases.length > 0) {
+          setAgentBriefing({ ...d, top_cases: cases });
+          return;
+        }
       }
+      // No prior run found — auto-fire agent silently
+      fetch(`${API_URL}/api/collections/risk/agent/run`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ triggered_by: 'auto_load' })
+      }).then(r => r.json()).then(data => {
+        let cases = data.top_cases;
+        if (typeof cases === 'string') { try { cases = JSON.parse(cases); } catch(e) { cases = []; } }
+        if (!Array.isArray(cases)) cases = [];
+        if (cases.length > 0) setAgentBriefing({ top_cases: cases, agent_summary: data.agent_summary, run_at: new Date().toISOString() });
+      }).catch(() => {});
     }).catch(() => {});
   }, [token]);
 
