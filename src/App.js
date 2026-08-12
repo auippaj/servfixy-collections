@@ -34,6 +34,12 @@ function Login({ onLogin }) {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${data.token}` }
           });
         } catch(e) { /* non-fatal */ }
+        // Fire agent run non-blocking
+        fetch(`${API_URL}/api/collections/risk/agent/run`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${data.token}` },
+          body: JSON.stringify({ triggered_by: 'demo_login' })
+        }).catch(() => {});
         setSeedingDemo(false);
       }
       onLogin(data.user, data.token);
@@ -2089,6 +2095,31 @@ function CollectionsWorkspaceTab({ token }) {
   const [view, setView] = useState('queue'); // queue | all
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [mobileView, setMobileView] = useState('queue'); // queue | detail
+  const [agentBriefing, setAgentBriefing] = useState(null);
+  const [agentLoading, setAgentLoading] = useState(false);
+  const [agentExpanded, setAgentExpanded] = useState(true);
+
+  React.useEffect(() => {
+    fetch(`${API_URL}/api/collections/risk/agent/last-run`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(r => r.json()).then(d => {
+      if (d && d.top_cases) setAgentBriefing(d);
+    }).catch(() => {});
+  }, [token]);
+
+  const runAgent = async () => {
+    setAgentLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/collections/risk/agent/run`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ triggered_by: 'manual' })
+      });
+      const data = await res.json();
+      setAgentBriefing({ top_cases: data.top_cases, agent_summary: data.agent_summary, run_at: new Date().toISOString() });
+    } catch (e) { console.error('agent run error:', e); }
+    setAgentLoading(false);
+  };
 
   React.useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth < 768);
@@ -2468,7 +2499,62 @@ function CollectionsWorkspaceTab({ token }) {
 
   // ── Desktop Layout ────────────────────────────────────────────────────────────
   return (
-    <div style={{ display: 'flex', height: '100vh', backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif', overflow: 'hidden' }}>
+
+      {/* AGENT BRIEFING BANNER */}
+      <div style={{ borderBottom: '2px solid #1B3A6B', backgroundColor: '#0d1f3c', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '18px' }}>🤖</span>
+            <span style={{ color: '#14B8A6', fontWeight: '800', fontSize: '13px', letterSpacing: '0.05em' }}>RISK AGENT</span>
+            {agentBriefing && (
+              <span style={{ color: '#94a3b8', fontSize: '11px' }}>
+                {agentBriefing.agent_summary}&nbsp;&nbsp;·&nbsp;&nbsp;{agentBriefing.run_at ? new Date(agentBriefing.run_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : ''}
+              </span>
+            )}
+            {!agentBriefing && !agentLoading && (
+              <span style={{ color: '#475569', fontSize: '11px' }}>No briefing — click Run Agent to score cases.</span>
+            )}
+            {agentLoading && <span style={{ color: '#14B8A6', fontSize: '11px' }}>⏳ Agent running...</span>}
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button onClick={runAgent} disabled={agentLoading}
+              style={{ padding: '5px 14px', borderRadius: '6px', border: '1px solid #14B8A6', backgroundColor: 'transparent', color: '#14B8A6', fontSize: '11px', fontWeight: '700', cursor: agentLoading ? 'not-allowed' : 'pointer' }}>
+              {agentLoading ? 'Running...' : '▶ Run Agent'}
+            </button>
+            {agentBriefing && (
+              <button onClick={() => setAgentExpanded(p => !p)}
+                style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #243f73', backgroundColor: 'transparent', color: '#94a3b8', fontSize: '11px', cursor: 'pointer' }}>
+                {agentExpanded ? '▲ Hide' : '▼ Show'}
+              </button>
+            )}
+          </div>
+        </div>
+        {agentExpanded && agentBriefing && agentBriefing.top_cases && agentBriefing.top_cases.length > 0 && (
+          <div style={{ display: 'flex', gap: '8px', padding: '0 18px 12px', overflowX: 'auto' }}>
+            {agentBriefing.top_cases.map((c, i) => {
+              const riskColors = { CRITICAL: { bg: '#fef2f2', border: '#fecaca', badge: '#dc2626', text: '#7f1d1d' }, HIGH: { bg: '#fff7ed', border: '#fed7aa', badge: '#ea580c', text: '#7c2d12' }, MEDIUM: { bg: '#fefce8', border: '#fef08a', badge: '#ca8a04', text: '#713f12' } };
+              const rc = riskColors[c.risk_level] || riskColors['MEDIUM'];
+              return (
+                <div key={i} style={{ minWidth: '220px', maxWidth: '220px', backgroundColor: rc.bg, border: '1px solid ' + rc.border, borderRadius: '8px', padding: '10px 12px', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: rc.badge, color: '#fff', padding: '2px 7px', borderRadius: '4px' }}>{c.risk_level}</span>
+                    <span style={{ fontSize: '10px', color: '#64748b' }}>#{c.rank}</span>
+                  </div>
+                  <div style={{ fontSize: '12px', fontWeight: '700', color: '#111827', marginBottom: '2px' }}>{c.resident_name}</div>
+                  <div style={{ fontSize: '10px', color: '#475569', marginBottom: '6px' }}>{c.unit_number} &middot; {c.property_name}</div>
+                  <div style={{ fontSize: '10px', color: rc.text, marginBottom: '6px', lineHeight: '1.4' }}>{c.situation}</div>
+                  <div style={{ fontSize: '10px', fontWeight: '600', color: '#1B3A6B', backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: '4px', padding: '4px 6px', lineHeight: '1.4' }}>&rarr; {c.next_action}</div>
+                  <div style={{ marginTop: '6px', fontSize: '9px', color: '#94a3b8' }}>Risk Score: {c.risk_score}/100</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* MAIN CONTENT */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
       {/* LEFT — Task Queue + Case List */}
       <div style={{ width: '380px', minWidth: '380px', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -2723,6 +2809,7 @@ function CollectionsWorkspaceTab({ token }) {
 
           </div>
         ) : null}
+      </div>
       </div>
     </div>
   );
