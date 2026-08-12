@@ -2103,7 +2103,10 @@ function CollectionsWorkspaceTab({ token }) {
     fetch(`${API_URL}/api/collections/risk/agent/last-run`, {
       headers: { Authorization: `Bearer ${token}` }
     }).then(r => r.json()).then(d => {
-      if (d && d.top_cases) setAgentBriefing(d);
+      if (d && d.top_cases) {
+        const cases = typeof d.top_cases === 'string' ? JSON.parse(d.top_cases) : d.top_cases;
+        setAgentBriefing({ ...d, top_cases: cases });
+      }
     }).catch(() => {});
   }, [token]);
 
