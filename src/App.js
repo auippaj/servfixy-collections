@@ -2104,8 +2104,10 @@ function CollectionsWorkspaceTab({ token }) {
       headers: { Authorization: `Bearer ${token}` }
     }).then(r => r.json()).then(d => {
       if (d && d.top_cases) {
-        const cases = typeof d.top_cases === 'string' ? JSON.parse(d.top_cases) : d.top_cases;
-        setAgentBriefing({ ...d, top_cases: cases });
+        let cases = d.top_cases;
+        if (typeof cases === 'string') { try { cases = JSON.parse(cases); } catch(e) { cases = []; } }
+        if (!Array.isArray(cases)) cases = [];
+        if (cases.length > 0) setAgentBriefing({ ...d, top_cases: cases });
       }
     }).catch(() => {});
   }, [token]);
@@ -2119,7 +2121,10 @@ function CollectionsWorkspaceTab({ token }) {
         body: JSON.stringify({ triggered_by: 'manual' })
       });
       const data = await res.json();
-      setAgentBriefing({ top_cases: data.top_cases, agent_summary: data.agent_summary, run_at: new Date().toISOString() });
+      let cases = data.top_cases;
+      if (typeof cases === 'string') { try { cases = JSON.parse(cases); } catch(e) { cases = []; } }
+      if (!Array.isArray(cases)) cases = [];
+      setAgentBriefing({ top_cases: cases, agent_summary: data.agent_summary, run_at: new Date().toISOString() });
     } catch (e) { console.error('agent run error:', e); }
     setAgentLoading(false);
   };
