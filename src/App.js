@@ -2531,7 +2531,7 @@ function CollectionsWorkspaceTab({ token }) {
           </div>
         </div>
         {agentExpanded && agentBriefing && agentBriefing.top_cases && agentBriefing.top_cases.length > 0 && (
-          <div style={{ display: 'flex', gap: '8px', padding: '0 18px 12px', overflowX: 'auto' }}>
+          <div style={{ display: 'flex', gap: '8px', padding: '0 18px 12px', overflowX: 'auto', overflowY: 'hidden', maxHeight: '180px' }}>
             {agentBriefing.top_cases.map((c, i) => {
               const riskColors = { CRITICAL: { bg: '#fef2f2', border: '#fecaca', badge: '#dc2626', text: '#7f1d1d' }, HIGH: { bg: '#fff7ed', border: '#fed7aa', badge: '#ea580c', text: '#7c2d12' }, MEDIUM: { bg: '#fefce8', border: '#fef08a', badge: '#ca8a04', text: '#713f12' } };
               const rc = riskColors[c.risk_level] || riskColors['MEDIUM'];
