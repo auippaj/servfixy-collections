@@ -2138,7 +2138,7 @@ function CollectionsWorkspaceTab({ token }) {
       let cases = data.top_cases;
       if (typeof cases === 'string') { try { cases = JSON.parse(cases); } catch(e) { cases = []; } }
       if (!Array.isArray(cases)) cases = [];
-      setAgentBriefing({ top_cases: cases, agent_summary: data.agent_summary, run_at: new Date().toISOString() });
+      if (cases.length > 0) { setAgentBriefing({ top_cases: cases, agent_summary: data.agent_summary, run_at: new Date().toISOString() }); setAgentExpanded(true); }
     } catch (e) { console.error('agent run error:', e); }
     setAgentLoading(false);
   };
