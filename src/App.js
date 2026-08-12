@@ -2524,7 +2524,7 @@ function CollectionsWorkspaceTab({ token }) {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif', overflow: 'hidden' }}>
 
       {/* AGENT BRIEFING BANNER */}
-      <div style={{ borderBottom: '2px solid #1B3A6B', backgroundColor: '#0d1f3c', flexShrink: 0, overflow: 'hidden', maxHeight: agentExpanded && agentBriefing ? '240px' : '46px', transition: 'max-height 0.2s ease' }}>
+      <div style={{ borderBottom: '2px solid #1B3A6B', backgroundColor: '#0d1f3c', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '18px' }}>🤖</span>
@@ -2552,8 +2552,8 @@ function CollectionsWorkspaceTab({ token }) {
             )}
           </div>
         </div>
-        {agentExpanded && agentBriefing && agentBriefing.top_cases && agentBriefing.top_cases.length > 0 && (
-          <div style={{ display: 'flex', gap: '8px', padding: '0 18px 12px', overflowX: 'auto', overflowY: 'hidden' }}>
+        {agentBriefing && Array.isArray(agentBriefing.top_cases) && agentBriefing.top_cases.length > 0 && (
+          <div style={{ display: agentExpanded ? 'flex' : 'none', gap: '8px', padding: '0 18px 12px', overflowX: 'auto', overflowY: 'hidden' }}>
             {agentBriefing.top_cases.map((c, i) => {
               const riskColors = { CRITICAL: { bg: '#fef2f2', border: '#fecaca', badge: '#dc2626', text: '#7f1d1d' }, HIGH: { bg: '#fff7ed', border: '#fed7aa', badge: '#ea580c', text: '#7c2d12' }, MEDIUM: { bg: '#fefce8', border: '#fef08a', badge: '#ca8a04', text: '#713f12' } };
               const rc = riskColors[c.risk_level] || riskColors['MEDIUM'];
