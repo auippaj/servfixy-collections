@@ -5328,7 +5328,93 @@ function CollectionsOnboardingTab({ token }) {
   const [ruleCount, setRuleCount] = useState(0);
   const [supervisorEmail] = useState(localStorage.getItem('collections_supervisor_email') || '');
 
-  // Checklist state — persisted per property in localStorage
+  // ── Pilot Region State ──────────────────────────────────────────────────────
+  const [activeSection, setActiveSection] = useState('checklist'); // checklist | pilot
+  const [regions, setRegions] = useState([]);
+  const [pilotProperties, setPilotProperties] = useState([]);
+  const [regionsLoading, setRegionsLoading] = useState(false);
+  const [showNewRegion, setShowNewRegion] = useState(false);
+  const [showNewProperty, setShowNewProperty] = useState(false);
+  const [regionForm, setRegionForm] = useState({ name: '', state: '' });
+  const [propertyForm, setPropertyForm] = useState({ region_id: '', name: '', address: '', unit_count: '' });
+  const [regionSaving, setRegionSaving] = useState(false);
+  const [propertySaving, setPropertySaving] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [templateForm, setTemplateForm] = useState({ ntv_template_url: '', attorney_package_template_url: '' });
+  const [editingRegion, setEditingRegion] = useState(null);
+  const [templateSaving, setTemplateSaving] = useState(false);
+
+  const PILOT_STATES = ['Ohio', 'Missouri', 'Texas', 'Tennessee', 'Washington State'];
+  const STATE_ABBR = { 'Ohio': 'OH', 'Missouri': 'MO', 'Texas': 'TX', 'Tennessee': 'TN', 'Washington State': 'WA' };
+
+  const fetchRegions = async () => {
+    setRegionsLoading(true);
+    try {
+      const [rRes, pRes] = await Promise.all([
+        fetch(`${API_URL}/api/pilot`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_URL}/api/pilot/properties`, { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+      if (rRes.ok) setRegions(await rRes.json());
+      if (pRes.ok) setPilotProperties(await pRes.json());
+    } catch (e) { console.error(e); }
+    setRegionsLoading(false);
+  };
+
+  const handleCreateRegion = async () => {
+    if (!regionForm.name || !regionForm.state) { setFormError('Name and state are required.'); return; }
+    setRegionSaving(true); setFormError('');
+    try {
+      const res = await fetch(`${API_URL}/api/pilot`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(regionForm),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create region');
+      setRegions(prev => [...prev, data]);
+      setRegionForm({ name: '', state: '' });
+      setShowNewRegion(false);
+    } catch (e) { setFormError(e.message); }
+    setRegionSaving(false);
+  };
+
+  const handleCreateProperty = async () => {
+    if (!propertyForm.region_id || !propertyForm.name) { setFormError('Region and property name are required.'); return; }
+    setPropertySaving(true); setFormError('');
+    try {
+      const res = await fetch(`${API_URL}/api/pilot/properties`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...propertyForm, unit_count: parseInt(propertyForm.unit_count) || null }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create property');
+      setPilotProperties(prev => [...prev, data]);
+      setPropertyForm({ region_id: '', name: '', address: '', unit_count: '' });
+      setShowNewProperty(false);
+    } catch (e) { setFormError(e.message); }
+    setPropertySaving(false);
+  };
+
+  const handleSaveTemplates = async () => {
+    if (!editingRegion) return;
+    setTemplateSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/api/pilot/${editingRegion.id}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(templateForm),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to save');
+      setRegions(prev => prev.map(r => r.id === data.id ? data : r));
+      setEditingRegion(null);
+      setTemplateForm({ ntv_template_url: '', attorney_package_template_url: '' });
+    } catch (e) { alert('Save failed: ' + e.message); }
+    setTemplateSaving(false);
+  };
+
+  // ── Checklist State ─────────────────────────────────────────────────────────
   const getChecklist = (propId) => {
     try { return JSON.parse(localStorage.getItem(`collections_checklist_${propId}`) || '{}'); }
     catch { return {}; }
@@ -5336,70 +5422,19 @@ function CollectionsOnboardingTab({ token }) {
   const saveChecklist = (propId, data) => {
     localStorage.setItem(`collections_checklist_${propId}`, JSON.stringify(data));
   };
-
   const [checklist, setChecklist] = useState({});
 
   const STEPS = [
-    {
-      id: 'module_enabled', label: 'Enable Collections Module',
-      description: 'Toggle Collections ON for this property in the Properties tab.',
-      check: () => propData?.collections_enabled === true,
-      action: null,
-    },
-    {
-      id: 'billing_active', label: 'Activate Billing',
-      description: 'Set up a Stripe subscription ($6/unit/mo Collections or $15/unit/mo Bundle).',
-      check: () => billingStatus?.status === 'active' || billingStatus?.status === 'trialing',
-      action: null,
-    },
-    {
-      id: 'jurisdiction_confirmed', label: 'Confirm State Jurisdiction',
-      description: 'Verify property state is correct — notice periods differ by state (TX/OH: 3 days, TN/WA: 14 days, MO: 3 days).',
-      check: () => checklist.jurisdiction_confirmed,
-      manual: true,
-    },
-    {
-      id: 'coordinators_added', label: 'Add Coordinator Names',
-      description: 'Enter coordinator names in the Coordinator Workspace so cases can be assigned.',
-      check: () => checklist.coordinators_added,
-      manual: true,
-    },
-    {
-      id: 'escalation_rules', label: 'Configure Escalation Rules',
-      description: 'Set up at least one escalation rule in the Escalation Rules tab.',
-      check: () => ruleCount > 0,
-      action: null,
-    },
-    {
-      id: 'supervisor_email', label: 'Set Supervisor Email',
-      description: 'Enter a supervisor email in the Escalation Rules tab so email alerts can be sent.',
-      check: () => !!supervisorEmail,
-      action: null,
-    },
-    {
-      id: 'residents_imported', label: 'Import Delinquent Residents',
-      description: 'Import your delinquency spreadsheet using the Import Cases tab, or add cases manually.',
-      check: () => caseCount > 0,
-      action: null,
-    },
-    {
-      id: 'first_notice', label: 'Generate First Notice (Optional)',
-      description: 'Open a case and generate a Pay or Quit notice for your oldest/highest-balance resident.',
-      check: () => checklist.first_notice,
-      manual: true,
-    },
-    {
-      id: 'coordinator_briefed', label: 'Brief Coordinator on Workflow',
-      description: 'Walk coordinator through Coordinator Workspace: task queue, logging contacts, advancing status.',
-      check: () => checklist.coordinator_briefed,
-      manual: true,
-    },
-    {
-      id: 'go_live', label: 'Go Live',
-      description: 'Collections is active. Review the Court Calendar weekly, run Portfolio Summary monthly, send supervisor alerts when rules fire.',
-      check: () => checklist.go_live,
-      manual: true,
-    },
+    { id: 'module_enabled', label: 'Enable Collections Module', description: 'Toggle Collections ON for this property in the Properties tab.', check: () => propData?.collections_enabled === true, action: null },
+    { id: 'billing_active', label: 'Activate Billing', description: 'Set up a Stripe subscription ($6/unit/mo Collections or $15/unit/mo Bundle).', check: () => billingStatus?.status === 'active' || billingStatus?.status === 'trialing', action: null },
+    { id: 'jurisdiction_confirmed', label: 'Confirm State Jurisdiction', description: 'Verify property state is correct — notice periods differ by state (TX/OH: 3 days, TN/WA: 14 days, MO: 3 days).', check: () => checklist.jurisdiction_confirmed, manual: true },
+    { id: 'coordinators_added', label: 'Add Coordinator Names', description: 'Enter coordinator names in the Coordinator Workspace so cases can be assigned.', check: () => checklist.coordinators_added, manual: true },
+    { id: 'escalation_rules', label: 'Configure Escalation Rules', description: 'Set up at least one escalation rule in the Escalation Rules tab.', check: () => ruleCount > 0, action: null },
+    { id: 'supervisor_email', label: 'Set Supervisor Email', description: 'Enter a supervisor email in the Escalation Rules tab so email alerts can be sent.', check: () => !!supervisorEmail, action: null },
+    { id: 'residents_imported', label: 'Import Delinquent Residents', description: 'Import your delinquency spreadsheet using the Import Cases tab, or add cases manually.', check: () => caseCount > 0, action: null },
+    { id: 'first_notice', label: 'Generate First Notice (Optional)', description: 'Open a case and generate a Pay or Quit notice for your oldest/highest-balance resident.', check: () => checklist.first_notice, manual: true },
+    { id: 'coordinator_briefed', label: 'Brief Coordinator on Workflow', description: 'Walk coordinator through Coordinator Workspace: task queue, logging contacts, advancing status.', check: () => checklist.coordinator_briefed, manual: true },
+    { id: 'go_live', label: 'Go Live', description: 'Collections is active. Review the Court Calendar weekly, run Portfolio Summary monthly, send supervisor alerts when rules fire.', check: () => checklist.go_live, manual: true },
   ];
 
   const loadPropertyData = async (propId) => {
@@ -5412,7 +5447,7 @@ function CollectionsOnboardingTab({ token }) {
         fetch(`${API_URL}/api/collections/cases?property_id=${propId}`, { headers: { Authorization: `Bearer ${token}` } }),
       ]);
       const propsData = await propRes.json();
-      const billing   = await billingRes.json();
+      const billing = await billingRes.json();
       const casesData = await casesRes.json();
       const prop = Array.isArray(propsData) ? propsData.find(p => p.id === propId) : null;
       setPropData(prop);
@@ -5428,6 +5463,7 @@ function CollectionsOnboardingTab({ token }) {
   useEffect(() => {
     fetch(`${API_URL}/api/properties`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(d => setProperties(Array.isArray(d) ? d : [])).catch(() => {});
+    fetchRegions();
   }, [token]);
 
   const handlePropertyChange = (e) => {
@@ -5435,105 +5471,290 @@ function CollectionsOnboardingTab({ token }) {
     loadPropertyData(e.target.value);
   };
 
-  const toggleManual = (stepId) => {
+  const handleToggleStep = (stepId) => {
+    if (!selectedProperty) return;
     const updated = { ...checklist, [stepId]: !checklist[stepId] };
     setChecklist(updated);
     saveChecklist(selectedProperty, updated);
   };
 
-  const completedCount = STEPS.filter(s => s.check()).length;
-  const pct = Math.round((completedCount / STEPS.length) * 100);
-  const allDone = completedCount === STEPS.length;
+  const inputStyle = { padding: '9px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px', width: '100%', boxSizing: 'border-box' };
+  const labelStyle = { fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' };
+  const btnPrimary = { padding: '9px 18px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '7px', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer' };
 
-  const STATE_RULES = { TX: '3 days', OH: '3 days', MO: '3 days', TN: '14 days', WA: '14 days' };
-  const propState = propData?.state;
+  const completedSteps = selectedProperty ? STEPS.filter(s => s.check()).length : 0;
+  const totalRegions = regions.length;
+  const totalPilotProps = pilotProperties.length;
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', color: '#111827' }}>
-
-      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', padding: '20px 24px', marginBottom: '0' }}>
-        <h1 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0f172a' }}>Collections Onboarding</h1>
-        <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Complete each step to activate Collections for a property.</p>
+    <div style={{ padding: '24px', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', minHeight: '100vh', color: '#111827' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0f172a' }}>Onboarding</h1>
+        <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Property checklist and pilot program setup.</p>
       </div>
 
-      {/* Property Selector */}
-      <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
-        <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Select Property to Onboard</label>
-        <select value={selectedProperty} onChange={handlePropertyChange}
-          style={{ padding: '9px 14px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#111827', fontSize: '14px', width: '100%', maxWidth: '400px' }}>
-          <option value=''>Choose property...</option>
-          {properties.map(p => <option key={p.id} value={p.id}>{p.name} ({p.state})</option>)}
-        </select>
+      {/* Section Toggle */}
+      <div style={{ display: 'flex', gap: '0', marginBottom: '24px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', width: 'fit-content' }}>
+        {[{ key: 'checklist', label: '✅ Property Checklist' }, { key: 'pilot', label: '🚀 Pilot Program Setup' }].map(s => (
+          <button key={s.key} onClick={() => setActiveSection(s.key)}
+            style={{ padding: '10px 20px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600', backgroundColor: activeSection === s.key ? '#1B3A6B' : '#ffffff', color: activeSection === s.key ? '#14B8A6' : '#475569', transition: 'all 0.15s' }}>
+            {s.label}
+          </button>
+        ))}
       </div>
 
-      {selectedProperty && !loading && (
-        <>
-          {/* Progress Bar */}
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>
-                {propData?.name} — {allDone ? '🎉 Ready to Go' : `${completedCount} of ${STEPS.length} complete`}
-              </div>
-              <div style={{ fontSize: '14px', fontWeight: '800', color: allDone ? '#15803d' : '#14B8A6' }}>{pct}%</div>
-            </div>
-            <div style={{ height: '10px', backgroundColor: '#ffffff', borderRadius: '5px', overflow: 'hidden' }}>
-              <div style={{ width: `${pct}%`, height: '100%', backgroundColor: allDone ? '#15803d' : '#14B8A6', borderRadius: '5px', transition: 'width 0.4s ease' }} />
-            </div>
-            {propState && (
-              <div style={{ marginTop: '10px', fontSize: '12px', color: '#94a3b8' }}>
-                State: <span style={{ color: '#14B8A6', fontWeight: '600' }}>{propState}</span>
-                {STATE_RULES[propState] && <span style={{ color: '#94a3b8' }}> · Notice period: <span style={{ color: '#facc15', fontWeight: '600' }}>{STATE_RULES[propState]}</span></span>}
-              </div>
-            )}
+      {/* ── CHECKLIST SECTION ─────────────────────────────────────────────── */}
+      {activeSection === 'checklist' && (
+        <div style={{ maxWidth: '720px' }}>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={labelStyle}>Select Property</label>
+            <select value={selectedProperty} onChange={handlePropertyChange} style={{ ...inputStyle, maxWidth: '400px' }}>
+              <option value=''>Choose a property...</option>
+              {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
           </div>
 
-          {/* Checklist */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {STEPS.map((step, i) => {
-              const done = step.check();
-              return (
-                <div key={step.id} style={{ backgroundColor: '#ffffff', borderRadius: '10px', padding: '16px 20px', borderLeft: `4px solid ${done ? '#15803d' : '#cbd5e1'}`, display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: done ? '#1c3a2e' : '#ffffff', border: `2px solid ${done ? '#15803d' : '#cbd5e1'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' }}>
-                    {done ? <span style={{ color: '#15803d', fontSize: '14px', fontWeight: '900' }}>✓</span>
-                           : <span style={{ color: '#475569', fontSize: '12px', fontWeight: '700' }}>{i + 1}</span>}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '14px', fontWeight: '600', color: done ? '#15803d' : '#0f172a', marginBottom: '4px' }}>{step.label}</div>
-                    <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.5' }}>{step.description}</div>
-                    {step.manual && !done && (
-                      <button onClick={() => toggleManual(step.id)}
-                        style={{ marginTop: '10px', fontSize: '11px', padding: '4px 12px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '5px', color: 'white', cursor: 'pointer', fontWeight: '600' }}>
-                        Mark Complete
-                      </button>
-                    )}
-                    {step.manual && done && (
-                      <button onClick={() => toggleManual(step.id)}
-                        style={{ marginTop: '10px', fontSize: '11px', padding: '4px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '5px', color: '#94a3b8', cursor: 'pointer' }}>
-                        Undo
-                      </button>
-                    )}
-                  </div>
-                  <div style={{ fontSize: '20px', flexShrink: 0 }}>{done ? '✅' : '⬜'}</div>
-                </div>
-              );
-            })}
-          </div>
-
-          {allDone && (
-            <div style={{ backgroundColor: '#1c3a2e', border: '1px solid #15803d', borderRadius: '12px', padding: '24px', marginTop: '20px', textAlign: 'center' }}>
-              <div style={{ fontSize: '36px', marginBottom: '12px' }}>🎉</div>
-              <div style={{ fontSize: '18px', fontWeight: '700', color: '#15803d', marginBottom: '8px' }}>Collections Active for {propData?.name}</div>
-              <div style={{ fontSize: '13px', color: '#94a3b8' }}>All onboarding steps complete. Your coordinator is ready to work cases.</div>
+          {selectedProperty && (
+            <div style={{ backgroundColor: '#F0F4F8', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', display: 'flex', gap: '24px', alignItems: 'center' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '800', color: completedSteps === STEPS.length ? '#15803d' : '#1B3A6B' }}>{completedSteps}/{STEPS.length}</div>
+                <div style={{ fontSize: '11px', color: '#475569' }}>Steps Complete</div>
+              </div>
+              <div style={{ flex: 1, height: '10px', backgroundColor: '#e2e8f0', borderRadius: '5px', overflow: 'hidden' }}>
+                <div style={{ width: `${(completedSteps / STEPS.length) * 100}%`, height: '100%', backgroundColor: completedSteps === STEPS.length ? '#15803d' : '#14B8A6', borderRadius: '5px', transition: 'width 0.4s' }} />
+              </div>
             </div>
           )}
-        </>
+
+          {loading && <div style={{ color: '#475569', fontSize: '13px' }}>Loading...</div>}
+
+          {!loading && STEPS.map((step, idx) => {
+            const done = step.check();
+            return (
+              <div key={step.id} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', padding: '14px 16px', backgroundColor: done ? '#f0fdf4' : '#ffffff', borderRadius: '10px', marginBottom: '10px', border: `1px solid ${done ? '#bbf7d0' : '#e2e8f0'}` }}>
+                <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: done ? '#15803d' : '#ffffff', border: `2px solid ${done ? '#15803d' : '#cbd5e1'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '14px', color: done ? '#fff' : '#94a3b8', fontWeight: '700' }}>
+                  {done ? '✓' : idx + 1}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a', marginBottom: '4px' }}>{step.label}</div>
+                  <div style={{ fontSize: '12px', color: '#475569' }}>{step.description}</div>
+                </div>
+                {step.manual && selectedProperty && (
+                  <button onClick={() => handleToggleStep(step.id)}
+                    style={{ padding: '5px 12px', borderRadius: '6px', border: `1px solid ${done ? '#15803d' : '#cbd5e1'}`, backgroundColor: done ? '#f0fdf4' : '#ffffff', color: done ? '#15803d' : '#94a3b8', fontSize: '11px', fontWeight: '600', cursor: 'pointer', flexShrink: 0 }}>
+                    {done ? 'Undo' : 'Mark Done'}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
 
-      {loading && <div style={{ textAlign: 'center', color: '#475569', padding: '48px' }}>Loading property data...</div>}
-      {!selectedProperty && !loading && (
-        <div style={{ textAlign: 'center', color: '#cbd5e1', padding: '48px' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
-          <div style={{ fontSize: '15px', color: '#475569' }}>Select a property to start the onboarding checklist</div>
+      {/* ── PILOT PROGRAM SETUP ───────────────────────────────────────────── */}
+      {activeSection === 'pilot' && (
+        <div>
+          {/* Summary Bar */}
+          <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
+            {[
+              { label: 'Regions', value: totalRegions, color: '#1B3A6B', target: 5 },
+              { label: 'Properties', value: totalPilotProps, color: '#14B8A6', target: 19 },
+              { label: 'NTV Templates', value: regions.filter(r => r.ntv_template_url).length, color: '#15803d', target: totalRegions },
+              { label: 'Attorney Templates', value: regions.filter(r => r.attorney_package_template_url).length, color: '#7c3aed', target: totalRegions },
+            ].map((k, i) => (
+              <div key={i} style={{ backgroundColor: '#F0F4F8', borderRadius: '10px', padding: '14px 18px', border: '1px solid #e2e8f0', minWidth: '130px' }}>
+                <div style={{ fontSize: '24px', fontWeight: '800', color: k.color }}>{k.value}<span style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '400' }}>/{k.target}</span></div>
+                <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px' }}>{k.label}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+
+            {/* LEFT — Regions */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <h2 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>Regions ({regions.length})</h2>
+                <button onClick={() => { setShowNewRegion(true); setFormError(''); }} style={{ ...btnPrimary, padding: '7px 14px', fontSize: '12px' }}>+ Add Region</button>
+              </div>
+
+              {regionsLoading && <div style={{ color: '#475569', fontSize: '13px' }}>Loading...</div>}
+
+              {regions.length === 0 && !regionsLoading && (
+                <div style={{ backgroundColor: '#F0F4F8', borderRadius: '10px', padding: '24px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>🗺️</div>
+                  <div style={{ fontSize: '13px', color: '#475569' }}>No regions yet. Add your 5 pilot states.</div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px' }}>Ohio · Missouri · Texas · Tennessee · Washington State</div>
+                </div>
+              )}
+
+              {regions.map(region => {
+                const props = pilotProperties.filter(p => p.region_id === region.id);
+                const hasNTV = !!region.ntv_template_url;
+                const hasAtty = !!region.attorney_package_template_url;
+                return (
+                  <div key={region.id} style={{ backgroundColor: '#ffffff', borderRadius: '10px', padding: '16px', marginBottom: '10px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{region.name}</div>
+                        <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>{region.state} · {props.length} propert{props.length !== 1 ? 'ies' : 'y'}</div>
+                      </div>
+                      <button onClick={() => { setEditingRegion(region); setTemplateForm({ ntv_template_url: region.ntv_template_url || '', attorney_package_template_url: region.attorney_package_template_url || '' }); }}
+                        style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: '#F0F4F8', border: '1px solid #cbd5e1', borderRadius: '5px', color: '#475569', cursor: 'pointer' }}>
+                        Templates
+                      </button>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', backgroundColor: hasNTV ? '#dcfce7' : '#fef2f2', color: hasNTV ? '#15803d' : '#dc2626', fontWeight: '700' }}>
+                        {hasNTV ? '✓ NTV Template' : '✗ NTV Missing'}
+                      </span>
+                      <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', backgroundColor: hasAtty ? '#dcfce7' : '#fef2f2', color: hasAtty ? '#15803d' : '#dc2626', fontWeight: '700' }}>
+                        {hasAtty ? '✓ Attorney Template' : '✗ Atty Template Missing'}
+                      </span>
+                    </div>
+                    {props.length > 0 && (
+                      <div style={{ marginTop: '10px', borderTop: '1px solid #f1f5f9', paddingTop: '8px' }}>
+                        {props.map(p => (
+                          <div key={p.id} style={{ fontSize: '12px', color: '#475569', padding: '3px 0', display: 'flex', justifyContent: 'space-between' }}>
+                            <span>🏢 {p.name}</span>
+                            {p.unit_count && <span style={{ color: '#94a3b8' }}>{p.unit_count} units</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* RIGHT — Properties */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <h2 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>Properties ({pilotProperties.length}/19)</h2>
+                <button onClick={() => { setShowNewProperty(true); setFormError(''); }} disabled={regions.length === 0}
+                  style={{ ...btnPrimary, padding: '7px 14px', fontSize: '12px', opacity: regions.length === 0 ? 0.5 : 1 }}>+ Add Property</button>
+              </div>
+
+              {/* Progress bar */}
+              <div style={{ marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>Pilot target: 19 properties</span>
+                  <span style={{ fontSize: '11px', fontWeight: '700', color: pilotProperties.length >= 19 ? '#15803d' : '#1B3A6B' }}>{pilotProperties.length}/19</span>
+                </div>
+                <div style={{ height: '8px', backgroundColor: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div style={{ width: `${Math.min(100, (pilotProperties.length / 19) * 100)}%`, height: '100%', backgroundColor: pilotProperties.length >= 19 ? '#15803d' : '#14B8A6', borderRadius: '4px', transition: 'width 0.4s' }} />
+                </div>
+              </div>
+
+              {pilotProperties.length === 0 && (
+                <div style={{ backgroundColor: '#F0F4F8', borderRadius: '10px', padding: '24px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>🏢</div>
+                  <div style={{ fontSize: '13px', color: '#475569' }}>No properties added yet. Add regions first, then add properties to each region.</div>
+                </div>
+              )}
+
+              {pilotProperties.map(p => (
+                <div key={p.id} style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '12px 14px', marginBottom: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>{p.name}</div>
+                    <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>{p.region_state} · {p.region_name}</div>
+                    {p.address && <div style={{ fontSize: '11px', color: '#cbd5e1', marginTop: '1px' }}>{p.address}</div>}
+                  </div>
+                  {p.unit_count && <div style={{ fontSize: '12px', fontWeight: '700', color: '#1B3A6B' }}>{p.unit_count} units</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Universal Balance Due Note */}
+          <div style={{ marginTop: '24px', backgroundColor: '#F0F4F8', borderRadius: '10px', padding: '16px 20px', border: '1px solid #e2e8f0' }}>
+            <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', marginBottom: '4px' }}>📄 Balance Due Letter</div>
+            <div style={{ fontSize: '12px', color: '#475569' }}>Universal template — applies to all regions. No upload needed; letter is generated from the resident's case data automatically.</div>
+          </div>
+        </div>
+      )}
+
+      {/* ── NEW REGION MODAL ────────────────────────────────────────────────── */}
+      {showNewRegion && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#ffffff', borderRadius: '14px', padding: '28px', width: '100%', maxWidth: '440px' }}>
+            <h2 style={{ margin: '0 0 20px', fontSize: '17px', fontWeight: '700', color: '#0f172a' }}>Add Pilot Region</h2>
+            {formError && <div style={{ color: '#dc2626', fontSize: '13px', marginBottom: '12px', padding: '8px 12px', backgroundColor: '#fef2f2', borderRadius: '6px' }}>{formError}</div>}
+            <div style={{ marginBottom: '14px' }}>
+              <label style={labelStyle}>Region Name *</label>
+              <input value={regionForm.name} onChange={e => setRegionForm(p => ({...p, name: e.target.value}))} style={inputStyle} placeholder='e.g. Ohio Region' />
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={labelStyle}>State *</label>
+              <select value={regionForm.state} onChange={e => setRegionForm(p => ({...p, state: e.target.value}))} style={inputStyle}>
+                <option value=''>Select state...</option>
+                {PILOT_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={handleCreateRegion} disabled={regionSaving} style={btnPrimary}>{regionSaving ? 'Saving...' : 'Add Region'}</button>
+              <button onClick={() => { setShowNewRegion(false); setFormError(''); }} style={{ padding: '9px 18px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#94a3b8', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── NEW PROPERTY MODAL ──────────────────────────────────────────────── */}
+      {showNewProperty && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#ffffff', borderRadius: '14px', padding: '28px', width: '100%', maxWidth: '480px' }}>
+            <h2 style={{ margin: '0 0 20px', fontSize: '17px', fontWeight: '700', color: '#0f172a' }}>Add Pilot Property</h2>
+            {formError && <div style={{ color: '#dc2626', fontSize: '13px', marginBottom: '12px', padding: '8px 12px', backgroundColor: '#fef2f2', borderRadius: '6px' }}>{formError}</div>}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+              <div style={{ gridColumn: '1/-1' }}>
+                <label style={labelStyle}>Region *</label>
+                <select value={propertyForm.region_id} onChange={e => setPropertyForm(p => ({...p, region_id: e.target.value}))} style={inputStyle}>
+                  <option value=''>Select region...</option>
+                  {regions.map(r => <option key={r.id} value={r.id}>{r.name} ({r.state})</option>)}
+                </select>
+              </div>
+              <div style={{ gridColumn: '1/-1' }}>
+                <label style={labelStyle}>Property Name *</label>
+                <input value={propertyForm.name} onChange={e => setPropertyForm(p => ({...p, name: e.target.value}))} style={inputStyle} placeholder='e.g. Riverside Apartments' />
+              </div>
+              <div style={{ gridColumn: '1/-1' }}>
+                <label style={labelStyle}>Address</label>
+                <input value={propertyForm.address} onChange={e => setPropertyForm(p => ({...p, address: e.target.value}))} style={inputStyle} placeholder='Street address (optional)' />
+              </div>
+              <div>
+                <label style={labelStyle}>Unit Count</label>
+                <input type='number' value={propertyForm.unit_count} onChange={e => setPropertyForm(p => ({...p, unit_count: e.target.value}))} style={inputStyle} placeholder='0' />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={handleCreateProperty} disabled={propertySaving} style={btnPrimary}>{propertySaving ? 'Saving...' : 'Add Property'}</button>
+              <button onClick={() => { setShowNewProperty(false); setFormError(''); }} style={{ padding: '9px 18px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#94a3b8', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TEMPLATE MODAL ──────────────────────────────────────────────────── */}
+      {editingRegion && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#ffffff', borderRadius: '14px', padding: '28px', width: '100%', maxWidth: '520px' }}>
+            <h2 style={{ margin: '0 0 6px', fontSize: '17px', fontWeight: '700', color: '#0f172a' }}>Templates — {editingRegion.name}</h2>
+            <p style={{ margin: '0 0 20px', fontSize: '12px', color: '#94a3b8' }}>Paste the URL to your uploaded PDF template. Upload to Google Drive, Dropbox, or any public URL and paste the direct link here.</p>
+            <div style={{ marginBottom: '14px' }}>
+              <label style={labelStyle}>Notice to Vacate (NTV) Template URL</label>
+              <input value={templateForm.ntv_template_url} onChange={e => setTemplateForm(p => ({...p, ntv_template_url: e.target.value}))} style={inputStyle} placeholder='https://...' />
+              <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>State-specific NTV template. Resident name, unit, balance, and dates will merge at generation time.</div>
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={labelStyle}>Attorney Package Template URL</label>
+              <input value={templateForm.attorney_package_template_url} onChange={e => setTemplateForm(p => ({...p, attorney_package_template_url: e.target.value}))} style={inputStyle} placeholder='https://...' />
+              <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>Attorney-specific package template for this region. Upload when you have it.</div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={handleSaveTemplates} disabled={templateSaving} style={btnPrimary}>{templateSaving ? 'Saving...' : 'Save Templates'}</button>
+              <button onClick={() => { setEditingRegion(null); setTemplateForm({ ntv_template_url: '', attorney_package_template_url: '' }); }} style={{ padding: '9px 18px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#94a3b8', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -5542,7 +5763,6 @@ function CollectionsOnboardingTab({ token }) {
 // ── End Collections Onboarding Checklist ──────────────────────────────────────
 
 
-// ── Collections Risk Tab ───────────────────────────────────────────────────────
 function CollectionsRiskTab({ token }) {
   const [subView, setSubView] = useState('dashboard');
   const [dashboard, setDashboard] = useState(null);
