@@ -3147,7 +3147,7 @@ function CollectionsWorkspaceTab({ token }) {
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             {stats && <div style={{ fontSize: '12px', color: '#dc2626', fontWeight: '700' }}>{stats.total_active} active</div>}
-            <button onClick={() => { setCoordinator(''); setCoordinatorInput(''); setMyCases([]); setStats(null); setSelectedCase(null); }}
+            <button onClick={() => { setCoordinator(''); setCoordinatorInput(''); }}
               style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '5px', color: '#94a3b8', cursor: 'pointer' }}>Switch</button>
           </div>
         </div>
