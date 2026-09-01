@@ -1246,9 +1246,6 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
           </div>
         </div>
       )}
-    </div>
-    </div>
-    </div>
   );
 }
 // ── End Collections Analytics Tab ──────────────────────────────────────────────
