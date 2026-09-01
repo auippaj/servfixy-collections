@@ -1029,6 +1029,12 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   const recoveryRate = totalClosed > 0 ? Math.round((Number(s.closed_paid_count) || 0) / totalClosed * 100) : 0;
 
   const avgBalance = s.active_cases > 0 ? Math.round(Number(s.total_balance) / Number(s.active_cases)) : 0;
+  const gprKey = selectedProperty || 'all';
+  const currentGpr = Number(gpr[gprKey] || 0);
+  const delinquencyPct = currentGpr > 0 ? ((Number(s.total_balance) / currentGpr) * 100).toFixed(1) : null;
+  const evictionCount = Number(s.eviction_count || 0);
+  const totalCasesNum = Number(s.total_cases || 0);
+  const evictionPct = totalCasesNum > 0 ? ((evictionCount / totalCasesNum) * 100).toFixed(1) : '0.0';
 
   const gprKey = selectedProperty || 'all';
   const currentGpr = Number(gpr[gprKey] || 0);
@@ -1041,6 +1047,8 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
     { label: 'Total Delinquent Balance', value: fmtCurrency(s.total_balance), color: '#dc2626', sub: `${s.total_cases || 0} total cases`, icon: '\uD83D\uDCB8', onClick: () => navigate('Collections Cases', { status: '', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'Amount Recovered', value: fmtCurrency(s.amount_recovered), color: '#15803d', sub: `${s.closed_paid_count || 0} cases closed paid`, icon: '\u2705', onClick: () => navigate('Collections Cases', { status: 'closed_paid', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'Recovery Rate', value: `${recoveryRate}%`, color: '#14B8A6', sub: recoveryRate >= 50 ? '\u2191 On track' : '\u2193 Below target', icon: '\uD83D\uDCCA', onClick: () => navigate('Collections Cases', { status: 'closed_paid', property_id: selectedProperty, aging_bucket: '' }) },
+    { label: 'Delinquency %', value: delinquencyPct !== null ? `${delinquencyPct}%` : 'Set GPR', color: delinquencyPct !== null ? (Number(delinquencyPct) > 10 ? '#dc2626' : Number(delinquencyPct) > 5 ? '#ea580c' : '#15803d') : '#94a3b8', sub: delinquencyPct !== null ? `of $${currentGpr.toLocaleString()} GPR` : 'Click to enter monthly GPR', icon: '\uD83D\uDCC9', onClick: () => setEditingGpr(true) },
+    { label: 'Eviction %', value: `${evictionPct}%`, color: Number(evictionPct) > 5 ? '#dc2626' : Number(evictionPct) > 2 ? '#ea580c' : '#15803d', sub: `${evictionCount} of ${totalCasesNum} cases in eviction`, icon: '\u2696\uFE0F', onClick: () => navigate('Collections Cases', { status: 'filed_with_attorney', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'Active Cases', value: s.active_cases || 0, color: '#1B3A6B', sub: 'Not yet resolved', icon: '\uD83D\uDCC2', onClick: () => navigate('Collections Cases', { status: 'active', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'In Legal Pipeline', value: s.legal_cases || 0, color: '#ea580c', sub: `${legalPct}% of total cases`, icon: '\u2696\uFE0F', onClick: () => navigate('Collections Cases', { status: 'filed_with_attorney', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'Possession Granted', value: s.possession_count || 0, color: '#dc2626', sub: 'Eviction complete', icon: '\uD83D\uDD11', onClick: () => navigate('Collections Cases', { status: 'possession_granted', property_id: selectedProperty, aging_bucket: '' }) },
@@ -1247,6 +1255,33 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
         </div>
       )}
       </div>
+
+      {editingGpr && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#fff', borderRadius: '14px', padding: '28px', width: '100%', maxWidth: '420px' }}>
+            <h2 style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>Monthly Gross Potential Rent</h2>
+            <p style={{ margin: '0 0 20px', fontSize: '13px', color: '#94a3b8' }}>
+              {selectedProperty ? `For ${properties.find(p => p.id === selectedProperty)?.name || 'selected property'}` : 'Portfolio-wide GPR'}
+            </p>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>GPR Amount ($)</label>
+              <input type='number' value={gprInput} onChange={e => setGprInput(e.target.value)}
+                placeholder={currentGpr > 0 ? currentGpr.toString() : 'e.g. 125000'}
+                style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '7px', fontSize: '14px', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => { const key = selectedProperty || 'all'; setGpr(prev => ({ ...prev, [key]: Number(gprInput) })); setEditingGpr(false); setGprInput(''); }}
+                style={{ flex: 1, padding: '10px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
+                Save GPR
+              </button>
+              <button onClick={() => { setEditingGpr(false); setGprInput(''); }}
+                style={{ padding: '10px 18px', border: '1px solid #cbd5e1', borderRadius: '7px', backgroundColor: '#fff', color: '#94a3b8', fontSize: '13px', cursor: 'pointer' }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
