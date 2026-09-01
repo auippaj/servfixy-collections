@@ -653,11 +653,6 @@ function YardiImportTab({ token }) {
     const reader = new FileReader();
     reader.onload = async (ev) => {
       try {
-        // Parse xlsx using SheetJS loaded via script
-        const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs').catch(() => null);
-        // Fallback: use openpyxl-style manual parse via ArrayBuffer
-        const ab = ev.target.result;
-        // We'll send to a parsing endpoint instead
         const formData = new FormData();
         formData.append('file', file);
         const res = await fetch(`${API_URL}/api/admin/yardi/parse`, {
