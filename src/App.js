@@ -925,6 +925,11 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [ptpStats, setPtpStats] = useState({ pending: 0, kept: 0, broken: 0, totalAmt: 0 });
+  const [gpr, setGpr] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('servfixy_gpr') || '{}'); } catch { return {}; }
+  });
+  const [editingGpr, setEditingGpr] = useState(false);
+  const [gprInput, setGprInput] = useState('');
   const [writStats, setWritStats] = useState({ total: 0, upcoming: 0 });
 
   const fetchData = async (propId) => {
@@ -1026,6 +1031,13 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   const recoveryRate = totalClosed > 0 ? Math.round((Number(s.closed_paid_count) || 0) / totalClosed * 100) : 0;
 
   const avgBalance = s.active_cases > 0 ? Math.round(Number(s.total_balance) / Number(s.active_cases)) : 0;
+
+  const gprKey = selectedProperty || 'all';
+  const currentGpr = Number(gpr[gprKey] || 0);
+  const delinquencyPct = currentGpr > 0 ? ((Number(s.total_balance) / currentGpr) * 100).toFixed(1) : null;
+  const evictionCount = Number(s.eviction_count || 0);
+  const totalCasesNum = Number(s.total_cases || 0);
+  const evictionPct = totalCasesNum > 0 ? ((evictionCount / totalCasesNum) * 100).toFixed(1) : '0.0';
   const legalPct = s.total_cases > 0 ? Math.round((Number(s.legal_cases) / Number(s.total_cases)) * 100) : 0;
   const kpis = [
     { label: 'Total Delinquent Balance', value: fmtCurrency(s.total_balance), color: '#dc2626', sub: `${s.total_cases || 0} total cases`, icon: '\uD83D\uDCB8', onClick: () => navigate('Collections Cases', { status: '', property_id: selectedProperty, aging_bucket: '' }) },
@@ -1207,6 +1219,40 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
 
     </div>
       </div>
+
+      {/* GPR Input Modal */}
+      {editingGpr && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#fff', borderRadius: '14px', padding: '28px', width: '100%', maxWidth: '420px' }}>
+            <h2 style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>Monthly Gross Potential Rent</h2>
+            <p style={{ margin: '0 0 20px', fontSize: '13px', color: '#94a3b8' }}>
+              {selectedProperty ? `For ${properties.find(p => p.id === selectedProperty)?.name || 'selected property'}` : 'Portfolio-wide (used when All Properties is selected)'}
+            </p>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>GPR Amount ($)</label>
+              <input type='number' value={gprInput} onChange={e => setGprInput(e.target.value)}
+                placeholder={currentGpr > 0 ? currentGpr.toString() : 'e.g. 125000'}
+                style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '7px', fontSize: '14px', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => {
+                const key = selectedProperty || 'all';
+                const updated = { ...gpr, [key]: Number(gprInput) };
+                setGpr(updated);
+                try { localStorage.setItem('servfixy_gpr', JSON.stringify(updated)); } catch {}
+                setEditingGpr(false); setGprInput('');
+              }} style={{ flex: 1, padding: '10px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
+                Save GPR
+              </button>
+              <button onClick={() => { setEditingGpr(false); setGprInput(''); }}
+                style={{ padding: '10px 18px', border: '1px solid #cbd5e1', borderRadius: '7px', backgroundColor: '#fff', color: '#94a3b8', fontSize: '13px', cursor: 'pointer' }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 // ── End Collections Analytics Tab ──────────────────────────────────────────────
