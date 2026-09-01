@@ -129,6 +129,7 @@ const NAV_ITEMS = [
     { label: 'Risk Register',        icon: '🛡️', tab: 'Collections Risk' },
   ]},
   { group: 'ADMIN', items: [
+    { label: 'User Management',      icon: '👥', tab: 'User Management' },
     { label: 'Integrations',         icon: '🔗', tab: 'Integrations' },
     { label: 'Compliance',           icon: '✅', tab: 'Compliance' },
   ]},
@@ -192,6 +193,168 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
   }
   return <div style={{ position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}><SidebarInner /></div>;
 }
+
+
+// ── Admin Tab ──────────────────────────────────────────────────────────────────
+function AdminTab({ token }) {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [form, setForm] = useState({ email: '', full_name: '', role: 'coordinator', temp_password: '' });
+  const ROLES = ['admin', 'dispatcher', 'coordinator', 'read_only'];
+  const ROLE_COLORS = { admin: '#dc2626', dispatcher: '#1B3A6B', coordinator: '#14B8A6', read_only: '#94a3b8' };
+  const inputStyle = { width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px', boxSizing: 'border-box', backgroundColor: '#fff' };
+  const labelStyle = { fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' };
+
+  const fetchUsers = async () => {
+    setLoading(true); setError('');
+    try {
+      const res = await fetch(`${API_URL}/api/admin/users`, { headers: { Authorization: `Bearer ${token}` } });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Failed to load users');
+      setUsers(d);
+    } catch (err) { setError(err.message); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchUsers(); }, [token]);
+
+  const handleCreate = async () => {
+    if (!form.email || !form.role || !form.temp_password) { setFormError('Email, role, and temp password are required.'); return; }
+    setSaving(true); setFormError('');
+    try {
+      const res = await fetch(`${API_URL}/api/admin/users`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Failed to create user');
+      setShowForm(false);
+      setForm({ email: '', full_name: '', role: 'coordinator', temp_password: '' });
+      fetchUsers();
+    } catch (err) { setFormError(err.message); }
+    finally { setSaving(false); }
+  };
+
+  const handleToggleActive = async (user) => {
+    try {
+      await fetch(`${API_URL}/api/admin/users/${user.id}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: !user.is_active })
+      });
+      fetchUsers();
+    } catch (err) { console.error(err); }
+  };
+
+  const handleRoleChange = async (user, newRole) => {
+    try {
+      await fetch(`${API_URL}/api/admin/users/${user.id}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole })
+      });
+      fetchUsers();
+    } catch (err) { console.error(err); }
+  };
+
+  return (
+    <div style={{ padding: '24px', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', minHeight: '100vh', color: '#111827' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+        <div>
+          <h1 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0f172a' }}>User Management</h1>
+          <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Create and manage Collections staff accounts.</p>
+        </div>
+        <button onClick={() => { setShowForm(true); setFormError(''); }}
+          style={{ padding: '10px 20px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+          + New User
+        </button>
+      </div>
+      {error && <div style={{ color: '#dc2626', marginBottom: '16px', fontSize: '13px' }}>{error}</div>}
+      {loading ? (
+        <div style={{ color: '#94a3b8', fontSize: '13px' }}>Loading users...</div>
+      ) : (
+        <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#F0F4F8', borderBottom: '2px solid #e2e8f0' }}>
+                {['Name', 'Email', 'Role', 'Status', 'Created', 'Actions'].map(h => (
+                  <th key={h} style={{ padding: '11px 16px', textAlign: 'left', color: '#94a3b8', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {users.length === 0 && (
+                <tr><td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>No users yet.</td></tr>
+              )}
+              {users.map((user, i) => (
+                <tr key={user.id} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: i % 2 === 0 ? '#fff' : '#fafafa', opacity: user.is_active ? 1 : 0.55 }}>
+                  <td style={{ padding: '12px 16px', fontWeight: '600', color: '#0f172a' }}>
+                    {[user.first_name, user.last_name].filter(Boolean).join(' ') || '—'}
+                  </td>
+                  <td style={{ padding: '12px 16px', color: '#475569' }}>{user.email}</td>
+                  <td style={{ padding: '12px 16px' }}>
+                    <select value={user.role} onChange={e => handleRoleChange(user, e.target.value)}
+                      style={{ padding: '5px 10px', border: `1px solid ${ROLE_COLORS[user.role] || '#cbd5e1'}`, borderRadius: '6px', color: ROLE_COLORS[user.role] || '#94a3b8', fontWeight: '700', fontSize: '12px', backgroundColor: '#fff', cursor: 'pointer' }}>
+                      {ROLES.map(r => <option key={r} value={r}>{r.replace('_', ' ')}</option>)}
+                    </select>
+                  </td>
+                  <td style={{ padding: '12px 16px' }}>
+                    <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '4px', fontWeight: '700', backgroundColor: user.is_active ? '#dcfce7' : '#f1f5f9', color: user.is_active ? '#15803d' : '#94a3b8' }}>
+                      {user.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '12px' }}>
+                    {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </td>
+                  <td style={{ padding: '12px 16px' }}>
+                    <button onClick={() => handleToggleActive(user)}
+                      style={{ fontSize: '11px', padding: '5px 12px', border: `1px solid ${user.is_active ? '#fca5a5' : '#86efac'}`, borderRadius: '5px', backgroundColor: '#fff', color: user.is_active ? '#dc2626' : '#15803d', cursor: 'pointer', fontWeight: '600' }}>
+                      {user.is_active ? 'Deactivate' : 'Reactivate'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {showForm && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#fff', borderRadius: '14px', padding: '28px', width: '100%', maxWidth: '480px' }}>
+            <h2 style={{ margin: '0 0 20px', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>New User</h2>
+            {formError && <div style={{ color: '#dc2626', fontSize: '13px', marginBottom: '14px', padding: '10px', backgroundColor: '#fef2f2', borderRadius: '7px' }}>{formError}</div>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div><label style={labelStyle}>Full Name</label><input value={form.full_name} onChange={e => setForm(p => ({...p, full_name: e.target.value}))} style={inputStyle} placeholder='Jane Smith' /></div>
+              <div><label style={labelStyle}>Email *</label><input type='email' value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} style={inputStyle} placeholder='jane@company.com' /></div>
+              <div><label style={labelStyle}>Role *</label>
+                <select value={form.role} onChange={e => setForm(p => ({...p, role: e.target.value}))} style={inputStyle}>
+                  {ROLES.map(r => <option key={r} value={r}>{r.replace('_', ' ')}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Temporary Password *</label>
+                <input type='text' value={form.temp_password} onChange={e => setForm(p => ({...p, temp_password: e.target.value}))} style={inputStyle} placeholder='Share with the user to log in' />
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>User should change this after first login.</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+              <button onClick={handleCreate} disabled={saving} style={{ flex: 1, padding: '10px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
+                {saving ? 'Creating...' : 'Create User'}
+              </button>
+              <button onClick={() => { setShowForm(false); setFormError(''); }} style={{ padding: '10px 18px', border: '1px solid #cbd5e1', borderRadius: '7px', backgroundColor: '#fff', color: '#94a3b8', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+// ── End Admin Tab ──────────────────────────────────────────────────────────────
 
 // ── App Shell ──────────────────────────────────────────────────────────────────
 // ── Collections Analytics Tab ──────────────────────────────────────────────────
@@ -7118,6 +7281,7 @@ function App() {
         {activeTab === 'Owner Summary' && <CollectionsOwnerSummaryTab token={token} />}
         {activeTab === 'Onboarding' && <CollectionsOnboardingTab token={token} />}
         {activeTab === 'Collections Risk' && <CollectionsRiskTab token={token} />}
+        {activeTab === 'User Management' && <AdminTab token={token} />}
         {activeTab === 'Integrations' && <IntegrationsTab token={token} />}
         {activeTab === 'Compliance' && <ComplianceTab token={token} />}
       </div>
