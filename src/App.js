@@ -655,7 +655,7 @@ function YardiImportTab({ token }) {
       try {
         const formData = new FormData();
         formData.append('file', file);
-        const res = await fetch(`${API_URL}/api/admin/yardi/parse`, {
+        const res = await fetch(`${API_URL}/api/yardi/parse`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
           body: formData
@@ -677,7 +677,7 @@ function YardiImportTab({ token }) {
     if (!selectedProperty) { setParseError('Select a property first.'); return; }
     setImporting(true);
     try {
-      const res = await fetch(`${API_URL}/api/admin/yardi/import`, {
+      const res = await fetch(`${API_URL}/api/yardi/import`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ property_id: selectedProperty, rows: parsedRows })
