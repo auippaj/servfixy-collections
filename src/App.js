@@ -6221,7 +6221,7 @@ function CollectionsOnboardingTab({ token }) {
           <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
             {[
               { label: 'Regions', value: totalRegions, color: '#1B3A6B', target: 5 },
-              { label: 'Properties', value: totalPilotProps, color: '#14B8A6', target: 19 },
+              { label: 'Properties', value: totalPilotProps, color: '#14B8A6', target: 20 },
               { label: 'NTV Templates', value: regions.filter(r => r.ntv_template_url).length, color: '#15803d', target: totalRegions },
               { label: 'Attorney Templates', value: regions.filter(r => r.attorney_package_template_url).length, color: '#7c3aed', target: totalRegions },
             ].map((k, i) => (
@@ -6301,7 +6301,7 @@ function CollectionsOnboardingTab({ token }) {
               {/* Progress bar */}
               <div style={{ marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>Pilot target: 19 properties</span>
+                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>Pilot target: 20 properties</span>
                   <span style={{ fontSize: '11px', fontWeight: '700', color: pilotProperties.length >= 19 ? '#15803d' : '#1B3A6B' }}>{pilotProperties.length}/19</span>
                 </div>
                 <div style={{ height: '8px', backgroundColor: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
