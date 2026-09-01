@@ -514,11 +514,10 @@ function AdminTab({ token }) {
             <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
               <label style={labelStyle}>Select Property</label>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <select value={selectedProperty} onChange={e => { setSelectedProperty(e.target.value); fetchEligible(e.target.value); }}
-                  style={{ ...inputStyle, maxWidth: '320px' }}>
-                  <option value=''>Choose a property...</option>
-                  {properties.map(p => <option key={p.id} value={p.id}>{p.name} ({p.notice_jurisdiction || p.state})</option>)}
-                </select>
+                <PropertySelector properties={properties} value={selectedProperty}
+                  onChange={v => { setSelectedProperty(v); fetchEligible(v); }}
+                  placeholder='Choose a property...'
+                  style={{ maxWidth: '480px' }} />
                 {selectedProperty && (
                   <button onClick={() => fetchEligible(selectedProperty)} disabled={eligibleLoading}
                     style={{ padding: '9px 16px', backgroundColor: '#F0F4F8', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#475569', fontSize: '13px', cursor: 'pointer' }}>
@@ -848,6 +847,73 @@ function YardiImportTab({ token }) {
   );
 }
 // ── End Yardi Import Tab ───────────────────────────────────────────────────────
+
+
+// ── Property Selector Component ────────────────────────────────────────────────
+function PropertySelector({ properties, value, onChange, placeholder, style }) {
+  const [stateFilter, setStateFilter] = useState('all');
+  const [search, setSearch] = useState('');
+
+  const states = ['all', ...Array.from(new Set(properties.map(p => p.state).filter(Boolean))).sort()];
+
+  const filtered = properties.filter(p => {
+    const matchState = stateFilter === 'all' || p.state === stateFilter;
+    const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase());
+    return matchState && matchSearch;
+  });
+
+  const selectStyle = { padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px', backgroundColor: '#fff', cursor: 'pointer', ...(style || {}) };
+
+  return (
+    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+      {/* State filter */}
+      <select value={stateFilter} onChange={e => setStateFilter(e.target.value)}
+        style={{ ...selectStyle, width: '80px', flexShrink: 0 }}>
+        {states.map(s => <option key={s} value={s}>{s === 'all' ? 'All States' : s}</option>)}
+      </select>
+
+      {/* Search + property select */}
+      <div style={{ position: 'relative', flex: 1, minWidth: '180px' }}>
+        {search && (
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#fff', border: '1px solid #cbd5e1', borderRadius: '7px', zIndex: 100, maxHeight: '220px', overflowY: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+            <div onClick={() => { onChange(''); setSearch(''); }}
+              style={{ padding: '9px 12px', fontSize: '13px', color: '#94a3b8', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}>
+              {placeholder || 'All Properties'}
+            </div>
+            {filtered.map(p => (
+              <div key={p.id} onClick={() => { onChange(p.id); setSearch(''); }}
+                style={{ padding: '9px 12px', fontSize: '13px', color: '#111827', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', backgroundColor: value === p.id ? 'rgba(20,184,166,0.08)' : '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>{p.name}</span>
+                <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600' }}>{p.state}</span>
+              </div>
+            ))}
+            {filtered.length === 0 && <div style={{ padding: '12px', fontSize: '13px', color: '#94a3b8', textAlign: 'center' }}>No properties found</div>}
+          </div>
+        )}
+        <input
+          type='text'
+          placeholder={value ? (properties.find(p => p.id === value)?.name || placeholder || 'All Properties') : (placeholder || 'Search properties...')}
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          onFocus={e => { if (!search) setSearch(''); }}
+          style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }}
+        />
+      </div>
+
+      {/* Direct dropdown fallback when not searching */}
+      {!search && (
+        <select value={value} onChange={e => onChange(e.target.value)}
+          style={{ ...selectStyle, flex: 2, minWidth: '160px' }}>
+          <option value=''>{placeholder || 'All Properties'}</option>
+          {filtered.map(p => (
+            <option key={p.id} value={p.id}>{p.name} ({p.state})</option>
+          ))}
+        </select>
+      )}
+    </div>
+  );
+}
+// ── End Property Selector ──────────────────────────────────────────────────────
 
 // ── App Shell ──────────────────────────────────────────────────────────────────
 // ── Collections Analytics Tab ──────────────────────────────────────────────────
