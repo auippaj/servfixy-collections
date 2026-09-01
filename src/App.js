@@ -5981,8 +5981,10 @@ function CollectionsOnboardingTab({ token }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/properties`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json()).then(d => { setProperties(Array.isArray(d) ? d : []); setLoading(false); })
+    const url = process.env.REACT_APP_API_URL || 'https://servfixy-production.up.railway.app';
+    fetch(`${url}/api/properties`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => { setProperties(Array.isArray(d) ? d : []); setLoading(false); })
       .catch(() => setLoading(false));
   }, [token]);
 
