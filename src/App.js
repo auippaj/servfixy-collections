@@ -1029,12 +1029,6 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   const recoveryRate = totalClosed > 0 ? Math.round((Number(s.closed_paid_count) || 0) / totalClosed * 100) : 0;
 
   const avgBalance = s.active_cases > 0 ? Math.round(Number(s.total_balance) / Number(s.active_cases)) : 0;
-  const gprKey = selectedProperty || 'all';
-  const currentGpr = Number(gpr[gprKey] || 0);
-  const delinquencyPct = currentGpr > 0 ? ((Number(s.total_balance) / currentGpr) * 100).toFixed(1) : null;
-  const evictionCount = Number(s.eviction_count || 0);
-  const totalCasesNum = Number(s.total_cases || 0);
-  const evictionPct = totalCasesNum > 0 ? ((evictionCount / totalCasesNum) * 100).toFixed(1) : '0.0';
 
   const gprKey = selectedProperty || 'all';
   const currentGpr = Number(gpr[gprKey] || 0);
