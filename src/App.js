@@ -925,9 +925,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [ptpStats, setPtpStats] = useState({ pending: 0, kept: 0, broken: 0, totalAmt: 0 });
-  const [gpr, setGpr] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('servfixy_gpr') || '{}'); } catch { return {}; }
-  });
+  const [gpr, setGpr] = useState({});
   const [editingGpr, setEditingGpr] = useState(false);
   const [gprInput, setGprInput] = useState('');
   const [writStats, setWritStats] = useState({ total: 0, upcoming: 0 });
@@ -1236,7 +1234,6 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
                 const key = selectedProperty || 'all';
                 const updated = { ...gpr, [key]: Number(gprInput) };
                 setGpr(updated);
-                try { localStorage.setItem('servfixy_gpr', JSON.stringify(updated)); } catch {}
                 setEditingGpr(false); setGprInput('');
               }} style={{ flex: 1, padding: '10px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
                 Save GPR
