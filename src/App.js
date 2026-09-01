@@ -1686,6 +1686,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                 <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', backgroundColor: 'rgba(20,184,166,0.12)', color: statusColor(c.status), fontWeight: '600' }}>{fmtStatus(c.status)}</span>
                 <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', backgroundColor: '#ffffff', color: AGING_COLORS[c.aging_bucket] || '#94a3b8', fontWeight: '600' }}>{c.aging_bucket} Days</span>
+                {c.notice_to_vacate && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', fontWeight: '700', backgroundColor: '#f1f5f9', color: '#475569' }}>NTV</span>}
                 {c.payment_probability != null && (
                   <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', fontWeight: '800',
                     backgroundColor: c.payment_probability >= 70 ? '#dcfce7' : c.payment_probability >= 40 ? '#fef9c3' : '#fee2e2',
@@ -3327,6 +3328,7 @@ function CollectionsWorkspaceTab({ token }) {
                 <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '4px', backgroundColor: 'rgba(20,184,166,0.12)', color: '#1B3A6B', fontWeight: '600' }}>{fmtStatus(c.status)}</span>
                 {c.times_late > 0 && <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '4px', backgroundColor: '#fef2f2', color: '#dc2626', fontWeight: '600' }}>{c.times_late}x late</span>}
                 {c.attorney_name && <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '4px', backgroundColor: '#fff7ed', color: '#ea580c', fontWeight: '600' }}>Legal</span>}
+                  {c.notice_to_vacate && <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '4px', backgroundColor: '#f1f5f9', color: '#475569', fontWeight: '700' }}>NTV</span>}
               </div>
             </div>
           ))}
