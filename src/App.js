@@ -725,7 +725,7 @@ function YardiImportTab({ token }) {
             <label style={labelStyle}>Property</label>
             <select value={selectedProperty} onChange={e => setSelectedProperty(e.target.value)} style={{ ...inputStyle, marginBottom: '20px' }}>
               <option value=''>Select property this report is for...</option>
-              {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} disabled style={{fontWeight:'700',color:'#94a3b8',backgroundColor:'#F0F4F8'}}>── {s} ──</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
             </select>
             <label style={{ display: 'block', border: '2px dashed #cbd5e1', borderRadius: '12px', padding: '40px', textAlign: 'center', cursor: 'pointer', backgroundColor: '#fafafa' }}>
               <div style={{ fontSize: '36px', marginBottom: '12px' }}>📊</div>
@@ -1071,7 +1071,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
           <select value={selectedProperty} onChange={handlePropertyChange}
             style={{ padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#111827', fontSize: '13px' }}>
             <option value=''>All Properties</option>
-            {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} disabled style={{fontWeight:'700',color:'#94a3b8',backgroundColor:'#F0F4F8'}}>── {s} ──</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
           </select>
           <button onClick={() => fetchData(selectedProperty)}
             style={{ padding: '8px 16px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '8px', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
@@ -1664,7 +1664,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
           </div>
           <select value={filterProperty} onChange={e => setFilterProperty(e.target.value)} style={{ ...inputStyle, marginBottom: '8px' }}>
             <option value=''>All Properties</option>
-            {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} disabled style={{fontWeight:'700',color:'#94a3b8',backgroundColor:'#F0F4F8'}}>── {s} ──</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
           </select>
           <div style={{ display: 'flex', gap: '8px' }}>
             <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ ...inputStyle }}>
@@ -2215,7 +2215,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                 <label style={labelStyle}>Property *</label>
                 <select value={newCase.property_id} onChange={e => setNewCase(p => ({...p, property_id: e.target.value}))} style={inputStyle}>
                   <option value=''>Select property...</option>
-                  {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} disabled style={{fontWeight:'700',color:'#94a3b8',backgroundColor:'#F0F4F8'}}>── {s} ──</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
                 </select>
               </div>
               <div>
@@ -2731,7 +2731,7 @@ function CollectionsReportsTab({ token, onBack }) {
             <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Property</div>
             <select value={filterProperty} onChange={e => setFilterProperty(e.target.value)} style={{ ...inputStyle, minWidth: '160px' }}>
               <option value=''>All Properties</option>
-              {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} disabled style={{fontWeight:'700',color:'#94a3b8',backgroundColor:'#F0F4F8'}}>── {s} ──</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
             </select>
           </div>
         )}
@@ -3930,7 +3930,7 @@ function CollectionsEscalationTab({ token }) {
                 <label style={labelStyle}>Property Scope</label>
                 <select value={form.property_id} onChange={e => setForm(p => ({...p, property_id: e.target.value}))} style={inputStyle}>
                   <option value=''>All Properties (portfolio-wide)</option>
-                  {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} disabled style={{fontWeight:'700',color:'#94a3b8',backgroundColor:'#F0F4F8'}}>── {s} ──</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
                 </select>
               </div>
               <div>
@@ -4124,7 +4124,7 @@ function CollectionsDocumentVault({ token }) {
           <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder='Search resident or unit...' style={{ ...inputStyle, marginBottom: '8px' }} />
           <select value={filterProp} onChange={e => setFilterProp(e.target.value)} style={inputStyle}>
             <option value=''>All Properties</option>
-            {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} disabled style={{fontWeight:'700',color:'#94a3b8',backgroundColor:'#F0F4F8'}}>── {s} ──</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
           </select>
         </div>
 
@@ -4529,7 +4529,7 @@ function CollectionsImportTab({ token }) {
             <h2 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>Select Property</h2>
             <select value={selectedProperty} onChange={e => setSelectedProperty(e.target.value)} style={inputStyle}>
               <option value=''>Choose property to import into...</option>
-              {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} disabled style={{fontWeight:'700',color:'#94a3b8',backgroundColor:'#F0F4F8'}}>── {s} ──</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
             </select>
           </div>
 
@@ -5279,7 +5279,7 @@ function PromisesToPayTab({ token }) {
           <select value={filterProp} onChange={e => setFilterProp(e.target.value)}
             style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '7px', fontSize: '13px', color: '#0f172a', backgroundColor: '#fff' }}>
             <option value="">All Properties</option>
-            {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} disabled style={{fontWeight:'700',color:'#94a3b8',backgroundColor:'#F0F4F8'}}>── {s} ──</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
           </select>
           <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '7px', overflow: 'hidden' }}>
             {['calendar', 'list'].map(v => (
@@ -5519,7 +5519,7 @@ function PromisesToPayTab({ token }) {
                 <label style={labelStyle}>Property</label>
                 <select value={form.property_id} onChange={e => setForm(f => ({ ...f, property_id: e.target.value }))} style={inputStyle}>
                   <option value="">Select property...</option>
-                  {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} disabled style={{fontWeight:'700',color:'#94a3b8',backgroundColor:'#F0F4F8'}}>── {s} ──</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
                 </select>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -5903,7 +5903,7 @@ function CollectionsOwnerSummaryTab({ token }) {
             <select value={selectedProperty} onChange={handlePropertyChange}
               style={{ padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px' }}>
               <option value='all'>All Properties</option>
-              {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} disabled style={{fontWeight:'700',color:'#94a3b8',backgroundColor:'#F0F4F8'}}>── {s} ──</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
             </select>
             <input value={ownerName} onChange={e => setOwnerName(e.target.value)}
               placeholder='Owner name (optional)'
