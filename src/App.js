@@ -197,160 +197,414 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
 
 // ── Admin Tab ──────────────────────────────────────────────────────────────────
 function AdminTab({ token }) {
+  const [activeSection, setActiveSection] = useState('users');
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState('');
-  const [form, setForm] = useState({ email: '', full_name: '', role: 'coordinator', temp_password: '' });
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [userError, setUserError] = useState('');
+  const [showUserForm, setShowUserForm] = useState(false);
+  const [userSaving, setUserSaving] = useState(false);
+  const [userFormError, setUserFormError] = useState('');
+  const [userForm, setUserForm] = useState({ email: '', full_name: '', role: 'coordinator', temp_password: '' });
+
+  // Notice settings state
+  const [properties, setProperties] = useState([]);
+  const [propsLoading, setPropsLoading] = useState(true);
+  const [savingProp, setSavingProp] = useState(null);
+  const [propSettings, setPropSettings] = useState({});
+
+  // Bulk notice state
+  const [selectedProperty, setSelectedProperty] = useState('');
+  const [eligibleData, setEligibleData] = useState(null);
+  const [eligibleLoading, setEligibleLoading] = useState(false);
+  const [selectedCases, setSelectedCases] = useState(new Set());
+  const [generating, setGenerating] = useState(false);
+  const [genResult, setGenResult] = useState(null);
+
   const ROLES = ['admin', 'dispatcher', 'coordinator', 'read_only'];
   const ROLE_COLORS = { admin: '#dc2626', dispatcher: '#1B3A6B', coordinator: '#14B8A6', read_only: '#94a3b8' };
+  const JURISDICTIONS = ['TX', 'OH', 'TN', 'MO', 'WA'];
+
   const inputStyle = { width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px', boxSizing: 'border-box', backgroundColor: '#fff' };
   const labelStyle = { fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' };
+  const fmtCurrency = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+  // ── Users ────────────────────────────────────────────────────────────────────
   const fetchUsers = async () => {
-    setLoading(true); setError('');
+    setUsersLoading(true); setUserError('');
     try {
       const res = await fetch(`${API_URL}/api/admin/users`, { headers: { Authorization: `Bearer ${token}` } });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'Failed to load users');
       setUsers(d);
-    } catch (err) { setError(err.message); }
-    finally { setLoading(false); }
+    } catch (err) { setUserError(err.message); }
+    finally { setUsersLoading(false); }
   };
 
-  useEffect(() => { fetchUsers(); }, [token]);
-
-  const handleCreate = async () => {
-    if (!form.email || !form.role || !form.temp_password) { setFormError('Email, role, and temp password are required.'); return; }
-    setSaving(true); setFormError('');
+  const handleCreateUser = async () => {
+    if (!userForm.email || !userForm.role || !userForm.temp_password) { setUserFormError('Email, role, and temp password are required.'); return; }
+    setUserSaving(true); setUserFormError('');
     try {
       const res = await fetch(`${API_URL}/api/admin/users`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(userForm)
       });
       const d = await res.json();
-      if (!res.ok) throw new Error(d.error || 'Failed to create user');
-      setShowForm(false);
-      setForm({ email: '', full_name: '', role: 'coordinator', temp_password: '' });
+      if (!res.ok) throw new Error(d.error);
+      setShowUserForm(false);
+      setUserForm({ email: '', full_name: '', role: 'coordinator', temp_password: '' });
       fetchUsers();
-    } catch (err) { setFormError(err.message); }
-    finally { setSaving(false); }
+    } catch (err) { setUserFormError(err.message); }
+    finally { setUserSaving(false); }
   };
 
   const handleToggleActive = async (user) => {
-    try {
-      await fetch(`${API_URL}/api/admin/users/${user.id}`, {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_active: !user.is_active })
-      });
-      fetchUsers();
-    } catch (err) { console.error(err); }
+    await fetch(`${API_URL}/api/admin/users/${user.id}`, {
+      method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_active: !user.is_active })
+    });
+    fetchUsers();
   };
 
   const handleRoleChange = async (user, newRole) => {
-    try {
-      await fetch(`${API_URL}/api/admin/users/${user.id}`, {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: newRole })
-      });
-      fetchUsers();
-    } catch (err) { console.error(err); }
+    await fetch(`${API_URL}/api/admin/users/${user.id}`, {
+      method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: newRole })
+    });
+    fetchUsers();
   };
 
+  // ── Property Notice Settings ──────────────────────────────────────────────────
+  const fetchProperties = async () => {
+    setPropsLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/properties/notice-settings`, { headers: { Authorization: `Bearer ${token}` } });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error);
+      setProperties(d);
+      const settings = {};
+      d.forEach(p => { settings[p.id] = { grace_period_day: p.grace_period_day || 3, notice_jurisdiction: p.notice_jurisdiction || 'TX', notice_type: p.notice_type || 'pay_or_quit', notice_recipient_email: p.notice_recipient_email || '' }; });
+      setPropSettings(settings);
+    } catch (err) { console.error(err); }
+    finally { setPropsLoading(false); }
+  };
+
+  const handleSavePropSettings = async (propId) => {
+    setSavingProp(propId);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/properties/${propId}/notice-settings`, {
+        method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(propSettings[propId])
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error);
+    } catch (err) { console.error(err); }
+    finally { setSavingProp(null); }
+  };
+
+  const updatePropSetting = (propId, key, value) => {
+    setPropSettings(prev => ({ ...prev, [propId]: { ...prev[propId], [key]: value } }));
+  };
+
+  // ── Bulk Notice Generation ───────────────────────────────────────────────────
+  const fetchEligible = async (propId) => {
+    if (!propId) return;
+    setEligibleLoading(true); setEligibleData(null); setSelectedCases(new Set()); setGenResult(null);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/notices/eligible/${propId}`, { headers: { Authorization: `Bearer ${token}` } });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error);
+      setEligibleData(d);
+      setSelectedCases(new Set(d.eligible_cases.map(c => c.id)));
+    } catch (err) { console.error(err); }
+    finally { setEligibleLoading(false); }
+  };
+
+  const handleGenerate = async () => {
+    if (selectedCases.size === 0) return;
+    setGenerating(true); setGenResult(null);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/notices/bulk-generate`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ property_id: selectedProperty, case_ids: [...selectedCases], generated_by: 'Admin' })
+      });
+      const d = await res.json();
+      setGenResult(d);
+    } catch (err) { console.error(err); }
+    finally { setGenerating(false); }
+  };
+
+  useEffect(() => { fetchUsers(); fetchProperties(); }, [token]);
+
+  const SECTIONS = [
+    { key: 'users', label: 'Users', icon: '👥' },
+    { key: 'notice-settings', label: 'Notice Settings', icon: '⚙️' },
+    { key: 'bulk-notices', label: 'Generate Notices', icon: '📄' },
+  ];
+
   return (
-    <div style={{ padding: '24px', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', minHeight: '100vh', color: '#111827' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-        <div>
-          <h1 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0f172a' }}>User Management</h1>
-          <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Create and manage Collections staff accounts.</p>
-        </div>
-        <button onClick={() => { setShowForm(true); setFormError(''); }}
-          style={{ padding: '10px 20px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
-          + New User
-        </button>
-      </div>
-      {error && <div style={{ color: '#dc2626', marginBottom: '16px', fontSize: '13px' }}>{error}</div>}
-      {loading ? (
-        <div style={{ color: '#94a3b8', fontSize: '13px' }}>Loading users...</div>
-      ) : (
-        <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#F0F4F8', borderBottom: '2px solid #e2e8f0' }}>
-                {['Name', 'Email', 'Role', 'Status', 'Created', 'Actions'].map(h => (
-                  <th key={h} style={{ padding: '11px 16px', textAlign: 'left', color: '#94a3b8', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {users.length === 0 && (
-                <tr><td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>No users yet.</td></tr>
-              )}
-              {users.map((user, i) => (
-                <tr key={user.id} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: i % 2 === 0 ? '#fff' : '#fafafa', opacity: user.is_active ? 1 : 0.55 }}>
-                  <td style={{ padding: '12px 16px', fontWeight: '600', color: '#0f172a' }}>
-                    {[user.first_name, user.last_name].filter(Boolean).join(' ') || '—'}
-                  </td>
-                  <td style={{ padding: '12px 16px', color: '#475569' }}>{user.email}</td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <select value={user.role} onChange={e => handleRoleChange(user, e.target.value)}
-                      style={{ padding: '5px 10px', border: `1px solid ${ROLE_COLORS[user.role] || '#cbd5e1'}`, borderRadius: '6px', color: ROLE_COLORS[user.role] || '#94a3b8', fontWeight: '700', fontSize: '12px', backgroundColor: '#fff', cursor: 'pointer' }}>
-                      {ROLES.map(r => <option key={r} value={r}>{r.replace('_', ' ')}</option>)}
-                    </select>
-                  </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '4px', fontWeight: '700', backgroundColor: user.is_active ? '#dcfce7' : '#f1f5f9', color: user.is_active ? '#15803d' : '#94a3b8' }}>
-                      {user.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '12px' }}>
-                    {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <button onClick={() => handleToggleActive(user)}
-                      style={{ fontSize: '11px', padding: '5px 12px', border: `1px solid ${user.is_active ? '#fca5a5' : '#86efac'}`, borderRadius: '5px', backgroundColor: '#fff', color: user.is_active ? '#dc2626' : '#15803d', cursor: 'pointer', fontWeight: '600' }}>
-                      {user.is_active ? 'Deactivate' : 'Reactivate'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      {showForm && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: '#fff', borderRadius: '14px', padding: '28px', width: '100%', maxWidth: '480px' }}>
-            <h2 style={{ margin: '0 0 20px', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>New User</h2>
-            {formError && <div style={{ color: '#dc2626', fontSize: '13px', marginBottom: '14px', padding: '10px', backgroundColor: '#fef2f2', borderRadius: '7px' }}>{formError}</div>}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div><label style={labelStyle}>Full Name</label><input value={form.full_name} onChange={e => setForm(p => ({...p, full_name: e.target.value}))} style={inputStyle} placeholder='Jane Smith' /></div>
-              <div><label style={labelStyle}>Email *</label><input type='email' value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} style={inputStyle} placeholder='jane@company.com' /></div>
-              <div><label style={labelStyle}>Role *</label>
-                <select value={form.role} onChange={e => setForm(p => ({...p, role: e.target.value}))} style={inputStyle}>
-                  {ROLES.map(r => <option key={r} value={r}>{r.replace('_', ' ')}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={labelStyle}>Temporary Password *</label>
-                <input type='text' value={form.temp_password} onChange={e => setForm(p => ({...p, temp_password: e.target.value}))} style={inputStyle} placeholder='Share with the user to log in' />
-                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>User should change this after first login.</div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-              <button onClick={handleCreate} disabled={saving} style={{ flex: 1, padding: '10px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
-                {saving ? 'Creating...' : 'Create User'}
-              </button>
-              <button onClick={() => { setShowForm(false); setFormError(''); }} style={{ padding: '10px 18px', border: '1px solid #cbd5e1', borderRadius: '7px', backgroundColor: '#fff', color: '#94a3b8', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
-            </div>
+    <div style={{ display: 'flex', height: '100vh', fontFamily: 'Arial, sans-serif', backgroundColor: '#F0F4F8' }}>
+
+      {/* Sub-nav */}
+      <div style={{ width: '200px', backgroundColor: '#fff', borderRight: '1px solid #e2e8f0', padding: '20px 0', flexShrink: 0 }}>
+        <div style={{ padding: '0 16px 16px', fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Admin</div>
+        {SECTIONS.map(s => (
+          <div key={s.key} onClick={() => setActiveSection(s.key)}
+            style={{ padding: '11px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', fontWeight: activeSection === s.key ? '700' : '400', color: activeSection === s.key ? '#1B3A6B' : '#475569', borderLeft: activeSection === s.key ? '3px solid #14B8A6' : '3px solid transparent', backgroundColor: activeSection === s.key ? 'rgba(20,184,166,0.08)' : 'transparent' }}>
+            <span>{s.icon}</span>{s.label}
           </div>
-        </div>
-      )}
+        ))}
+      </div>
+
+      {/* Content */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '28px' }}>
+
+        {/* ── USERS ── */}
+        {activeSection === 'users' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+              <div>
+                <h1 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>User Management</h1>
+                <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Create and manage Collections staff accounts.</p>
+              </div>
+              <button onClick={() => { setShowUserForm(true); setUserFormError(''); }}
+                style={{ padding: '10px 20px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+                + New User
+              </button>
+            </div>
+            {userError && <div style={{ color: '#dc2626', marginBottom: '16px', fontSize: '13px' }}>{userError}</div>}
+            {usersLoading ? <div style={{ color: '#94a3b8', fontSize: '13px' }}>Loading...</div> : (
+              <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#F0F4F8', borderBottom: '2px solid #e2e8f0' }}>
+                      {['Name', 'Email', 'Role', 'Status', 'Created', 'Actions'].map(h => (
+                        <th key={h} style={{ padding: '11px 16px', textAlign: 'left', color: '#94a3b8', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.length === 0 && <tr><td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>No users yet.</td></tr>}
+                    {users.map((user, i) => (
+                      <tr key={user.id} style={{ borderBottom: '1px solid #f1f5f9', opacity: user.is_active ? 1 : 0.55 }}>
+                        <td style={{ padding: '12px 16px', fontWeight: '600', color: '#0f172a' }}>{[user.first_name, user.last_name].filter(Boolean).join(' ') || '—'}</td>
+                        <td style={{ padding: '12px 16px', color: '#475569' }}>{user.email}</td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <select value={user.role} onChange={e => handleRoleChange(user, e.target.value)}
+                            style={{ padding: '5px 10px', border: `1px solid ${ROLE_COLORS[user.role] || '#cbd5e1'}`, borderRadius: '6px', color: ROLE_COLORS[user.role] || '#94a3b8', fontWeight: '700', fontSize: '12px', backgroundColor: '#fff', cursor: 'pointer' }}>
+                            {ROLES.map(r => <option key={r} value={r}>{r.replace('_', ' ')}</option>)}
+                          </select>
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '4px', fontWeight: '700', backgroundColor: user.is_active ? '#dcfce7' : '#f1f5f9', color: user.is_active ? '#15803d' : '#94a3b8' }}>
+                            {user.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '12px' }}>{new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <button onClick={() => handleToggleActive(user)}
+                            style={{ fontSize: '11px', padding: '5px 12px', border: `1px solid ${user.is_active ? '#fca5a5' : '#86efac'}`, borderRadius: '5px', backgroundColor: '#fff', color: user.is_active ? '#dc2626' : '#15803d', cursor: 'pointer', fontWeight: '600' }}>
+                            {user.is_active ? 'Deactivate' : 'Reactivate'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {showUserForm && (
+              <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                <div style={{ backgroundColor: '#fff', borderRadius: '14px', padding: '28px', width: '100%', maxWidth: '480px' }}>
+                  <h2 style={{ margin: '0 0 20px', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>New User</h2>
+                  {userFormError && <div style={{ color: '#dc2626', fontSize: '13px', marginBottom: '14px', padding: '10px', backgroundColor: '#fef2f2', borderRadius: '7px' }}>{userFormError}</div>}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <div><label style={labelStyle}>Full Name</label><input value={userForm.full_name} onChange={e => setUserForm(p => ({...p, full_name: e.target.value}))} style={inputStyle} placeholder='Jane Smith' /></div>
+                    <div><label style={labelStyle}>Email *</label><input type='email' value={userForm.email} onChange={e => setUserForm(p => ({...p, email: e.target.value}))} style={inputStyle} placeholder='jane@company.com' /></div>
+                    <div><label style={labelStyle}>Role *</label>
+                      <select value={userForm.role} onChange={e => setUserForm(p => ({...p, role: e.target.value}))} style={inputStyle}>
+                        {ROLES.map(r => <option key={r} value={r}>{r.replace('_', ' ')}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Temporary Password *</label>
+                      <input type='text' value={userForm.temp_password} onChange={e => setUserForm(p => ({...p, temp_password: e.target.value}))} style={inputStyle} placeholder='Share with the user to log in' />
+                      <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>User should change this after first login.</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                    <button onClick={handleCreateUser} disabled={userSaving} style={{ flex: 1, padding: '10px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
+                      {userSaving ? 'Creating...' : 'Create User'}
+                    </button>
+                    <button onClick={() => { setShowUserForm(false); setUserFormError(''); }} style={{ padding: '10px 18px', border: '1px solid #cbd5e1', borderRadius: '7px', backgroundColor: '#fff', color: '#94a3b8', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── NOTICE SETTINGS ── */}
+        {activeSection === 'notice-settings' && (
+          <div>
+            <div style={{ marginBottom: '24px' }}>
+              <h1 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>Notice Settings</h1>
+              <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Configure grace period, jurisdiction, and notice recipient per property.</p>
+            </div>
+            {propsLoading ? <div style={{ color: '#94a3b8', fontSize: '13px' }}>Loading properties...</div> : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {properties.map(prop => (
+                  <div key={prop.id} style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>{prop.name}</div>
+                    <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '16px' }}>{prop.state}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '14px', marginBottom: '16px' }}>
+                      <div>
+                        <label style={labelStyle}>Grace Period Ends (day of month)</label>
+                        <input type='number' min='1' max='28'
+                          value={propSettings[prop.id]?.grace_period_day || 3}
+                          onChange={e => updatePropSetting(prop.id, 'grace_period_day', parseInt(e.target.value))}
+                          style={{ ...inputStyle }}
+                        />
+                        <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px' }}>e.g. 3 = notices run on the 4th</div>
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Jurisdiction State</label>
+                        <select value={propSettings[prop.id]?.notice_jurisdiction || 'TX'} onChange={e => updatePropSetting(prop.id, 'notice_jurisdiction', e.target.value)} style={inputStyle}>
+                          {JURISDICTIONS.map(j => <option key={j} value={j}>{j}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Notice Type</label>
+                        <select value={propSettings[prop.id]?.notice_type || 'pay_or_quit'} onChange={e => updatePropSetting(prop.id, 'notice_type', e.target.value)} style={inputStyle}>
+                          <option value='pay_or_quit'>Pay or Quit</option>
+                          <option value='demand_letter'>Demand Letter</option>
+                          <option value='notice_to_vacate'>Notice to Vacate</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Notice Email Recipient</label>
+                        <input type='email' value={propSettings[prop.id]?.notice_recipient_email || ''}
+                          onChange={e => updatePropSetting(prop.id, 'notice_recipient_email', e.target.value)}
+                          style={inputStyle} placeholder='you@servfixy.com' />
+                      </div>
+                    </div>
+                    <button onClick={() => handleSavePropSettings(prop.id)} disabled={savingProp === prop.id}
+                      style={{ padding: '8px 20px', backgroundColor: '#1B3A6B', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                      {savingProp === prop.id ? 'Saving...' : 'Save Settings'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── BULK NOTICES ── */}
+        {activeSection === 'bulk-notices' && (
+          <div>
+            <div style={{ marginBottom: '24px' }}>
+              <h1 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>Generate Notices</h1>
+              <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Select a property, review eligible cases, and generate Pay or Quit notices in bulk.</p>
+            </div>
+
+            {/* Property selector */}
+            <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
+              <label style={labelStyle}>Select Property</label>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <select value={selectedProperty} onChange={e => { setSelectedProperty(e.target.value); fetchEligible(e.target.value); }}
+                  style={{ ...inputStyle, maxWidth: '320px' }}>
+                  <option value=''>Choose a property...</option>
+                  {properties.map(p => <option key={p.id} value={p.id}>{p.name} ({p.notice_jurisdiction || p.state})</option>)}
+                </select>
+                {selectedProperty && (
+                  <button onClick={() => fetchEligible(selectedProperty)} disabled={eligibleLoading}
+                    style={{ padding: '9px 16px', backgroundColor: '#F0F4F8', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#475569', fontSize: '13px', cursor: 'pointer' }}>
+                    {eligibleLoading ? 'Loading...' : '↻ Refresh'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Eligible cases */}
+            {eligibleData && (
+              <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: '20px' }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                  <div>
+                    <div style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>{eligibleData.property.name}</div>
+                    <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
+                      {eligibleData.eligible_cases.length} delinquent cases · Grace period ends day {eligibleData.grace_period_day} · {eligibleData.property.notice_jurisdiction} jurisdiction
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <button onClick={() => setSelectedCases(new Set(eligibleData.eligible_cases.map(c => c.id)))}
+                      style={{ fontSize: '11px', padding: '5px 12px', border: '1px solid #cbd5e1', borderRadius: '5px', backgroundColor: '#fff', color: '#475569', cursor: 'pointer' }}>Select All</button>
+                    <button onClick={() => setSelectedCases(new Set())}
+                      style={{ fontSize: '11px', padding: '5px 12px', border: '1px solid #cbd5e1', borderRadius: '5px', backgroundColor: '#fff', color: '#475569', cursor: 'pointer' }}>Clear</button>
+                    <button onClick={handleGenerate} disabled={generating || selectedCases.size === 0}
+                      style={{ padding: '10px 22px', backgroundColor: selectedCases.size === 0 ? '#94a3b8' : '#dc2626', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: selectedCases.size === 0 ? 'not-allowed' : 'pointer' }}>
+                      {generating ? 'Generating...' : `Generate ${selectedCases.size} Notice${selectedCases.size !== 1 ? 's' : ''}`}
+                    </button>
+                  </div>
+                </div>
+
+                {eligibleData.eligible_cases.length === 0 ? (
+                  <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No eligible delinquent cases for this property.</div>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#F0F4F8', borderBottom: '1px solid #e2e8f0' }}>
+                        <th style={{ padding: '10px 16px', width: '40px' }}></th>
+                        {['Resident', 'Unit', 'Balance', 'Aging', 'Status'].map(h => (
+                          <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#94a3b8', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {eligibleData.eligible_cases.map((c, i) => (
+                        <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: selectedCases.has(c.id) ? 'rgba(20,184,166,0.05)' : i % 2 === 0 ? '#fff' : '#fafafa', cursor: 'pointer' }}
+                          onClick={() => setSelectedCases(prev => { const n = new Set(prev); n.has(c.id) ? n.delete(c.id) : n.add(c.id); return n; })}>
+                          <td style={{ padding: '10px 16px' }}>
+                            <div style={{ width: '16px', height: '16px', borderRadius: '3px', border: `2px solid ${selectedCases.has(c.id) ? '#14B8A6' : '#cbd5e1'}`, backgroundColor: selectedCases.has(c.id) ? '#14B8A6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              {selectedCases.has(c.id) && <span style={{ color: '#fff', fontSize: '10px', fontWeight: '900' }}>✓</span>}
+                            </div>
+                          </td>
+                          <td style={{ padding: '10px 16px', fontWeight: '600', color: '#0f172a' }}>{c.resident_name}</td>
+                          <td style={{ padding: '10px 16px', color: '#475569' }}>Unit {c.unit_number}</td>
+                          <td style={{ padding: '10px 16px', fontWeight: '700', color: '#dc2626' }}>{fmtCurrency(c.balance_owed)}</td>
+                          <td style={{ padding: '10px 16px' }}>
+                            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontWeight: '600', backgroundColor: '#fff', color: { '30-60': '#facc15', '61-90': '#ea580c', '91-120': '#dc2626', '120+': '#dc2626' }[c.aging_bucket] || '#94a3b8' }}>
+                              {c.aging_bucket} Days
+                            </span>
+                          </td>
+                          <td style={{ padding: '10px 16px', color: '#94a3b8', fontSize: '12px' }}>{(c.status || '').replace(/_/g, ' ').replace(/\w/g, x => x.toUpperCase())}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
+
+            {/* Generation result */}
+            {genResult && (
+              <div style={{ backgroundColor: genResult.errors === 0 ? '#f0fdf4' : '#fef2f2', border: `1px solid ${genResult.errors === 0 ? '#bbf7d0' : '#fca5a5'}`, borderRadius: '12px', padding: '20px' }}>
+                <div style={{ fontSize: '16px', fontWeight: '700', color: genResult.errors === 0 ? '#15803d' : '#dc2626', marginBottom: '12px' }}>
+                  {genResult.errors === 0 ? '✅' : '⚠️'} {genResult.generated} notice{genResult.generated !== 1 ? 's' : ''} generated{genResult.errors > 0 ? `, ${genResult.errors} failed` : ''}
+                </div>
+                {genResult.results.map((r, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid rgba(0,0,0,0.06)', fontSize: '13px' }}>
+                    <span style={{ color: '#0f172a', fontWeight: '600' }}>{r.resident_name} · Unit {r.unit_number}</span>
+                    <a href={r.pdf_url} target='_blank' rel='noreferrer' style={{ color: '#14B8A6', fontWeight: '600', textDecoration: 'none', fontSize: '12px' }}>View PDF →</a>
+                  </div>
+                ))}
+                {genResult.error_details?.length > 0 && (
+                  <div style={{ marginTop: '12px', fontSize: '12px', color: '#dc2626' }}>{genResult.error_details.join(' · ')}</div>
+                )}
+                <div style={{ marginTop: '12px', fontSize: '12px', color: '#475569' }}>Summary email sent to {eligibleData?.property?.notice_recipient_email || 'configured recipient'}.</div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
