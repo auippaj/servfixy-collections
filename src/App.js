@@ -122,6 +122,7 @@ const NAV_ITEMS = [
   { group: 'TOOLS', items: [
     { label: 'Document Vault',       icon: '🗂️', tab: 'Document Vault' },
     { label: 'Import Cases',         icon: '📥', tab: 'Import Cases' },
+    { label: 'Yardi Import',           icon: '📊', tab: 'Yardi Import' },
     { label: 'Owner Summary',        icon: '🏢', tab: 'Owner Summary' },
     { label: 'Onboarding',           icon: '🚀', tab: 'Onboarding' },
   ]},
@@ -609,6 +610,246 @@ function AdminTab({ token }) {
   );
 }
 // ── End Admin Tab ──────────────────────────────────────────────────────────────
+
+
+// ── Yardi Import Tab ───────────────────────────────────────────────────────────
+function YardiImportTab({ token }) {
+  const [properties, setProperties] = useState([]);
+  const [selectedProperty, setSelectedProperty] = useState('');
+  const [step, setStep] = useState(1); // 1=upload, 2=preview, 3=done
+  const [parsedRows, setParsedRows] = useState([]);
+  const [parseError, setParseError] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [importResults, setImportResults] = useState(null);
+  const [detectedProperty, setDetectedProperty] = useState('');
+
+  const fmtCurrency = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/properties`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => setProperties(Array.isArray(d) ? d : [])).catch(() => {});
+  }, [token]);
+
+  const STATUS_MAP = { 'Current': 'active', 'Notice': 'notice_issued', 'Eviction': 'filed_with_attorney' };
+  const AGING_COLORS = { '0-30': '#facc15', '31-60': '#ea580c', '61-90': '#dc2626', '90+': '#dc2626' };
+
+  const getAgingBucket = (row) => {
+    if (Number(row.over90) > 0) return '120+';
+    if (Number(row.owed6190) > 0) return '91-120';
+    if (Number(row.owed3160) > 0) return '61-90';
+    return '30-60';
+  };
+
+  const handleFile = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setParseError('');
+    setParsedRows([]);
+    setStep(1);
+
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        // Parse xlsx using SheetJS loaded via script
+        const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs').catch(() => null);
+        // Fallback: use openpyxl-style manual parse via ArrayBuffer
+        const ab = ev.target.result;
+        // We'll send to a parsing endpoint instead
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch(`${API_URL}/api/admin/yardi/parse`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData
+        });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.error || 'Parse failed');
+        setParsedRows(d.rows);
+        setDetectedProperty(d.detected_property || '');
+        setStep(2);
+      } catch (err) {
+        setParseError(err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = '';
+  };
+
+  const handleImport = async () => {
+    if (!selectedProperty) { setParseError('Select a property first.'); return; }
+    setImporting(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/yardi/import`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ property_id: selectedProperty, rows: parsedRows })
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error);
+      setImportResults(d);
+      setStep(3);
+    } catch (err) { setParseError(err.message); }
+    finally { setImporting(false); }
+  };
+
+  const inputStyle = { width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px', boxSizing: 'border-box', backgroundColor: '#fff' };
+  const labelStyle = { fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' };
+
+  return (
+    <div style={{ padding: '24px', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', minHeight: '100vh' }}>
+
+      {/* Header */}
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>Yardi Delinquency Import</h1>
+        <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Upload a Yardi Resident Delinquency Summary report to populate Collections cases.</p>
+      </div>
+
+      {/* Step indicator */}
+      <div style={{ display: 'flex', gap: '0', marginBottom: '28px' }}>
+        {['Upload Report', 'Preview & Confirm', 'Done'].map((s, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', flex: i < 2 ? 1 : 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: step > i + 1 ? '#14B8A6' : step === i + 1 ? '#1B3A6B' : '#F0F4F8', border: `2px solid ${step >= i + 1 ? '#14B8A6' : '#cbd5e1'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: step >= i + 1 ? '#fff' : '#475569', flexShrink: 0 }}>
+                {step > i + 1 ? '✓' : i + 1}
+              </div>
+              <span style={{ fontSize: '12px', fontWeight: step === i + 1 ? '700' : '400', color: step >= i + 1 ? '#111827' : '#475569', whiteSpace: 'nowrap' }}>{s}</span>
+            </div>
+            {i < 2 && <div style={{ flex: 1, height: '2px', backgroundColor: step > i + 1 ? '#14B8A6' : '#e2e8f0', margin: '0 12px' }} />}
+          </div>
+        ))}
+      </div>
+
+      {parseError && <div style={{ color: '#dc2626', fontSize: '13px', marginBottom: '16px', padding: '12px 16px', backgroundColor: '#fef2f2', borderRadius: '8px' }}>{parseError}</div>}
+
+      {/* Step 1 — Upload */}
+      {step === 1 && (
+        <div style={{ maxWidth: '580px' }}>
+          <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '24px', marginBottom: '16px', border: '1px solid #e2e8f0' }}>
+            <label style={labelStyle}>Property</label>
+            <select value={selectedProperty} onChange={e => setSelectedProperty(e.target.value)} style={{ ...inputStyle, marginBottom: '20px' }}>
+              <option value=''>Select property this report is for...</option>
+              {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+            <label style={{ display: 'block', border: '2px dashed #cbd5e1', borderRadius: '12px', padding: '40px', textAlign: 'center', cursor: 'pointer', backgroundColor: '#fafafa' }}>
+              <div style={{ fontSize: '36px', marginBottom: '12px' }}>📊</div>
+              <div style={{ fontSize: '14px', fontWeight: '600', color: '#94a3b8', marginBottom: '6px' }}>Click to upload Yardi report (.xlsx)</div>
+              <div style={{ fontSize: '12px', color: '#475569' }}>Resident Delinquency Summary With Memo Report</div>
+              <input type='file' accept='.xlsx,.xls' onChange={handleFile} style={{ display: 'none' }} disabled={!selectedProperty} />
+            </label>
+            {!selectedProperty && <div style={{ fontSize: '12px', color: '#f59e0b', marginTop: '10px', textAlign: 'center' }}>Select a property first before uploading.</div>}
+          </div>
+          <div style={{ backgroundColor: '#F0F4F8', borderRadius: '10px', padding: '16px 20px', fontSize: '12px', color: '#475569' }}>
+            <div style={{ fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>What gets imported:</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {['All residents on the report (Current, Notice, Eviction)', 'Balance mapped from 0-30 / 31-60 / 61-90 / Over 90 columns', 'Status: Current → Active · Notice → Notice Issued · Eviction → Filed w/ Attorney', 'Memo notes imported as first internal case note', 'Existing cases matched by unit number — updated, not duplicated'].map((item, i) => (
+                <div key={i} style={{ display: 'flex', gap: '8px' }}><span style={{ color: '#14B8A6', fontWeight: '700' }}>✓</span>{item}</div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 2 — Preview */}
+      {step === 2 && parsedRows.length > 0 && (
+        <div>
+          <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '16px 20px', marginBottom: '20px', border: '1px solid #e2e8f0', display: 'flex', gap: '24px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+              {[
+                { label: 'Total Residents', value: parsedRows.length, color: '#1B3A6B' },
+                { label: 'Active', value: parsedRows.filter(r => r.status === 'Current').length, color: '#14B8A6' },
+                { label: 'Notice', value: parsedRows.filter(r => r.status === 'Notice').length, color: '#facc15' },
+                { label: 'Eviction', value: parsedRows.filter(r => r.status === 'Eviction').length, color: '#dc2626' },
+                { label: 'Total Balance', value: fmtCurrency(parsedRows.reduce((s, r) => s + Number(r.total_owed || 0), 0)), color: '#dc2626' },
+              ].map((k, i) => (
+                <div key={i} style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '22px', fontWeight: '800', color: k.color }}>{k.value}</div>
+                  <div style={{ fontSize: '11px', color: '#475569' }}>{k.label}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => { setStep(1); setParsedRows([]); }} style={{ padding: '9px 18px', border: '1px solid #cbd5e1', borderRadius: '7px', backgroundColor: '#fff', color: '#94a3b8', fontSize: '13px', cursor: 'pointer' }}>Start Over</button>
+              <button onClick={handleImport} disabled={importing}
+                style={{ padding: '9px 22px', backgroundColor: '#1B3A6B', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+                {importing ? 'Importing...' : `Import ${parsedRows.length} Residents`}
+              </button>
+            </div>
+          </div>
+
+          <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#F0F4F8', borderBottom: '2px solid #e2e8f0' }}>
+                    {['Unit', 'Resident', 'Yardi Status', '0-30', '31-60', '61-90', '90+', 'Total Owed', 'Memo'].map(h => (
+                      <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#94a3b8', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {parsedRows.map((row, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: i % 2 === 0 ? '#fff' : '#fafafa' }}>
+                      <td style={{ padding: '10px 14px', fontWeight: '600', color: '#0f172a' }}>Unit {row.unit}</td>
+                      <td style={{ padding: '10px 14px', color: '#0f172a' }}>{row.last_name}</td>
+                      <td style={{ padding: '10px 14px' }}>
+                        <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontWeight: '700', backgroundColor: row.status === 'Eviction' ? '#fef2f2' : row.status === 'Notice' ? '#fefce8' : '#f0fdf4', color: row.status === 'Eviction' ? '#dc2626' : row.status === 'Notice' ? '#ca8a04' : '#15803d' }}>
+                          {row.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px 14px', color: Number(row.owed030) > 0 ? '#facc15' : '#cbd5e1' }}>{Number(row.owed030) > 0 ? fmtCurrency(row.owed030) : '—'}</td>
+                      <td style={{ padding: '10px 14px', color: Number(row.owed3160) > 0 ? '#ea580c' : '#cbd5e1' }}>{Number(row.owed3160) > 0 ? fmtCurrency(row.owed3160) : '—'}</td>
+                      <td style={{ padding: '10px 14px', color: Number(row.owed6190) > 0 ? '#dc2626' : '#cbd5e1' }}>{Number(row.owed6190) > 0 ? fmtCurrency(row.owed6190) : '—'}</td>
+                      <td style={{ padding: '10px 14px', color: Number(row.over90) > 0 ? '#dc2626' : '#cbd5e1', fontWeight: Number(row.over90) > 0 ? '700' : '400' }}>{Number(row.over90) > 0 ? fmtCurrency(row.over90) : '—'}</td>
+                      <td style={{ padding: '10px 14px', fontWeight: '700', color: Number(row.total_owed) > 0 ? '#dc2626' : '#475569' }}>{fmtCurrency(row.total_owed)}</td>
+                      <td style={{ padding: '10px 14px', color: '#475569', fontSize: '11px', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.memo || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 3 — Done */}
+      {step === 3 && importResults && (
+        <div style={{ maxWidth: '560px' }}>
+          <div style={{ backgroundColor: '#f0fdf4', borderRadius: '14px', padding: '32px', textAlign: 'center', border: '1px solid #bbf7d0' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
+            <h2 style={{ margin: '0 0 8px', fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>Import Complete</h2>
+            <p style={{ margin: '0 0 24px', fontSize: '13px', color: '#475569' }}>
+              {importResults.created} cases created · {importResults.updated} updated · {importResults.errors} errors
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '24px' }}>
+              {[
+                { label: 'Created', value: importResults.created, color: '#15803d', bg: '#dcfce7' },
+                { label: 'Updated', value: importResults.updated, color: '#1B3A6B', bg: 'rgba(20,184,166,0.12)' },
+                { label: 'Errors', value: importResults.errors, color: importResults.errors > 0 ? '#dc2626' : '#94a3b8', bg: importResults.errors > 0 ? '#fef2f2' : '#F0F4F8' },
+              ].map((k, i) => (
+                <div key={i} style={{ backgroundColor: k.bg, borderRadius: '10px', padding: '14px' }}>
+                  <div style={{ fontSize: '26px', fontWeight: '800', color: k.color }}>{k.value}</div>
+                  <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>{k.label}</div>
+                </div>
+              ))}
+            </div>
+            {importResults.error_details?.length > 0 && (
+              <div style={{ backgroundColor: '#fef2f2', borderRadius: '8px', padding: '12px', marginBottom: '16px', textAlign: 'left', fontSize: '12px', color: '#dc2626' }}>
+                {importResults.error_details.join('\n')}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <button onClick={() => { setStep(1); setParsedRows([]); setImportResults(null); setParseError(''); }}
+                style={{ padding: '10px 20px', backgroundColor: '#1B3A6B', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
+                Import Another
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+// ── End Yardi Import Tab ───────────────────────────────────────────────────────
 
 // ── App Shell ──────────────────────────────────────────────────────────────────
 // ── Collections Analytics Tab ──────────────────────────────────────────────────
@@ -7536,6 +7777,7 @@ function App() {
         {activeTab === 'Onboarding' && <CollectionsOnboardingTab token={token} />}
         {activeTab === 'Collections Risk' && <CollectionsRiskTab token={token} />}
         {activeTab === 'User Management' && <AdminTab token={token} />}
+        {activeTab === 'Yardi Import' && <YardiImportTab token={token} />}
         {activeTab === 'Integrations' && <IntegrationsTab token={token} />}
         {activeTab === 'Compliance' && <ComplianceTab token={token} />}
       </div>
