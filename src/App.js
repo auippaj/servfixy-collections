@@ -24,6 +24,9 @@ function Login({ onLogin }) {
       if (data.user.role !== 'admin' && data.user.role !== 'dispatcher') {
         throw new Error('Access denied. Servfixy Collections staff only.');
       }
+      if (data.user.product !== 'collections' && data.user.product !== 'both') {
+        throw new Error('No Collections account found for this email. Contact your administrator.');
+      }
       localStorage.setItem('collections_token', data.token);
       localStorage.setItem('collections_user', JSON.stringify(data.user));
       if (isDemo) {
@@ -205,7 +208,7 @@ function AdminTab({ token }) {
   const [showUserForm, setShowUserForm] = useState(false);
   const [userSaving, setUserSaving] = useState(false);
   const [userFormError, setUserFormError] = useState('');
-  const [userForm, setUserForm] = useState({ email: '', full_name: '', role: 'coordinator', temp_password: '' });
+  const [userForm, setUserForm] = useState({ email: '', full_name: '', role: 'coordinator', temp_password: '', product: 'collections' });
 
   // Notice settings state
   const [properties, setProperties] = useState([]);
@@ -252,7 +255,7 @@ function AdminTab({ token }) {
       const d = await res.json();
       if (!res.ok) throw new Error(d.error);
       setShowUserForm(false);
-      setUserForm({ email: '', full_name: '', role: 'coordinator', temp_password: '' });
+      setUserForm({ email: '', full_name: '', role: 'coordinator', temp_password: '', product: 'collections' });
       fetchUsers();
     } catch (err) { setUserFormError(err.message); }
     finally { setUserSaving(false); }
@@ -378,7 +381,7 @@ function AdminTab({ token }) {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ backgroundColor: '#F0F4F8', borderBottom: '2px solid #e2e8f0' }}>
-                      {['Name', 'Email', 'Role', 'Status', 'Created', 'Actions'].map(h => (
+                      {['Name', 'Email', 'Role', 'Product', 'Status', 'Created', 'Actions'].map(h => (
                         <th key={h} style={{ padding: '11px 16px', textAlign: 'left', color: '#94a3b8', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                       ))}
                     </tr>
