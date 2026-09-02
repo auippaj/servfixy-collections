@@ -1908,23 +1908,69 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                 </div>
               </div>
 
-              {/* Key Dates */}
+              {/* Key Dates — inline editable */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px', marginTop: '20px' }}>
+                {/* Static: Aging Bucket */}
+                <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '10px 12px' }}>
+                  <div style={{ fontSize: '10px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Aging Bucket</div>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: AGING_COLORS[caseDetail.aging_bucket] || '#111827' }}>{caseDetail.aging_bucket} Days</div>
+                </div>
+                {/* Static: Times Late */}
+                <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '10px 12px' }}>
+                  <div style={{ fontSize: '10px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Times Late</div>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#111827' }}>{caseDetail.times_late || 0}</div>
+                </div>
+                {/* Editable date fields */}
                 {[
-                  { label: 'Aging Bucket', value: `${caseDetail.aging_bucket} Days`, color: AGING_COLORS[caseDetail.aging_bucket] },
-                  { label: 'Times Late', value: caseDetail.times_late || 0 },
-                  { label: 'Notice Issued', value: fmtDate(caseDetail.notice_issued_date) },
-                  { label: 'FED Date', value: fmtDate(caseDetail.fed_date) },
-                  { label: 'Writ Filed', value: fmtDate(caseDetail.writ_file_date) },
-                  { label: 'Court Hearing', value: fmtDate(caseDetail.court_hearing_date) },
-                  { label: 'Possession Granted', value: fmtDate(caseDetail.possession_granted_date) },
-                  { label: 'Attorney', value: caseDetail.attorney_name || '—' },
-                   { label: 'Atty Email', value: caseDetail.attorney_email || '—' },
-                   { label: 'Atty Phone', value: caseDetail.attorney_phone || '—' },
-                ].map((item, i) => (
-                  <div key={i} style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '10px 12px' }}>
-                    <div style={{ fontSize: '10px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{item.label}</div>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: item.color || '#111827' }}>{item.value}</div>
+                  { label: 'Notice Issued', field: 'notice_issued_date' },
+                  { label: 'FED Date',       field: 'fed_date' },
+                  { label: 'Writ Filed',     field: 'writ_file_date' },
+                  { label: 'Court Hearing',  field: 'court_hearing_date' },
+                  { label: 'Possession Granted', field: 'possession_granted_date' },
+                ].map(({ label, field }) => (
+                  <div key={field} style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '10px 12px' }}>
+                    <div style={{ fontSize: '10px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{label}</div>
+                    <input
+                      type='date'
+                      defaultValue={caseDetail[field] ? caseDetail[field].split('T')[0] : ''}
+                      onBlur={async e => {
+                        const val = e.target.value || null;
+                        await fetch(`${API_URL}/api/collections/cases/${caseDetail.id}`, {
+                          method: 'PATCH',
+                          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ [field]: val })
+                        });
+                        fetchCaseDetail(caseDetail.id);
+                        fetchCases();
+                      }}
+                      style={{ fontSize: '13px', fontWeight: '600', color: '#111827', border: 'none', backgroundColor: 'transparent', width: '100%', padding: 0, cursor: 'pointer', outline: 'none' }}
+                    />
+                  </div>
+                ))}
+                {/* Editable text fields */}
+                {[
+                  { label: 'Attorney',   field: 'attorney_name' },
+                  { label: 'Atty Email', field: 'attorney_email' },
+                  { label: 'Atty Phone', field: 'attorney_phone' },
+                ].map(({ label, field }) => (
+                  <div key={field} style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '10px 12px' }}>
+                    <div style={{ fontSize: '10px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{label}</div>
+                    <input
+                      type='text'
+                      defaultValue={caseDetail[field] || ''}
+                      placeholder='—'
+                      onBlur={async e => {
+                        const val = e.target.value || null;
+                        await fetch(`${API_URL}/api/collections/cases/${caseDetail.id}`, {
+                          method: 'PATCH',
+                          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ [field]: val })
+                        });
+                        fetchCaseDetail(caseDetail.id);
+                        fetchCases();
+                      }}
+                      style={{ fontSize: '13px', fontWeight: '600', color: '#111827', border: 'none', backgroundColor: 'transparent', width: '100%', padding: 0, outline: 'none' }}
+                    />
                   </div>
                 ))}
               </div>
