@@ -261,6 +261,18 @@ function AdminTab({ token }) {
     finally { setUserSaving(false); }
   };
 
+  const handleResetPassword = async (user) => {
+    if (!window.confirm(`Reset password for ${user.email}? A new temporary password will be emailed to them.`)) return;
+    try {
+      const res = await fetch(`${API_URL}/api/admin/users/${user.id}/reset-password`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}` }
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error);
+      alert('Password reset and email sent successfully.');
+    } catch (err) { alert('Failed to reset password: ' + err.message); }
+  };
+
   const handleToggleActive = async (user) => {
     await fetch(`${API_URL}/api/admin/users/${user.id}`, {
       method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -914,6 +926,62 @@ function PropertySelector({ properties, value, onChange, placeholder, style }) {
   );
 }
 // ── End Property Selector ──────────────────────────────────────────────────────
+
+
+// ── Change Password Screen ─────────────────────────────────────────────────────
+function ChangePasswordScreen({ token, user, onChanged }) {
+  const [pw, setPw] = useState('');
+  const [pw2, setPw2] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async () => {
+    if (pw.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    if (pw !== pw2) { setError('Passwords do not match.'); return; }
+    setSaving(true); setError('');
+    try {
+      const res = await fetch(`${API_URL}/api/auth/change-password`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_password: pw })
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Failed to change password.');
+      onChanged();
+    } catch (err) { setError(err.message); }
+    finally { setSaving(false); }
+  };
+
+  const inputStyle = { width: '100%', padding: '12px 14px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box', color: '#111827' };
+
+  return (
+    <div style={{ minHeight: '100vh', backgroundColor: '#F0F4F8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Arial, sans-serif' }}>
+      <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '40px', width: '100%', maxWidth: '420px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+          <div style={{ width: '56px', height: '56px', backgroundColor: '#1B3A6B', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '24px' }}>🔒</div>
+          <h2 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: '700', color: '#0f172a' }}>Set Your Password</h2>
+          <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>You must set a new password before continuing.</p>
+        </div>
+        {error && <div style={{ color: '#dc2626', fontSize: '13px', marginBottom: '16px', padding: '10px 14px', backgroundColor: '#fef2f2', borderRadius: '8px' }}>{error}</div>}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div>
+            <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>New Password</label>
+            <input type='password' value={pw} onChange={e => setPw(e.target.value)} style={inputStyle} placeholder='At least 8 characters' />
+          </div>
+          <div>
+            <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Confirm Password</label>
+            <input type='password' value={pw2} onChange={e => setPw2(e.target.value)} style={inputStyle} placeholder='Repeat your new password' onKeyDown={e => e.key === 'Enter' && handleSubmit()} />
+          </div>
+          <button onClick={handleSubmit} disabled={saving}
+            style={{ padding: '13px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer', marginTop: '6px' }}>
+            {saving ? 'Saving...' : 'Set Password & Continue'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+// ── End Change Password Screen ─────────────────────────────────────────────────
 
 // ── App Shell ──────────────────────────────────────────────────────────────────
 // ── Collections Analytics Tab ──────────────────────────────────────────────────
@@ -7696,6 +7764,7 @@ function App() {
   };
 
   if (!user || !token) return <Login onLogin={handleLogin} />;
+  if (user.must_change_password) return <ChangePasswordScreen token={token} user={user} onChanged={() => { const u = {...user, must_change_password: false}; setUser(u); localStorage.setItem('collections_user', JSON.stringify(u)); }} />;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#F0F4F8', fontFamily: 'Arial, sans-serif' }}>
