@@ -7772,17 +7772,7 @@ function App() {
   const handleLogin = (u, t) => {
     setUser(u);
     setToken(t);
-    // Auto-run risk scoring on login — fire-and-forget, silent on error
-    setScoringToast('analyzing');
-    fetch(`${API_URL}/api/collections/risk/score-all`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${t}`, 'Content-Type': 'application/json' }
-    })
-      .then(() => {
-        setScoringToast('done');
-        setTimeout(() => setScoringToast(''), 3000);
-      })
-      .catch(() => setScoringToast(''));
+    // Auto-run // Auto risk scoring disabled — use Run Agent button in Coordinator Workspace
   };
 
   const handleLogout = () => {
