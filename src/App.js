@@ -937,6 +937,8 @@ function ChangePasswordScreen({ token, user, onChanged }) {
 
   const handleSubmit = async () => {
     if (pw.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    if (!/[0-9]/.test(pw)) { setError('Password must contain at least one number.'); return; }
+    if (!/[A-Z]/.test(pw)) { setError('Password must contain at least one uppercase letter.'); return; }
     if (pw !== pw2) { setError('Passwords do not match.'); return; }
     setSaving(true); setError('');
     try {
@@ -7774,6 +7776,26 @@ function App() {
     setToken(t);
     // Auto-run // Auto risk scoring disabled — use Run Agent button in Coordinator Workspace
   };
+
+  // Session timeout — 60 min inactivity
+  useEffect(() => {
+    if (!token) return;
+    let timeout;
+    const resetTimer = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        alert('Your session has expired due to inactivity. Please log in again.');
+        handleLogout();
+      }, 60 * 60 * 1000); // 60 minutes
+    };
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+    events.forEach(e => window.addEventListener(e, resetTimer));
+    resetTimer();
+    return () => {
+      clearTimeout(timeout);
+      events.forEach(e => window.removeEventListener(e, resetTimer));
+    };
+  }, [token]);
 
   const handleLogout = () => {
     localStorage.removeItem('collections_token');
