@@ -261,6 +261,44 @@ function AdminTab({ token }) {
     finally { setUserSaving(false); }
   };
 
+  const [editingUser, setEditingUser] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
+
+  const handleEditUser = (user) => {
+    setEditForm({ first_name: user.first_name || '', last_name: user.last_name || '', email: user.email, role: user.role, product: user.product || 'collections' });
+    setEditError('');
+    setEditingUser(user);
+  };
+
+  const handleSaveEdit = async () => {
+    setEditSaving(true); setEditError('');
+    try {
+      const res = await fetch(`${API_URL}/api/admin/users/${editingUser.id}`, {
+        method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm)
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Failed to update user.');
+      setEditingUser(null);
+      fetchUsers();
+    } catch (err) { setEditError(err.message); }
+    finally { setEditSaving(false); }
+  };
+
+  const handleResendInvite = async (user) => {
+    if (!window.confirm(`Resend login email to ${user.email}?`)) return;
+    try {
+      const res = await fetch(`${API_URL}/api/admin/users/${user.id}/resend-invite`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}` }
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error);
+      alert(`Login email sent to ${user.email}.`);
+    } catch (err) { alert('Failed to resend: ' + err.message); }
+  };
+
   const handleResetPassword = async (user) => {
     if (!window.confirm(`Reset password for ${user.email}? A new temporary password will be emailed to them.`)) return;
     try {
