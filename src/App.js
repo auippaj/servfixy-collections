@@ -459,6 +459,56 @@ function AdminTab({ token }) {
           </div>
         )}
 
+        {/* Edit User Modal */}
+        {editingUser && (
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+            <div style={{ backgroundColor: '#fff', borderRadius: '14px', padding: '28px', width: '100%', maxWidth: '500px' }}>
+              <h2 style={{ margin: '0 0 20px', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>Edit User</h2>
+              {editError && <div style={{ color: '#dc2626', fontSize: '13px', marginBottom: '14px', padding: '10px', backgroundColor: '#fef2f2', borderRadius: '7px' }}>{editError}</div>}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={labelStyle}>First Name</label>
+                    <input value={editForm.first_name} onChange={e => setEditForm(p => ({...p, first_name: e.target.value}))} style={inputStyle} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={labelStyle}>Last Name</label>
+                    <input value={editForm.last_name} onChange={e => setEditForm(p => ({...p, last_name: e.target.value}))} style={inputStyle} />
+                  </div>
+                </div>
+                <div>
+                  <label style={labelStyle}>Email *</label>
+                  <input type='email' value={editForm.email} onChange={e => setEditForm(p => ({...p, email: e.target.value}))} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Role *</label>
+                  <select value={editForm.role} onChange={e => setEditForm(p => ({...p, role: e.target.value}))} style={inputStyle}>
+                    {ROLES.map(r => <option key={r} value={r}>{r.replace('_', ' ')}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Product Access *</label>
+                  <select value={editForm.product} onChange={e => setEditForm(p => ({...p, product: e.target.value}))} style={inputStyle}>
+                    <option value='collections'>Collections only</option>
+                    <option value='maintenance'>Maintenance only</option>
+                    <option value='both'>Both</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                <button onClick={handleSaveEdit} disabled={editSaving}
+                  style={{ flex: 1, padding: '10px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
+                  {editSaving ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button onClick={() => { setEditingUser(null); setEditError(''); }}
+                  style={{ padding: '10px 18px', border: '1px solid #cbd5e1', borderRadius: '7px', backgroundColor: '#fff', color: '#94a3b8', fontSize: '13px', cursor: 'pointer' }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── NOTICE SETTINGS ── */}
         {activeSection === 'notice-settings' && (
           <div>
