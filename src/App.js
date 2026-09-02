@@ -21,7 +21,7 @@ function Login({ onLogin }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');
-      if (data.user.role !== 'admin' && data.user.role !== 'dispatcher') {
+      if (!['admin', 'dispatcher', 'coordinator', 'read_only'].includes(data.user.role)) {
         throw new Error('Access denied. Servfixy Collections staff only.');
       }
       if (data.user.product !== 'collections' && data.user.product !== 'both') {
