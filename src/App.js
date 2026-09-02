@@ -5757,7 +5757,7 @@ function CollectionsCalendarTab({ token }) {
       )}
 
       {/* Legend */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap', paddingLeft: '16px' }}>
         {EVENT_TYPES.map(et => (
           <div key={et.key} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#94a3b8' }}>
             <span style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: et.color, display: 'inline-block' }} />
@@ -5802,7 +5802,7 @@ function CollectionsCalendarTab({ token }) {
                 const isPast = dateStr < today && events.length > 0;
                 return (
                   <div key={day} onClick={() => setSelectedDate(dateStr === selectedDate ? null : dateStr)}
-                    style={{ minHeight: '80px', borderRight: '1px solid #ffffff', borderBottom: '1px solid #ffffff', padding: '6px', cursor: events.length > 0 ? 'pointer' : 'default', backgroundColor: isSelected ? '#1B3A6B' : isToday ? '#0f2a1a' : 'transparent', transition: 'background 0.1s' }}>
+                    style={{ minHeight: '80px', borderRight: '1px solid #ffffff', borderBottom: '1px solid #ffffff', padding: '6px', cursor: events.length > 0 ? 'pointer' : 'default', backgroundColor: isSelected ? '#dbeafe' : isToday ? '#d1fae5' : 'transparent', transition: 'background 0.1s' }}>
                     <div style={{ fontSize: '13px', fontWeight: isToday ? '800' : '400', color: isToday ? '#14B8A6' : '#94a3b8', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
                       <span>{day}</span>
                       {events.length > 0 && <span style={{ fontSize: '10px', backgroundColor: isPast ? '#dc2626' : '#14B8A6', color: 'white', borderRadius: '10px', padding: '1px 5px', fontWeight: '700' }}>{events.length}</span>}
