@@ -1361,6 +1361,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
   const [filterProperty, setFilterProperty] = useState(initialFilters?.property_id || '');
   const [filterStatus, setFilterStatus] = useState(initialFilters?.status || '');
   const [filterAging, setFilterAging] = useState(initialFilters?.aging_bucket || '');
+  const [nameSearch, setNameSearch] = useState('');
   const [showNewCase, setShowNewCase] = useState(false);
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -1459,6 +1460,15 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
   }, [token]);
 
   useEffect(() => { fetchCases(); }, [filterProperty, filterStatus, filterAging]);
+
+  useEffect(() => {
+    if (!nameSearch) return;
+    const matches = cases.filter(c =>
+      c.resident_name.toLowerCase().includes(nameSearch.toLowerCase()) ||
+      (c.unit_number || '').toLowerCase().includes(nameSearch.toLowerCase())
+    );
+    if (matches.length === 1) handleSelectCase(matches[0]);
+  }, [nameSearch, cases]);
 
   const handleSelectCase = (c) => {
     setSelectedCase(c);
@@ -1733,6 +1743,12 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
             </div>
             <button onClick={() => { setShowNewCase(true); setFormError(''); }} style={{ ...btnPrimary, padding: '7px 14px', fontSize: '12px' }}>+ New Case</button>
           </div>
+          <input
+            value={nameSearch}
+            onChange={e => setNameSearch(e.target.value)}
+            placeholder='🔍 Search by name or unit...'
+            style={{ ...inputStyle, marginBottom: '8px' }}
+          />
           <select value={filterProperty} onChange={e => setFilterProperty(e.target.value)} style={{ ...inputStyle, marginBottom: '8px' }}>
             <option value=''>All Properties</option>
             {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} disabled style={{fontWeight:'700',color:'#94a3b8',backgroundColor:'#F0F4F8'}}>── {s} ──</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
@@ -1798,7 +1814,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
             <div style={{ padding: '24px', color: '#dc2626', fontSize: '13px' }}>{error}</div>
           ) : cases.length === 0 ? (
             <div style={{ padding: '24px', textAlign: 'center', color: '#475569', fontSize: '13px' }}>No cases found. Add your first case.</div>
-          ) : cases.map(c => (
+          ) : cases.filter(c => !nameSearch || c.resident_name.toLowerCase().includes(nameSearch.toLowerCase()) || (c.unit_number || '').toLowerCase().includes(nameSearch.toLowerCase())).map(c => (
             <div key={c.id}
               onClick={() => bulkMode ? toggleSelectId(c.id) : handleSelectCase(c)}
               style={{ padding: '14px 16px', borderBottom: '1px solid #ffffff', cursor: 'pointer', backgroundColor: bulkMode && selectedIds.has(c.id) ? '#1B3A6B' : selectedCase?.id === c.id ? '#ffffff' : 'transparent', transition: 'background 0.15s' }}
