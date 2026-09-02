@@ -3753,6 +3753,7 @@ function CollectionsWorkspaceTab({ token }) {
                 {[
                   { label: 'Aging', value: `${caseDetail.aging_bucket} Days`, color: AGING_COLORS[caseDetail.aging_bucket] },
                   { label: 'Times Late', value: caseDetail.times_late || 0 },
+                  { label: 'Broken PTPs', value: caseDetail.broken_ptp_count || 0, color: caseDetail.broken_ptp_count > 0 ? '#dc2626' : undefined },
                   { label: 'Notice Issued', value: fmtDate(caseDetail.notice_issued_date) },
                   { label: 'Attorney', value: caseDetail.attorney_name || '—' },
                 ].map((item, i) => (
