@@ -2589,6 +2589,34 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
         </div>
       )}
 
+      {/* Pagination */}
+      {caseTotalPages > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderTop: '1px solid #e2e8f0', backgroundColor: '#fff', marginTop: '8px', borderRadius: '0 0 12px 12px' }}>
+          <div style={{ fontSize: '13px', color: '#94a3b8' }}>
+            Showing {((casePage-1)*75)+1}–{Math.min(casePage*75, caseTotal)} of {caseTotal.toLocaleString()} cases
+          </div>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button onClick={() => fetchCases(casePage - 1)} disabled={casePage === 1}
+              style={{ padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', backgroundColor: casePage === 1 ? '#f8fafc' : '#fff', color: casePage === 1 ? '#94a3b8' : '#475569', cursor: casePage === 1 ? 'not-allowed' : 'pointer', fontSize: '13px' }}>
+              ← Prev
+            </button>
+            {Array.from({length: Math.min(caseTotalPages, 7)}, (_, i) => {
+              const p = caseTotalPages <= 7 ? i+1 : casePage <= 4 ? i+1 : casePage >= caseTotalPages-3 ? caseTotalPages-6+i : casePage-3+i;
+              return (
+                <button key={p} onClick={() => fetchCases(p)}
+                  style={{ padding: '6px 12px', border: `1px solid ${p === casePage ? '#14B8A6' : '#cbd5e1'}`, borderRadius: '6px', backgroundColor: p === casePage ? '#14B8A6' : '#fff', color: p === casePage ? '#fff' : '#475569', cursor: 'pointer', fontSize: '13px', fontWeight: p === casePage ? '700' : '400' }}>
+                  {p}
+                </button>
+              );
+            })}
+            <button onClick={() => fetchCases(casePage + 1)} disabled={casePage === caseTotalPages}
+              style={{ padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: '6px', backgroundColor: casePage === caseTotalPages ? '#f8fafc' : '#fff', color: casePage === caseTotalPages ? '#94a3b8' : '#475569', cursor: casePage === caseTotalPages ? 'not-allowed' : 'pointer', fontSize: '13px' }}>
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
