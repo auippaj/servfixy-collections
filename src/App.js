@@ -2545,6 +2545,10 @@ function CollectionsReportsTab({ token, onBack }) {
     { key: 'attorney_referrals',    label: 'Attorney Referrals',      endpoint: '/reports/attorney-referrals',    description: 'Cases in legal pipeline with all key dates' },
     { key: 'payment_plans',         label: 'Payment Plan Performance',endpoint: '/reports/payment-plans',         description: 'All plans with payments made, missed, and amount collected' },
     { key: 'coordinator_activity',  label: 'Coordinator Activity',    endpoint: '/reports/coordinator-activity',  description: 'Touchpoints per coordinator with method and outcome breakdown' },
+    { key: 'property_ranking',      label: 'Property Ranking',         endpoint: '/reports/property-ranking',      description: 'All properties ranked worst to best by delinquent balance and legal exposure' },
+    { key: 'month_over_month',      label: 'Month-Over-Month Trend',   endpoint: '/reports/month-over-month',      description: 'Trailing 12-month view of cases opened, balance, and amount recovered' },
+    { key: 'state_comparison',      label: 'State / Market Compare',   endpoint: '/reports/state-comparison',      description: 'Delinquency %, legal exposure, avg days open, and recovery rate by state' },
+    { key: 'high_risk',             label: 'High-Risk Cases',          endpoint: '/reports/high-risk',             description: 'Cases flagged for 2+ risk factors: aging, low pay probability, no recent contact, high balance' },
   ];
 
   const fmtCurrency = (v) => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2805,6 +2809,159 @@ function CollectionsReportsTab({ token, onBack }) {
     </div>
   );
 
+
+  const renderPropertyRanking = (rows) => (
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+        <thead>
+          <tr style={{ backgroundColor: '#ffffff' }}>
+            {['Rank', 'Property', 'State', 'Cases', 'Total Balance', '30-60', '61-90', '91-120', '120+', 'In Legal', 'Avg Pay Prob'].map(h => (
+              <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: '#94a3b8', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', borderBottom: '1px solid #ffffff' }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} style={{ borderBottom: '1px solid #ffffff', backgroundColor: i === 0 ? 'rgba(220,38,38,0.06)' : i < 3 ? 'rgba(234,88,12,0.04)' : 'transparent' }}>
+              <td style={{ padding: '10px 12px', fontWeight: '800', color: i === 0 ? '#dc2626' : i < 3 ? '#ea580c' : '#94a3b8', fontSize: '15px' }}>#{i + 1}</td>
+              <td style={{ padding: '10px 12px', color: '#0f172a', fontWeight: '600' }}>{row.property_name}</td>
+              <td style={{ padding: '10px 12px', color: '#94a3b8' }}>{row.state}</td>
+              <td style={{ padding: '10px 12px', color: '#111827', textAlign: 'center' }}>{fmtNum(row.total_cases)}</td>
+              <td style={{ padding: '10px 12px', color: '#dc2626', fontWeight: '700' }}>{fmtCurrency(row.total_balance)}</td>
+              <td style={{ padding: '10px 12px', color: '#facc15', textAlign: 'center' }}>{row.bucket_30_60 || 0}</td>
+              <td style={{ padding: '10px 12px', color: '#ea580c', textAlign: 'center' }}>{row.bucket_61_90 || 0}</td>
+              <td style={{ padding: '10px 12px', color: '#dc2626', textAlign: 'center' }}>{row.bucket_91_120 || 0}</td>
+              <td style={{ padding: '10px 12px', color: '#dc2626', fontWeight: '700', textAlign: 'center' }}>{row.bucket_120_plus || 0}</td>
+              <td style={{ padding: '10px 12px', color: '#7c3aed', textAlign: 'center', fontWeight: '600' }}>{row.legal_count || 0}</td>
+              <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: Number(row.avg_pay_prob) >= 60 ? '#15803d' : Number(row.avg_pay_prob) >= 40 ? '#854d0e' : '#dc2626' }}>
+                  {Math.round(Number(row.avg_pay_prob))}%
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr style={{ backgroundColor: '#ffffff', borderTop: '2px solid #cbd5e1' }}>
+            <td style={{ padding: '10px 12px', color: '#0f172a', fontWeight: '700' }} colSpan={3}>TOTAL</td>
+            <td style={{ padding: '10px 12px', color: '#111827', fontWeight: '700', textAlign: 'center' }}>{fmtNum(rows.reduce((s, r) => s + Number(r.total_cases || 0), 0))}</td>
+            <td style={{ padding: '10px 12px', color: '#dc2626', fontWeight: '800' }}>{fmtCurrency(rows.reduce((s, r) => s + Number(r.total_balance || 0), 0))}</td>
+            <td colSpan={6}></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+
+  const renderMonthOverMonth = (rows) => (
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+        <thead>
+          <tr style={{ backgroundColor: '#ffffff' }}>
+            {['Month', 'Cases Opened', 'Balance Opened', 'Cases Recovered', 'Amount Recovered', 'Written Off', 'Recovery Rate'].map(h => (
+              <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: '#94a3b8', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', borderBottom: '1px solid #ffffff' }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} style={{ borderBottom: '1px solid #ffffff', backgroundColor: i % 2 === 0 ? 'transparent' : '#ffffff11' }}>
+              <td style={{ padding: '10px 12px', color: '#0f172a', fontWeight: '600' }}>{row.month_label}</td>
+              <td style={{ padding: '10px 12px', color: '#1B3A6B', textAlign: 'center', fontWeight: '600' }}>{fmtNum(row.cases_opened)}</td>
+              <td style={{ padding: '10px 12px', color: '#dc2626', fontWeight: '700' }}>{fmtCurrency(row.balance_opened)}</td>
+              <td style={{ padding: '10px 12px', color: '#15803d', textAlign: 'center', fontWeight: '600' }}>{fmtNum(row.cases_recovered)}</td>
+              <td style={{ padding: '10px 12px', color: '#15803d', fontWeight: '700' }}>{fmtCurrency(row.amount_recovered)}</td>
+              <td style={{ padding: '10px 12px', color: '#94a3b8', textAlign: 'center' }}>{fmtNum(row.cases_written_off)}</td>
+              <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                <span style={{ fontSize: '12px', fontWeight: '700', padding: '2px 8px', borderRadius: '4px',
+                  backgroundColor: Number(row.recovery_rate_pct) >= 50 ? '#dcfce7' : Number(row.recovery_rate_pct) >= 20 ? '#fef9c3' : '#fee2e2',
+                  color: Number(row.recovery_rate_pct) >= 50 ? '#15803d' : Number(row.recovery_rate_pct) >= 20 ? '#854d0e' : '#dc2626'
+                }}>{row.recovery_rate_pct}%</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  const renderStateComparison = (rows) => (
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+        <thead>
+          <tr style={{ backgroundColor: '#ffffff' }}>
+            {['State', 'Properties', 'Active Cases', 'Active Balance', 'In Legal', 'Legal Balance', 'Avg Days Open', 'Avg Pay Prob', 'Recovered'].map(h => (
+              <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: '#94a3b8', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', borderBottom: '1px solid #ffffff' }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} style={{ borderBottom: '1px solid #ffffff', backgroundColor: i % 2 === 0 ? 'transparent' : '#ffffff11' }}>
+              <td style={{ padding: '10px 12px', color: '#0f172a', fontWeight: '800', fontSize: '15px' }}>{row.state}</td>
+              <td style={{ padding: '10px 12px', color: '#94a3b8', textAlign: 'center' }}>{row.property_count}</td>
+              <td style={{ padding: '10px 12px', color: '#1B3A6B', textAlign: 'center', fontWeight: '600' }}>{fmtNum(row.active_cases)}</td>
+              <td style={{ padding: '10px 12px', color: '#dc2626', fontWeight: '700' }}>{fmtCurrency(row.active_balance)}</td>
+              <td style={{ padding: '10px 12px', color: '#7c3aed', textAlign: 'center', fontWeight: '600' }}>{fmtNum(row.legal_cases)}</td>
+              <td style={{ padding: '10px 12px', color: '#7c3aed', fontWeight: '600' }}>{fmtCurrency(row.legal_balance)}</td>
+              <td style={{ padding: '10px 12px', color: '#94a3b8', textAlign: 'center' }}>{Math.round(Number(row.avg_days_open))}d</td>
+              <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: Number(row.avg_pay_prob) >= 60 ? '#15803d' : Number(row.avg_pay_prob) >= 40 ? '#854d0e' : '#dc2626' }}>
+                  {Math.round(Number(row.avg_pay_prob))}%
+                </span>
+              </td>
+              <td style={{ padding: '10px 12px', color: '#15803d', fontWeight: '600' }}>{fmtCurrency(row.amount_recovered)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  const renderHighRisk = (rows) => (
+    <div style={{ overflowX: 'auto' }}>
+      <div style={{ marginBottom: '16px', padding: '12px 16px', backgroundColor: '#fee2e2', borderRadius: '8px', fontSize: '13px', color: '#dc2626', fontWeight: '600' }}>
+        ⚠️ {rows.length} case{rows.length !== 1 ? 's' : ''} flagged with 2+ risk factors — prioritize immediate contact or escalation.
+      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+        <thead>
+          <tr style={{ backgroundColor: '#ffffff' }}>
+            {['Risk', 'Resident', 'Unit', 'Property', 'State', 'Balance', 'Aging', 'Status', 'Pay Prob', 'Days Open', 'Last Contact'].map(h => (
+              <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: '#94a3b8', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', borderBottom: '1px solid #ffffff' }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} style={{ borderBottom: '1px solid #ffffff', backgroundColor: Number(row.risk_score) >= 4 ? 'rgba(220,38,38,0.06)' : 'transparent' }}>
+              <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                <span style={{ fontWeight: '800', fontSize: '14px', color: Number(row.risk_score) >= 4 ? '#dc2626' : Number(row.risk_score) >= 3 ? '#ea580c' : '#facc15' }}>
+                  {'★'.repeat(Number(row.risk_score))}
+                </span>
+              </td>
+              <td style={{ padding: '10px 12px', color: '#0f172a', fontWeight: '600' }}>{row.resident_name}</td>
+              <td style={{ padding: '10px 12px', color: '#94a3b8' }}>{row.unit_number}</td>
+              <td style={{ padding: '10px 12px', color: '#cbd5e1', fontSize: '12px' }}>{row.property_name}</td>
+              <td style={{ padding: '10px 12px', color: '#94a3b8' }}>{row.state}</td>
+              <td style={{ padding: '10px 12px', color: '#dc2626', fontWeight: '700' }}>{fmtCurrency(row.balance_owed)}</td>
+              <td style={{ padding: '10px 12px' }}><span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '4px', backgroundColor: '#ffffff', color: {'30-60':'#facc15','61-90':'#ea580c','91-120':'#dc2626','120+':'#dc2626'}[row.aging_bucket]||'#94a3b8', fontWeight: '700' }}>{row.aging_bucket}</span></td>
+              <td style={{ padding: '10px 12px', color: '#94a3b8', fontSize: '12px' }}>{fmtStatus(row.status)}</td>
+              <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: Number(row.payment_probability) >= 40 ? '#854d0e' : '#dc2626' }}>
+                  {row.payment_probability != null ? `${row.payment_probability}%` : '—'}
+                </span>
+              </td>
+              <td style={{ padding: '10px 12px', color: '#94a3b8', textAlign: 'center' }}>{Math.round(Number(row.days_open))}d</td>
+              <td style={{ padding: '10px 12px', color: row.last_contact ? '#94a3b8' : '#dc2626', fontSize: '12px', fontWeight: row.last_contact ? '400' : '700' }}>
+                {row.last_contact ? fmtDate(row.last_contact) : 'Never contacted'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
   const renderReport = () => {
     if (!reportData || !reportData.rows) return null;
     const rows = reportData.rows;
@@ -2816,13 +2973,17 @@ function CollectionsReportsTab({ token, onBack }) {
       case 'attorney_referrals':   return renderAttorneyReferrals(rows);
       case 'payment_plans':        return renderPaymentPlans(rows);
       case 'coordinator_activity': return renderCoordinatorActivity(rows);
+      case 'property_ranking':     return renderPropertyRanking(rows);
+      case 'month_over_month':     return renderMonthOverMonth(rows);
+      case 'state_comparison':     return renderStateComparison(rows);
+      case 'high_risk':            return renderHighRisk(rows);
       default: return null;
     }
   };
 
   const activeReportMeta = REPORTS.find(r => r.key === activeReport);
-  const showPropertyFilter  = ['aging', 'pipeline', 'portfolio_summary'].includes(activeReport);
-  const showStateFilter     = activeReport === 'aging';
+  const showPropertyFilter  = ['aging', 'pipeline', 'portfolio_summary', 'high_risk'].includes(activeReport);
+  const showStateFilter     = ['aging', 'property_ranking'].includes(activeReport);
   const showDateFilter      = activeReport === 'coordinator_activity';
 
   return (
