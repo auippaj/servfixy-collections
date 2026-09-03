@@ -460,12 +460,12 @@ function AdminTab({ token }) {
                             {user.is_active ? 'Deactivate' : 'Reactivate'}
                           </button>
                           <button onClick={() => handleEditUser(user)}
-                            style={{ fontSize: '11px', padding: '5px 10px', border: '1px solid #14B8A6', borderRadius: '5px', backgroundColor: '#fff', color: '#14B8A6', cursor: 'pointer', fontWeight: '600', marginTop: '4px', display: 'block' }}>
+                            style={{ fontSize: '11px', padding: '5px 10px', border: '1px solid #14B8A6', borderRadius: '5px', backgroundColor: '#fff', color: '#14B8A6', cursor: 'pointer', fontWeight: '600', marginTop: '4px' }}>
                             Edit
                           </button>
                           <button onClick={() => handleResendInvite(user)}
-                            style={{ fontSize: '11px', padding: '5px 10px', border: '1px solid #1B3A6B', borderRadius: '5px', backgroundColor: '#fff', color: '#1B3A6B', cursor: 'pointer', fontWeight: '600', marginTop: '4px', display: 'block' }}>
-                            Resend Login
+                            style={{ fontSize: '11px', padding: '5px 10px', border: '1px solid #1B3A6B', borderRadius: '5px', backgroundColor: '#fff', color: '#1B3A6B', cursor: 'pointer', fontWeight: '600', marginTop: '4px' }}>
+                            Resend
                           </button>
                         </td>
                       </tr>
