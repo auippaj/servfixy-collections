@@ -333,9 +333,18 @@ function AdminTab({ token, initialSection }) {
   const fetchProperties = async () => {
     setPropsLoading(true);
     try {
+      // Try admin notice-settings endpoint first, fall back to standard properties endpoint
+      let propsData = [];
       const res = await fetch(`${API_URL}/api/admin/properties/notice-settings`, { headers: { Authorization: `Bearer ${token}` } });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error);
+      if (res.ok) {
+        propsData = await res.json();
+      } else {
+        const res2 = await fetch(`${API_URL}/api/properties`, { headers: { Authorization: `Bearer ${token}` } });
+        const d2 = await res2.json();
+        propsData = Array.isArray(d2) ? d2 : [];
+      }
+      const d = propsData;
+      if (!Array.isArray(d)) throw new Error('Invalid properties response');
       setProperties(d);
       const settings = {};
       d.forEach(p => { settings[p.id] = { grace_period_day: p.grace_period_day || 3, notice_jurisdiction: p.notice_jurisdiction || 'TX', notice_type: p.notice_type || 'pay_or_quit', notice_recipient_email: p.notice_recipient_email || '' }; });
