@@ -1746,17 +1746,32 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
   const fmtStatus = (s) => (s || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   const statusColor = (s) => (STATUS_PIPELINE.find(p => p.key === s) || { color: '#94a3b8' }).color;
 
-  const fetchCases = async () => {
+  const [casePage, setCasePage] = useState(1);
+  const [caseTotal, setCaseTotal] = useState(0);
+  const [caseTotalPages, setCaseTotalPages] = useState(1);
+
+  const fetchCases = async (page = 1) => {
     setLoading(true); setError('');
     try {
-      let url = `${API_URL}/api/collections/cases?`;
+      let url = `${API_URL}/api/collections/cases?page=${page}&limit=75&`;
       if (filterProperty) url += `property_id=${filterProperty}&`;
       if (filterStatus)   url += `status=${filterStatus}&`;
       if (filterAging)    url += `aging_bucket=${encodeURIComponent(filterAging)}&`;
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Failed to load cases');
-      setCases(Array.isArray(json) ? json : []);
+      // Handle both paginated {cases, total, total_pages} and plain array responses
+      if (Array.isArray(json)) {
+        setCases(json);
+        setCaseTotal(json.length);
+        setCaseTotalPages(1);
+        setCasePage(1);
+      } else {
+        setCases(Array.isArray(json.cases) ? json.cases : []);
+        setCaseTotal(json.total || 0);
+        setCaseTotalPages(json.total_pages || 1);
+        setCasePage(page);
+      }
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
   };
