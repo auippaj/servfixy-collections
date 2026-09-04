@@ -749,7 +749,7 @@ function AdminTab({ token, initialSection }) {
                     {/* ZIP Download */}
                     <a href={genResult.zip_url} download
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#1B3A6B', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: '700', fontSize: '14px', marginBottom: '16px' }}>
-                      ⬇ Download ZIP ({genResult.notices_generated} notices)
+                      ⬇ Download PDF ({genResult.notices_generated} notices)
                     </a>
 
                     {/* Email Draft */}
