@@ -125,10 +125,6 @@ const NAV_ITEMS = [
   { group: 'TOOLS', items: [
     { label: 'Document Vault',       icon: '🗂️', tab: 'Document Vault' },
     { label: 'Import Cases',         icon: '📥', tab: 'Import Cases' },
-    { label: 'Yardi Import',           icon: '📊', tab: 'Yardi Import' },
-    { label: 'Owner Summary',        icon: '🏢', tab: 'Owner Summary' },
-    { label: 'Onboarding',           icon: '🚀', tab: 'Onboarding' },
-    { label: 'Unit Directory',       icon: '🏠', tab: 'Unit Directory' },
   ]},
   { group: 'RISK', items: [
     { label: 'Risk Register',        icon: '🛡️', tab: 'Collections Risk' },
@@ -136,6 +132,8 @@ const NAV_ITEMS = [
   { group: 'ADMIN', items: [
     { label: 'Generate Notices',     icon: '📄', tab: 'Generate Notices' },
     { label: 'User Management',      icon: '👥', tab: 'User Management' },
+    { label: 'Yardi Import',         icon: '📊', tab: 'Yardi Import' },
+    { label: 'Onboarding',           icon: '🚀', tab: 'Onboarding' },
     { label: 'Integrations',         icon: '🔗', tab: 'Integrations' },
     { label: 'Compliance',           icon: '✅', tab: 'Compliance' },
   ]},
