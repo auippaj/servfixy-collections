@@ -128,6 +128,7 @@ const NAV_ITEMS = [
     { label: 'Yardi Import',           icon: '📊', tab: 'Yardi Import' },
     { label: 'Owner Summary',        icon: '🏢', tab: 'Owner Summary' },
     { label: 'Onboarding',           icon: '🚀', tab: 'Onboarding' },
+    { label: 'Unit Directory',       icon: '🏠', tab: 'Unit Directory' },
   ]},
   { group: 'RISK', items: [
     { label: 'Risk Register',        icon: '🛡️', tab: 'Collections Risk' },
@@ -1080,6 +1081,158 @@ function ChangePasswordScreen({ token, user, onChanged }) {
   );
 }
 // ── End Change Password Screen ─────────────────────────────────────────────────
+
+
+// ── Unit Directory Tab ─────────────────────────────────────────────────────────
+function UnitDirectoryTab({ token }) {
+  const [properties, setProperties] = React.useState([]);
+  const [selectedProperty, setSelectedProperty] = React.useState('');
+  const [units, setUnits] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+  const [uploading, setUploading] = React.useState(false);
+  const [uploadResult, setUploadResult] = React.useState(null);
+  const [error, setError] = React.useState('');
+
+  React.useEffect(() => {
+    fetch(`${API_URL}/api/properties`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => setProperties(Array.isArray(d) ? d : [])).catch(() => {});
+  }, [token]);
+
+  const fetchUnits = async (propId) => {
+    if (!propId) { setUnits([]); return; }
+    setLoading(true); setError('');
+    try {
+      const res = await fetch(`${API_URL}/api/unit-directory/${propId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Failed to load directory');
+      setUnits(d.units || []);
+    } catch (err) { setError(err.message); setUnits([]); }
+    finally { setLoading(false); }
+  };
+
+  const handlePropertyChange = (propId) => {
+    setSelectedProperty(propId);
+    setUploadResult(null);
+    fetchUnits(propId);
+  };
+
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !selectedProperty) return;
+    setUploading(true); setUploadResult(null); setError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`${API_URL}/api/unit-directory/${selectedProperty}/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Upload failed');
+      setUploadResult(d);
+      fetchUnits(selectedProperty);
+    } catch (err) { setError(err.message); }
+    finally { setUploading(false); e.target.value = ''; }
+  };
+
+  const inputStyle = { padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px', backgroundColor: '#fff' };
+  const labelStyle = { fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' };
+
+  const propName = properties.find(p => p.id === selectedProperty)?.name || '';
+
+  return (
+    <div style={{ padding: '24px', fontFamily: 'Arial, sans-serif', backgroundColor: '#F0F4F8', minHeight: '100vh' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>Unit Directory</h1>
+        <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Upload unit-to-address mapping per property. Used to auto-populate addresses on notices.</p>
+      </div>
+
+      {/* Property selector + upload */}
+      <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', alignItems: 'end' }}>
+          <div>
+            <label style={labelStyle}>Property</label>
+            <select value={selectedProperty} onChange={e => handlePropertyChange(e.target.value)} style={{ ...inputStyle, width: '100%' }}>
+              <option value=''>Select a property...</option>
+              {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) =>
+                i === 0 ? [] : [
+                  <option key={`state-${s}`} disabled style={{ fontWeight: '700', color: '#94a3b8' }}>── {s} ──</option>,
+                  ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)
+                ]
+              )}
+            </select>
+          </div>
+          <div>
+            <label style={labelStyle}>Upload Directory (.xlsx)</label>
+            <label style={{ display: 'block', padding: '9px 16px', backgroundColor: selectedProperty ? '#1B3A6B' : '#94a3b8', borderRadius: '7px', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: selectedProperty ? 'pointer' : 'not-allowed', textAlign: 'center' }}>
+              {uploading ? 'Uploading...' : '📂 Upload Excel File'}
+              <input type='file' accept='.xlsx,.xls' onChange={handleUpload} disabled={!selectedProperty || uploading} style={{ display: 'none' }} />
+            </label>
+            {!selectedProperty && <div style={{ fontSize: '11px', color: '#f59e0b', marginTop: '4px' }}>Select a property first</div>}
+          </div>
+        </div>
+
+        {uploadResult && (
+          <div style={{ marginTop: '14px', padding: '12px 16px', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', fontSize: '13px', color: '#15803d', fontWeight: '600' }}>
+            ✅ {uploadResult.count} units imported for {propName}
+          </div>
+        )}
+        {error && (
+          <div style={{ marginTop: '14px', padding: '12px 16px', backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', fontSize: '13px', color: '#dc2626' }}>
+            {error}
+          </div>
+        )}
+      </div>
+
+      {/* Unit table */}
+      {selectedProperty && (
+        <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>
+              {propName} — {units.length} units
+            </div>
+            {units.length > 0 && (
+              <div style={{ fontSize: '12px', color: '#94a3b8' }}>Directory loaded · addresses will populate on notices</div>
+            )}
+          </div>
+          {loading ? (
+            <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>Loading...</div>
+          ) : units.length === 0 ? (
+            <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
+              No directory uploaded yet. Upload an Excel file above to get started.
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#F0F4F8', borderBottom: '2px solid #e2e8f0' }}>
+                    {['Unit', 'Address', 'Unit Type', 'Notes'].map(h => (
+                      <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#94a3b8', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {units.map((u, i) => (
+                    <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: i % 2 === 0 ? '#fff' : '#fafafa' }}>
+                      <td style={{ padding: '10px 16px', fontWeight: '600', color: '#0f172a' }}>{u.unit_number}</td>
+                      <td style={{ padding: '10px 16px', color: '#475569' }}>{u.address}</td>
+                      <td style={{ padding: '10px 16px', color: '#94a3b8' }}>{u.unit_type || '—'}</td>
+                      <td style={{ padding: '10px 16px', color: '#94a3b8' }}>{u.notes || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+// ── End Unit Directory Tab ─────────────────────────────────────────────────────
 
 // ── App Shell ──────────────────────────────────────────────────────────────────
 // ── Collections Analytics Tab ──────────────────────────────────────────────────
@@ -7957,6 +8110,7 @@ function App() {
         {activeTab === 'Collections Risk' && <CollectionsRiskTab token={token} />}
         {activeTab === 'User Management' && <AdminTab token={token} />}
         {activeTab === 'Yardi Import' && <YardiImportTab token={token} />}
+              {activeTab === 'Unit Directory' && <UnitDirectoryTab token={token} />}
         {activeTab === 'Integrations' && <IntegrationsTab token={token} />}
         {activeTab === 'Compliance' && <ComplianceTab token={token} />}
       </div>
