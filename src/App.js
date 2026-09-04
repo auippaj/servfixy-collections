@@ -1293,6 +1293,8 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   const [editingGpr, setEditingGpr] = useState(false);
   const [gprInput, setGprInput] = useState('');
   const [writStats, setWritStats] = useState({ total: 0, upcoming: 0 });
+  const [predictions, setPredictions] = useState(null);
+  const [predictionsLoading, setPredictionsLoading] = useState(false);
 
   const fetchData = async (propId) => {
     setLoading(true);
@@ -1310,6 +1312,17 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
     } finally {
       setLoading(false);
     }
+    // Fetch AI predictions separately (can be slow)
+    setPredictionsLoading(true);
+    try {
+      const predUrl = propId
+        ? `${API_URL}/api/collections/risk/payment-predictions?property_id=${propId}`
+        : `${API_URL}/api/collections/risk/payment-predictions`;
+      const predRes = await fetch(predUrl, { headers: { Authorization: `Bearer ${token}` } });
+      const predJson = await predRes.json();
+      if (predRes.ok) setPredictions(predJson);
+    } catch (_) {}
+    finally { setPredictionsLoading(false); }
   };
 
   useEffect(() => {
@@ -1475,6 +1488,111 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
             <div style={{ fontSize: '11px', color: '#64748b' }}>{k.sub}</div>
           </div>
         ))}
+      </div>
+
+      {/* AI Prediction Widgets */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+
+        {/* Widget 1: Will Pay Before Possession */}
+        <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#fef9c3', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#92400e' }}>⚖️ Will Pay Before Possession</div>
+              <div style={{ fontSize: '11px', color: '#a16207', marginTop: '2px' }}>Cases in eviction predicted to pay at the last minute</div>
+            </div>
+            {predictions && (
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '28px', fontWeight: '800', color: '#d97706', lineHeight: 1 }}>
+                  {predictions.pre_possession.will_pay_count}
+                  <span style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '400' }}>/{predictions.pre_possession.total_count}</span>
+                </div>
+                <div style={{ fontSize: '10px', color: '#94a3b8' }}>likely to pay</div>
+              </div>
+            )}
+          </div>
+          <div style={{ padding: '0', maxHeight: '320px', overflowY: 'auto' }}>
+            {predictionsLoading ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>🤖 AI analyzing payment patterns...</div>
+            ) : predictions?.pre_possession.cases.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No cases currently in eviction pipeline</div>
+            ) : predictions?.pre_possession.cases.map((c, i) => (
+              <div key={i} style={{ padding: '12px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {c.resident_name}
+                    {c.pattern_flag && <span title="Repeat last-minute payer" style={{ fontSize: '10px', backgroundColor: '#fef9c3', color: '#92400e', padding: '1px 5px', borderRadius: '4px', fontWeight: '700' }}>REPEAT</span>}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8' }}>Unit {c.unit_number} · {c.property_name}</div>
+                  <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px', fontStyle: 'italic' }}>{c.reasoning}</div>
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: c.will_pay_probability >= 70 ? '#d97706' : c.will_pay_probability >= 50 ? '#ea580c' : '#94a3b8' }}>
+                    {c.will_pay_probability}%
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#94a3b8' }}>{c.confidence} confidence</div>
+                  <div style={{ fontSize: '11px', color: '#dc2626', fontWeight: '600' }}>${Number(c.balance_owed).toLocaleString()}</div>
+                </div>
+              </div>
+            ))}
+            {predictions && predictions.pre_possession.total_count > 0 && (
+              <div style={{ padding: '10px 20px', backgroundColor: '#f8fafc', display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748b' }}>
+                <span>🔁 {predictions.pre_possession.repeat_payers} repeat last-minute payer{predictions.pre_possession.repeat_payers !== 1 ? 's' : ''}</span>
+                <span>At-risk (won't pay): ${predictions.pre_possession.total_at_risk.toLocaleString('en-US', {minimumFractionDigits: 0})}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Widget 2: Will Pay Before Writ Execution */}
+        <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#fef2f2', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#991b1b' }}>🔑 Will Pay Before Writ Execution</div>
+              <div style={{ fontSize: '11px', color: '#b91c1c', marginTop: '2px' }}>Possession granted — predicted to pay before writ executes</div>
+            </div>
+            {predictions && (
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '28px', fontWeight: '800', color: '#dc2626', lineHeight: 1 }}>
+                  {predictions.pre_writ.will_pay_count}
+                  <span style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '400' }}>/{predictions.pre_writ.total_count}</span>
+                </div>
+                <div style={{ fontSize: '10px', color: '#94a3b8' }}>likely to pay</div>
+              </div>
+            )}
+          </div>
+          <div style={{ padding: '0', maxHeight: '320px', overflowY: 'auto' }}>
+            {predictionsLoading ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>🤖 AI analyzing payment patterns...</div>
+            ) : predictions?.pre_writ.cases.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No cases with possession granted</div>
+            ) : predictions?.pre_writ.cases.map((c, i) => (
+              <div key={i} style={{ padding: '12px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {c.resident_name}
+                    {c.pattern_flag && <span title="Repeat last-minute payer" style={{ fontSize: '10px', backgroundColor: '#fef2f2', color: '#991b1b', padding: '1px 5px', borderRadius: '4px', fontWeight: '700' }}>REPEAT</span>}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8' }}>Unit {c.unit_number} · {c.property_name}</div>
+                  <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px', fontStyle: 'italic' }}>{c.reasoning}</div>
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: c.will_pay_probability >= 70 ? '#dc2626' : c.will_pay_probability >= 50 ? '#ea580c' : '#94a3b8' }}>
+                    {c.will_pay_probability}%
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#94a3b8' }}>{c.confidence} confidence</div>
+                  <div style={{ fontSize: '11px', color: '#dc2626', fontWeight: '600' }}>${Number(c.balance_owed).toLocaleString()}</div>
+                </div>
+              </div>
+            ))}
+            {predictions && predictions.pre_writ.total_count > 0 && (
+              <div style={{ padding: '10px 20px', backgroundColor: '#f8fafc', display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748b' }}>
+                <span>🔁 {predictions.pre_writ.repeat_payers} repeat last-minute payer{predictions.pre_writ.repeat_payers !== 1 ? 's' : ''}</span>
+                <span>At-risk (won't pay): ${predictions.pre_writ.total_at_risk.toLocaleString('en-US', {minimumFractionDigits: 0})}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
 
       {/* Row 1: Aging + Status */}
