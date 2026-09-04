@@ -702,7 +702,20 @@ function AdminTab({ token, initialSection }) {
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                     <thead>
                       <tr style={{ backgroundColor: '#F0F4F8', borderBottom: '1px solid #e2e8f0' }}>
-                        <th style={{ padding: '10px 16px', width: '40px' }}></th>
+                        <th style={{ padding: '10px 16px', width: '40px' }}>
+                          {(() => {
+                            const allSelected = eligibleData.eligible_cases.every(c => selectedCases.has(c.id));
+                            const someSelected = eligibleData.eligible_cases.some(c => selectedCases.has(c.id));
+                            return (
+                              <div
+                                onClick={e => { e.stopPropagation(); allSelected ? setSelectedCases(new Set()) : setSelectedCases(new Set(eligibleData.eligible_cases.map(c => c.id))); }}
+                                style={{ width: '16px', height: '16px', borderRadius: '3px', border: `2px solid ${someSelected ? '#14B8A6' : '#cbd5e1'}`, backgroundColor: someSelected ? '#14B8A6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                {allSelected && <span style={{ color: '#fff', fontSize: '10px', fontWeight: '900' }}>✓</span>}
+                                {!allSelected && someSelected && <span style={{ color: '#fff', fontSize: '10px', fontWeight: '900' }}>−</span>}
+                              </div>
+                            );
+                          })()}
+                        </th>
                         {['Resident', 'Unit', 'Balance', 'Aging', 'Status'].map(h => (
                           <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#94a3b8', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                         ))}
