@@ -1068,16 +1068,7 @@ function PropertySelector({ properties, value, onChange, placeholder, style }) {
         />
       </div>
 
-      {/* Direct dropdown fallback when not searching */}
-      {!search && (
-        <select value={value} onChange={e => onChange(e.target.value)}
-          style={{ ...selectStyle, flex: 2, minWidth: '160px' }}>
-          <option value=''>{placeholder || 'All Properties'}</option>
-          {filtered.map(p => (
-            <option key={p.id} value={p.id}>{p.name} ({p.state})</option>
-          ))}
-        </select>
-      )}
+
     </div>
   );
 }
