@@ -416,7 +416,7 @@ function AdminTab({ token, initialSection }) {
         body: JSON.stringify({
           property_id: selectedProperty,
           generated_by: 'Collections Admin',
-          min_balance: 500,
+          case_ids: [...selectedCases],
         })
       });
       const d = await res.json();
@@ -8299,3 +8299,4 @@ function App() {
 }
 
 export default App;
+
