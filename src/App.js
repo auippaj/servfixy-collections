@@ -141,6 +141,10 @@ const NAV_ITEMS = [
 
 function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
   const isMobile = window.innerWidth < 768;
+  // Track which groups are collapsed — default all expanded
+  const [collapsed, setCollapsed] = React.useState({});
+  const toggleGroup = (group) => setCollapsed(prev => ({ ...prev, [group]: !prev[group] }));
+
   const SidebarInner = () => (
     <div style={{ width: '224px', minWidth: '224px', backgroundColor: '#1B3A6B', borderRight: '1px solid #1B3A6B', display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* Logo */}
@@ -155,22 +159,31 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
       </div>
       {/* Nav groups */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
-        {NAV_ITEMS.map(group => (
-          <div key={group.group} style={{ marginBottom: '8px' }}>
-            <div style={{ padding: '4px 18px 6px', fontSize: '10px', fontWeight: '700', color: '#94a3b8', letterSpacing: '0.1em' }}>{group.group}</div>
-            {group.items.map(item => {
-              const active = activeTab === item.tab;
-              return (
-                <div key={item.tab} onClick={() => { setActiveTab(item.tab); if (isMobile) onClose(); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 18px', cursor: 'pointer', borderLeft: active ? '3px solid #14b8a6' : '3px solid transparent', backgroundColor: active ? 'rgba(20,184,166,0.12)' : 'transparent', color: active ? '#ffffff' : '#94a3b8', fontSize: '14px', fontWeight: active ? '600' : '400', transition: 'all 0.15s' }}>
-                  <span style={{ fontSize: '18px' }}>{item.icon}</span>
-                  {item.badge > 0 && <span style={{ marginLeft: 'auto', backgroundColor: '#dc2626', color: '#fff', fontSize: '10px', fontWeight: '800', padding: '1px 6px', borderRadius: '10px' }}>{item.badge}</span>}
-                  {item.label}
-                </div>
-              );
-            })}
-          </div>
-        ))}
+        {NAV_ITEMS.map(group => {
+          const isCollapsed = collapsed[group.group];
+          return (
+            <div key={group.group} style={{ marginBottom: '4px' }}>
+              {/* Clickable group header */}
+              <div onClick={() => toggleGroup(group.group)}
+                style={{ padding: '6px 18px', fontSize: '10px', fontWeight: '700', color: '#64748b', letterSpacing: '0.1em', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', userSelect: 'none' }}>
+                <span>{group.group}</span>
+                <span style={{ fontSize: '9px', color: '#475569' }}>{isCollapsed ? '▶' : '▼'}</span>
+              </div>
+              {/* Items — hidden when collapsed */}
+              {!isCollapsed && group.items.map(item => {
+                const active = activeTab === item.tab;
+                return (
+                  <div key={item.tab} onClick={() => { setActiveTab(item.tab); if (isMobile) onClose(); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 18px', cursor: 'pointer', borderLeft: active ? '3px solid #14b8a6' : '3px solid transparent', backgroundColor: active ? 'rgba(20,184,166,0.12)' : 'transparent', color: active ? '#ffffff' : '#94a3b8', fontSize: '14px', fontWeight: active ? '600' : '400', transition: 'all 0.15s' }}>
+                    <span style={{ fontSize: '18px' }}>{item.icon}</span>
+                    {item.badge > 0 && <span style={{ marginLeft: 'auto', backgroundColor: '#dc2626', color: '#fff', fontSize: '10px', fontWeight: '800', padding: '1px 6px', borderRadius: '10px' }}>{item.badge}</span>}
+                    {item.label}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
       </div>
       {/* Footer */}
       <div style={{ padding: '14px 18px', borderTop: '1px solid #243f73' }}>
