@@ -1019,59 +1019,34 @@ function YardiImportTab({ token }) {
 
 // ── Property Selector Component ────────────────────────────────────────────────
 function PropertySelector({ properties, value, onChange, placeholder, style }) {
-  const [stateFilter, setStateFilter] = useState('all');
-  const [search, setSearch] = useState('');
+  const [stateFilter, setStateFilter] = useState('OH');
 
   const states = ['all', ...Array.from(new Set(properties.map(p => p.state).filter(Boolean))).sort()];
 
-  const filtered = properties.filter(p => {
-    const matchState = stateFilter === 'all' || p.state === stateFilter;
-    const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase());
-    return matchState && matchSearch;
-  });
+  const filtered = stateFilter === 'all' ? properties : properties.filter(p => p.state === stateFilter);
 
-  const selectStyle = { padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px', backgroundColor: '#fff', cursor: 'pointer', ...(style || {}) };
+  const selectStyle = { padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px', backgroundColor: '#fff', cursor: 'pointer' };
 
   return (
-    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', ...(style || {}) }}>
       {/* State filter */}
       <select value={stateFilter} onChange={e => setStateFilter(e.target.value)}
         style={{ ...selectStyle, width: '80px', flexShrink: 0 }}>
-        {states.map(s => <option key={s} value={s}>{s === 'all' ? 'All States' : s}</option>)}
+        {states.map(s => <option key={s} value={s}>{s === 'all' ? 'All' : s}</option>)}
       </select>
 
-      {/* Search + property select */}
-      <div style={{ position: 'relative', flex: 1, minWidth: '180px' }}>
-        {search && (
-          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#fff', border: '1px solid #cbd5e1', borderRadius: '7px', zIndex: 100, maxHeight: '220px', overflowY: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-            <div onClick={() => { onChange(''); setSearch(''); }}
-              style={{ padding: '9px 12px', fontSize: '13px', color: '#94a3b8', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}>
-              {placeholder || 'All Properties'}
-            </div>
-            {filtered.map(p => (
-              <div key={p.id} onClick={() => { onChange(p.id); setSearch(''); }}
-                style={{ padding: '9px 12px', fontSize: '13px', color: '#111827', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', backgroundColor: value === p.id ? 'rgba(20,184,166,0.08)' : '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>{p.name}</span>
-                <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600' }}>{p.state}</span>
-              </div>
-            ))}
-            {filtered.length === 0 && <div style={{ padding: '12px', fontSize: '13px', color: '#94a3b8', textAlign: 'center' }}>No properties found</div>}
-          </div>
-        )}
-        <input
-          type='text'
-          placeholder={value ? (properties.find(p => p.id === value)?.name || placeholder || 'All Properties') : (placeholder || 'Search properties...')}
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          onFocus={e => { if (!search) setSearch(''); }}
-          style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }}
-        />
-      </div>
-
-
+      {/* Property select */}
+      <select value={value} onChange={e => onChange(e.target.value)}
+        style={{ ...selectStyle, flex: 1, minWidth: '220px' }}>
+        <option value=''>{placeholder || 'Choose a property...'}</option>
+        {filtered.map(p => (
+          <option key={p.id} value={p.id}>{p.name}</option>
+        ))}
+      </select>
     </div>
   );
 }
+
 // ── End Property Selector ──────────────────────────────────────────────────────
 
 
