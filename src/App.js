@@ -365,11 +365,22 @@ function AdminTab({ token }) {
     if (!propId) return;
     setEligibleLoading(true); setEligibleData(null); setSelectedCases(new Set()); setGenResult(null);
     try {
-      const res = await fetch(`${API_URL}/api/admin/notices/eligible/${propId}`, { headers: { Authorization: `Bearer ${token}` } });
+      // Load all open cases for this property with balance >= $500
+      const res = await fetch(
+        `${API_URL}/api/collections/cases?property_id=${propId}&min_balance=500`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       const d = await res.json();
-      if (!res.ok) throw new Error(d.error);
-      setEligibleData(d);
-      setSelectedCases(new Set(d.eligible_cases.map(c => c.id)));
+      if (!res.ok) throw new Error(d.error || 'Failed to load cases');
+      const eligible = (Array.isArray(d) ? d : (d.cases || []))
+        .filter(c => parseFloat(c.balance_owed) >= 500 && !['closed_paid','closed_written_off'].includes(c.status));
+      const prop = properties.find(p => p.id === propId);
+      setEligibleData({
+        property: prop || { name: 'Selected Property', notice_jurisdiction: 'OH' },
+        eligible_cases: eligible,
+        grace_period_day: 3,
+      });
+      setSelectedCases(new Set(eligible.map(c => c.id)));
     } catch (err) { console.error(err); }
     finally { setEligibleLoading(false); }
   };
@@ -378,13 +389,19 @@ function AdminTab({ token }) {
     if (selectedCases.size === 0) return;
     setGenerating(true); setGenResult(null);
     try {
-      const res = await fetch(`${API_URL}/api/admin/notices/bulk-generate`, {
-        method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ property_id: selectedProperty, case_ids: [...selectedCases], generated_by: 'Admin' })
+      const res = await fetch(`${API_URL}/api/collections/cases/batch-notices`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          property_id: selectedProperty,
+          generated_by: 'Collections Admin',
+          min_balance: 500,
+        })
       });
       const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Batch generation failed');
       setGenResult(d);
-    } catch (err) { console.error(err); }
+    } catch (err) { setGenResult({ error: err.message }); }
     finally { setGenerating(false); }
   };
 
@@ -698,11 +715,52 @@ function AdminTab({ token }) {
 
             {/* Generation result */}
             {genResult && (
+              <div style={{ backgroundColor: genResult.error ? '#fef2f2' : '#f0fdf4', border: `1px solid ${genResult.error ? '#fca5a5' : '#bbf7d0'}`, borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+                {genResult.error ? (
+                  <div style={{ color: '#dc2626', fontWeight: '700' }}>❌ {genResult.error}</div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: '16px', fontWeight: '700', color: '#15803d', marginBottom: '16px' }}>
+                      ✅ {genResult.notices_generated} notice{genResult.notices_generated !== 1 ? 's' : ''} generated
+                      {genResult.notices_failed > 0 && <span style={{ color: '#dc2626', marginLeft: '8px' }}>· {genResult.notices_failed} failed</span>}
+                    </div>
+
+                    {/* ZIP Download */}
+                    <a href={genResult.zip_url} download
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#1B3A6B', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: '700', fontSize: '14px', marginBottom: '16px' }}>
+                      ⬇ Download ZIP ({genResult.notices_generated} notices)
+                    </a>
+
+                    {/* Email Draft */}
+                    <div style={{ marginTop: '16px' }}>
+                      <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email Draft</div>
+                      <textarea readOnly value={genResult.email_draft || ''}
+                        style={{ width: '100%', minHeight: '180px', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', color: '#334155', backgroundColor: '#f8fafc', resize: 'vertical', boxSizing: 'border-box' }} />
+                      <button onClick={() => navigator.clipboard.writeText(genResult.email_draft || '')}
+                        style={{ marginTop: '8px', padding: '7px 14px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', color: '#475569', cursor: 'pointer' }}>
+                        Copy to Clipboard
+                      </button>
+                    </div>
+
+                    {/* Failed cases */}
+                    {genResult.notices_failed > 0 && (
+                      <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#fef2f2', borderRadius: '8px', border: '1px solid #fca5a5' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#dc2626', marginBottom: '6px' }}>Failed notices:</div>
+                        {(genResult.failed_cases || []).map((f, i) => (
+                          <div key={i} style={{ fontSize: '12px', color: '#dc2626' }}>{f.resident} — {f.error}</div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+            {false && genResult && genResult._legacy && (
               <div style={{ backgroundColor: genResult.errors === 0 ? '#f0fdf4' : '#fef2f2', border: `1px solid ${genResult.errors === 0 ? '#bbf7d0' : '#fca5a5'}`, borderRadius: '12px', padding: '20px' }}>
                 <div style={{ fontSize: '16px', fontWeight: '700', color: genResult.errors === 0 ? '#15803d' : '#dc2626', marginBottom: '12px' }}>
                   {genResult.errors === 0 ? '✅' : '⚠️'} {genResult.generated} notice{genResult.generated !== 1 ? 's' : ''} generated{genResult.errors > 0 ? `, ${genResult.errors} failed` : ''}
                 </div>
-                {genResult.results.map((r, i) => (
+                {(genResult.results || []).map((r, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid rgba(0,0,0,0.06)', fontSize: '13px' }}>
                     <span style={{ color: '#0f172a', fontWeight: '600' }}>{r.resident_name} · Unit {r.unit_number}</span>
                     <a href={r.pdf_url} target='_blank' rel='noreferrer' style={{ color: '#14B8A6', fontWeight: '600', textDecoration: 'none', fontSize: '12px' }}>View PDF →</a>
