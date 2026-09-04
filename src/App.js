@@ -134,6 +134,7 @@ const NAV_ITEMS = [
     { label: 'Risk Register',        icon: '🛡️', tab: 'Collections Risk' },
   ]},
   { group: 'ADMIN', items: [
+    { label: 'Generate Notices',     icon: '📄', tab: 'Generate Notices' },
     { label: 'User Management',      icon: '👥', tab: 'User Management' },
     { label: 'Integrations',         icon: '🔗', tab: 'Integrations' },
     { label: 'Compliance',           icon: '✅', tab: 'Compliance' },
@@ -201,8 +202,8 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
 
 
 // ── Admin Tab ──────────────────────────────────────────────────────────────────
-function AdminTab({ token }) {
-  const [activeSection, setActiveSection] = useState('users');
+function AdminTab({ token, initialSection }) {
+  const [activeSection, setActiveSection] = useState(initialSection || 'users');
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [userError, setUserError] = useState('');
@@ -8181,6 +8182,7 @@ function App() {
         {activeTab === 'Owner Summary' && <CollectionsOwnerSummaryTab token={token} />}
         {activeTab === 'Onboarding' && <CollectionsOnboardingTab token={token} />}
         {activeTab === 'Collections Risk' && <CollectionsRiskTab token={token} />}
+        {activeTab === 'Generate Notices' && <AdminTab token={token} initialSection='bulk-notices' />}
         {activeTab === 'User Management' && <AdminTab token={token} />}
         {activeTab === 'Yardi Import' && <YardiImportTab token={token} />}
               {activeTab === 'Unit Directory' && <UnitDirectoryTab token={token} />}
