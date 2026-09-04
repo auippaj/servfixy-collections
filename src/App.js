@@ -886,7 +886,7 @@ function YardiImportTab({ token }) {
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>Yardi Delinquency Import</h1>
-        <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Upload a Yardi Resident Delinquency Summary report to populate Collections cases.</p>
+        <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Upload a Yardi Aged Receivables report to populate Collections cases.</p>
       </div>
 
       {/* Step indicator */}
@@ -918,7 +918,7 @@ function YardiImportTab({ token }) {
             <label style={{ display: 'block', border: '2px dashed #cbd5e1', borderRadius: '12px', padding: '40px', textAlign: 'center', cursor: 'pointer', backgroundColor: '#fafafa' }}>
               <div style={{ fontSize: '36px', marginBottom: '12px' }}>📊</div>
               <div style={{ fontSize: '14px', fontWeight: '600', color: '#94a3b8', marginBottom: '6px' }}>Click to upload Yardi report (.xlsx)</div>
-              <div style={{ fontSize: '12px', color: '#475569' }}>Resident Delinquency Summary With Memo Report</div>
+              <div style={{ fontSize: '12px', color: '#475569' }}>Aged Receivables Report</div>
               <input type='file' accept='.xlsx,.xls' onChange={handleFile} style={{ display: 'none' }} disabled={!selectedProperty} />
             </label>
             {!selectedProperty && <div style={{ fontSize: '12px', color: '#f59e0b', marginTop: '10px', textAlign: 'center' }}>Select a property first before uploading.</div>}
@@ -976,6 +976,7 @@ function YardiImportTab({ token }) {
                     <tr key={i} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: i % 2 === 0 ? '#fff' : '#fafafa' }}>
                       <td style={{ padding: '10px 14px', fontWeight: '600', color: '#0f172a' }}>Unit {row.unit}</td>
                       <td style={{ padding: '10px 14px', color: '#0f172a' }}>{row.last_name}</td>
+
                       <td style={{ padding: '10px 14px' }}>
                         <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontWeight: '700', backgroundColor: row.status === 'Eviction' ? '#fef2f2' : row.status === 'Notice' ? '#fefce8' : '#f0fdf4', color: row.status === 'Eviction' ? '#dc2626' : row.status === 'Notice' ? '#ca8a04' : '#15803d' }}>
                           {row.status}
@@ -8299,4 +8300,5 @@ function App() {
 }
 
 export default App;
+
 
