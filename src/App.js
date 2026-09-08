@@ -5784,6 +5784,7 @@ function WritTrackerTab({ token }) {
   const [reviewingReq, setReviewingReq] = useState(null);
   const [reviewForm, setReviewForm] = useState({ coordinator_notes: '', counter_date: '' });
   const [reviewSaving, setReviewSaving] = useState(false);
+  const [ptps, setPtps] = useState([]);
 
   const fmtCurrency = v => '$' + Math.round(Number(v || 0)).toLocaleString('en-US');
   const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
@@ -5792,12 +5793,14 @@ function WritTrackerTab({ token }) {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [wRes, rRes] = await Promise.all([
+      const [wRes, rRes, pRes] = await Promise.all([
         fetch(`${API_URL}/api/collections/writs`, { headers: { Authorization: 'Bearer ' + token } }),
-        fetch(`${API_URL}/api/collections/writs/reminders`, { headers: { Authorization: 'Bearer ' + token } })
+        fetch(`${API_URL}/api/collections/writs/reminders`, { headers: { Authorization: 'Bearer ' + token } }),
+        fetch(`${API_URL}/api/ptp`, { headers: { Authorization: 'Bearer ' + token } })
       ]);
       if (wRes.ok) setWrits(await wRes.json());
       if (rRes.ok) setReminders(await rRes.json());
+      if (pRes.ok) setPtps(await pRes.json());
     } catch (e) { console.error(e); }
     setLoading(false);
   };
@@ -5849,6 +5852,15 @@ function WritTrackerTab({ token }) {
       const d = w.writ_execution_date.split('T')[0];
       if (!executionsByDate[d]) executionsByDate[d] = [];
       executionsByDate[d].push(w);
+    }
+  });
+
+  const ptpsByDate = {};
+  ptps.forEach(p => {
+    if (p.promise_date) {
+      const d = p.promise_date.split('T')[0];
+      if (!ptpsByDate[d]) ptpsByDate[d] = [];
+      ptpsByDate[d].push(p);
     }
   });
 
@@ -6056,6 +6068,7 @@ function WritTrackerTab({ token }) {
               const day = i + 1;
               const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
               const dayWrits = executionsByDate[dateStr] || [];
+              const dayPtps = ptpsByDate[dateStr] || [];
               const isToday = dateStr === today;
               const isAlert = isReminder(dateStr) && dayWrits.length > 0;
               const isHovered = hoveredDay === dateStr;
@@ -6072,13 +6085,20 @@ function WritTrackerTab({ token }) {
                         {isAlert ? '⚠️ ' : ''}{w.resident_name.split(' ')[0]} · U{w.unit_number}
                       </div>
                     ))}
+                    {dayPtps.map(p => (
+                      <div key={p.id}
+                        title={p.resident_name + ' · Unit ' + p.unit_number + ' · ' + '$' + Number(p.promise_amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' · ' + (p.status || 'pending')}
+                        style={{ fontSize: '10px', padding: '3px 6px', borderRadius: '4px', backgroundColor: p.status === 'kept' ? '#dcfce7' : p.status === 'broken' ? '#fef2f2' : '#f0fdf4', color: p.status === 'kept' ? '#15803d' : p.status === 'broken' ? '#dc2626' : '#16a34a', fontWeight: '700', lineHeight: '1.3', border: `1px solid ${p.status === 'kept' ? '#86efac' : p.status === 'broken' ? '#fca5a5' : '#bbf7d0'}`, cursor: 'default' }}>
+                        💚 {p.resident_name.split(' ')[0]} · U{p.unit_number}
+                      </div>
+                    ))}
                   </div>
                 </div>
               );
             })}
           </div>
           <div style={{ display: 'flex', gap: '20px', padding: '12px 20px', borderTop: '1px solid #e2e8f0', backgroundColor: '#F0F4F8', flexWrap: 'wrap' }}>
-            {[{ label: 'Execution Scheduled', bg: '#ede9fe', color: '#7c3aed' }, { label: '48-Hour Alert', bg: '#fee2e2', color: '#dc2626' }].map(l => (
+            {[{ label: 'Execution Scheduled', bg: '#ede9fe', color: '#7c3aed' }, { label: '48-Hour Alert', bg: '#fee2e2', color: '#dc2626' }, { label: 'Promise to Pay', bg: '#f0fdf4', color: '#16a34a' }].map(l => (
               <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#64748b' }}>
                 <div style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: l.bg, border: `1px solid ${l.color}55` }} />
                 {l.label}
