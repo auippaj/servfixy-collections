@@ -255,7 +255,7 @@ function AdminTab({ token, initialSection }) {
 
   const inputStyle = { width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px', boxSizing: 'border-box', backgroundColor: '#fff' };
   const labelStyle = { fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' };
-  const fmtCurrency = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtCurrency = v => '$' + Math.round(Number(v || 0)).toLocaleString('en-US');
 
   // ── Users ────────────────────────────────────────────────────────────────────
   const fetchUsers = async () => {
@@ -1024,7 +1024,7 @@ function YardiImportTab({ token }) {
   const [importResults, setImportResults] = useState(null);
   const [detectedProperty, setDetectedProperty] = useState('');
 
-  const fmtCurrency = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtCurrency = v => '$' + Math.round(Number(v || 0)).toLocaleString('en-US');
 
   useEffect(() => {
     fetch(`${API_URL}/api/properties`, { headers: { Authorization: `Bearer ${token}` } })
@@ -5763,7 +5763,7 @@ function WritTrackerTab({ token }) {
   const [reviewForm, setReviewForm] = useState({ coordinator_notes: '', counter_date: '' });
   const [reviewSaving, setReviewSaving] = useState(false);
 
-  const fmtCurrency = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtCurrency = v => '$' + Math.round(Number(v || 0)).toLocaleString('en-US');
   const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
   const today = new Date().toISOString().split('T')[0];
 
@@ -6183,7 +6183,7 @@ function PromisesToPayTab({ token }) {
   const [saving, setSaving] = useState(false);
   const [hoveredDay, setHoveredDay] = useState(null);
 
-  const fmtCurrency = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtCurrency = v => '$' + Math.round(Number(v || 0)).toLocaleString('en-US');
   const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
   const fetchRequests = async () => {
