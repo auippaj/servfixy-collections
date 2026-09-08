@@ -805,10 +805,18 @@ function AdminTab({ token, initialSection }) {
                             </div>
                           ))}
                         </div>
-                        <a href={waResult.pdf_url} download
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#1B3A6B', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: '700', fontSize: '14px', marginBottom: '16px' }}>
-                          ⬇ Download PDF ({waResult.notices_generated} notices)
-                        </a>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
+                          <a href={waResult.pdf_url} download
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#1B3A6B', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: '700', fontSize: '14px' }}>
+                            ⬇ Download PDF ({waResult.notices_generated} notices)
+                          </a>
+                          {waResult.pdf_url && (
+                            <button onClick={() => { if (!waMergeUrls.includes(waResult.pdf_url)) setWaMergeUrls(prev => [...prev, waResult.pdf_url]); }}
+                              style={{ padding: '10px 16px', backgroundColor: waMergeUrls.includes(waResult.pdf_url) ? '#dcfce7' : '#f1f5f9', border: `1px solid ${waMergeUrls.includes(waResult.pdf_url) ? '#86efac' : '#cbd5e1'}`, borderRadius: '8px', fontSize: '13px', color: waMergeUrls.includes(waResult.pdf_url) ? '#15803d' : '#475569', cursor: 'pointer', fontWeight: '600' }}>
+                              {waMergeUrls.includes(waResult.pdf_url) ? `✓ Added (${waMergeUrls.length} batch${waMergeUrls.length !== 1 ? 'es' : ''})` : '+ Add to merge list'}
+                            </button>
+                          )}
+                        </div>
                         <div style={{ marginTop: '16px' }}>
                           <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email Draft</div>
                           <textarea readOnly value={waResult.email_draft || ''}
@@ -826,13 +834,7 @@ function AdminTab({ token, initialSection }) {
                             ))}
                           </div>
                         )}
-                        {/* Add to merge list */}
-                        {waResult.pdf_url && !waMergeUrls.includes(waResult.pdf_url) && (
-                          <button onClick={() => setWaMergeUrls(prev => [...prev, waResult.pdf_url])}
-                            style={{ marginTop: '12px', padding: '8px 16px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', color: '#475569', cursor: 'pointer' }}>
-                            + Add to merge list ({waMergeUrls.length + 1} batch{waMergeUrls.length > 0 ? 'es' : ''})
-                          </button>
-                        )}
+
                       </>
                     )}
                   </div>
