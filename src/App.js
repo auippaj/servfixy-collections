@@ -238,6 +238,7 @@ function AdminTab({ token, initialSection }) {
   const [genResult, setGenResult] = useState(null);
 
   // WA notice state
+  const WA_BATCH_LIMIT = 15;
   const [waFiles, setWaFiles] = useState([]);
   const [waServiceDate, setWaServiceDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [waTermDate, setWaTermDate] = useState(() => {
@@ -245,6 +246,8 @@ function AdminTab({ token, initialSection }) {
   });
   const [waGenerating, setWaGenerating] = useState(false);
   const [waResult, setWaResult] = useState(null);
+  const [waMergeUrls, setWaMergeUrls] = useState([]);
+  const [waMerging, setWaMerging] = useState(false);
 
   const ROLES = ['admin', 'dispatcher', 'coordinator', 'read_only'];
   const ROLE_COLORS = { admin: '#dc2626', dispatcher: '#1B3A6B', coordinator: '#14B8A6', read_only: '#94a3b8' };
@@ -715,8 +718,11 @@ function AdminTab({ token, initialSection }) {
             {/* ── WA: Ledger upload UI ── */}
             {isWA && (
               <div>
-                <div style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '13px', color: '#1e40af' }}>
-                  <strong>Washington State</strong> — 30-day itemized notice. Upload one ledger PDF per delinquent resident. Each ledger will be parsed and a compliant notice generated automatically.
+                <div style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', padding: '12px 16px', marginBottom: '12px', fontSize: '13px', color: '#1e40af' }}>
+                  <strong>Washington State</strong> — 30-day itemized notice. Upload one ledger PDF per resident. Limit <strong>{WA_BATCH_LIMIT} per run</strong> — for larger batches, run multiple times then use Merge PDFs below.
+                </div>
+                <div style={{ backgroundColor: '#fefce8', border: '1px solid #fde68a', borderRadius: '10px', padding: '10px 16px', marginBottom: '20px', fontSize: '12px', color: '#92400e' }}>
+                  ⚠️ <strong>Tech reminder:</strong> Batch limit exists due to Railway request timeout. Async job queue needed as permanent fix — schedule for next dev session.
                 </div>
 
                 {/* Dates */}
@@ -748,14 +754,14 @@ function AdminTab({ token, initialSection }) {
                   <div
                     onClick={() => document.getElementById('wa-ledger-input').click()}
                     onDragOver={e => e.preventDefault()}
-                    onDrop={e => { e.preventDefault(); const files = [...e.dataTransfer.files].filter(f => f.name.toLowerCase().endsWith('.pdf')); setWaFiles(prev => { const existing = new Set(prev.map(f => f.name)); return [...prev, ...files.filter(f => !existing.has(f.name))]; }); }}
+                    onDrop={e => { e.preventDefault(); const files = [...e.dataTransfer.files].filter(f => f.name.toLowerCase().endsWith('.pdf')); setWaFiles(prev => { const existing = new Set(prev.map(f => f.name)); const merged = [...prev, ...files.filter(f => !existing.has(f.name))]; return merged.slice(0, WA_BATCH_LIMIT); }); }}
                     style={{ border: '2px dashed #cbd5e1', borderRadius: '8px', padding: '28px', textAlign: 'center', cursor: 'pointer', backgroundColor: '#f8fafc' }}>
                     <div style={{ fontSize: '24px', marginBottom: '8px' }}>📁</div>
                     <div style={{ fontSize: '13px', color: '#64748b' }}>Drop ledger PDFs here or click to browse</div>
                     <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>One PDF per resident — upload as many as needed</div>
                   </div>
                   <input id='wa-ledger-input' type='file' accept='.pdf' multiple style={{ display: 'none' }}
-                    onChange={e => { const files = [...e.target.files]; setWaFiles(prev => { const existing = new Set(prev.map(f => f.name)); return [...prev, ...files.filter(f => !existing.has(f.name))]; }); e.target.value = ''; }} />
+                    onChange={e => { const files = [...e.target.files]; setWaFiles(prev => { const existing = new Set(prev.map(f => f.name)); const merged = [...prev, ...files.filter(f => !existing.has(f.name))]; return merged.slice(0, WA_BATCH_LIMIT); }); e.target.value = ''; }} />
                   {waFiles.length > 0 && (
                     <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {waFiles.map((f, i) => (
@@ -820,8 +826,44 @@ function AdminTab({ token, initialSection }) {
                             ))}
                           </div>
                         )}
+                        {/* Add to merge list */}
+                        {waResult.pdf_url && !waMergeUrls.includes(waResult.pdf_url) && (
+                          <button onClick={() => setWaMergeUrls(prev => [...prev, waResult.pdf_url])}
+                            style={{ marginTop: '12px', padding: '8px 16px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', color: '#475569', cursor: 'pointer' }}>
+                            + Add to merge list ({waMergeUrls.length + 1} batch{waMergeUrls.length > 0 ? 'es' : ''})
+                          </button>
+                        )}
                       </>
                     )}
+                  </div>
+                )}
+
+                {/* Merge PDFs from multiple batches */}
+                {waMergeUrls.length > 1 && (
+                  <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', marginTop: '16px' }}>
+                    <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>Merge {waMergeUrls.length} batches into one PDF</div>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>{waMergeUrls.length} batches queued</div>
+                    <button onClick={async () => {
+                      setWaMerging(true);
+                      try {
+                        const res = await fetch(`${API_URL}/api/collections/cases/merge-wa-pdfs`, {
+                          method: 'POST',
+                          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ pdf_urls: waMergeUrls })
+                        });
+                        const d = await res.json();
+                        if (d.pdf_url) { window.open(d.pdf_url, '_blank'); setWaMergeUrls([]); }
+                        else alert('Merge failed: ' + (d.error || 'Unknown error'));
+                      } catch(e) { alert('Merge failed: ' + e.message); }
+                      finally { setWaMerging(false); }
+                    }} disabled={waMerging}
+                      style={{ padding: '10px 20px', backgroundColor: '#1B3A6B', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+                      {waMerging ? 'Merging...' : '⬇ Download Merged PDF'}
+                    </button>
+                    <button onClick={() => setWaMergeUrls([])}
+                      style={{ marginLeft: '10px', padding: '10px 16px', backgroundColor: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', color: '#94a3b8', cursor: 'pointer' }}>
+                      Clear
+                    </button>
                   </div>
                 )}
               </div>
