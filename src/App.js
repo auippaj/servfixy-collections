@@ -3394,7 +3394,7 @@ function CollectionsReportsTab({ token, onBack }) {
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={{ backgroundColor: '#ffffff' }}>
-            {['Resident', 'Unit', 'Property', 'State', 'Balance', 'Aging', 'Status', 'Times Late', 'Case Opened'].map(h => (
+            {['Risk', 'Resident', 'Unit', 'Property', 'State', 'Balance', 'Aging', 'Status', 'Times Late', 'Case Opened'].map(h => (
               <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: '#94a3b8', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', borderBottom: '1px solid #ffffff' }}>{h}</th>
             ))}
           </tr>
@@ -3402,6 +3402,28 @@ function CollectionsReportsTab({ token, onBack }) {
         <tbody>
           {rows.map((row, i) => (
             <tr key={i} style={{ borderBottom: '1px solid #ffffff' }}>
+              <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                {row.risk_score != null ? (
+                  <span title={} style={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    width: '32px', height: '32px', borderRadius: '50%', fontWeight: '700', fontSize: '12px', cursor: 'default',
+                    backgroundColor:
+                      row.risk_score >= 70 ? '#fef2f2' :
+                      row.risk_score >= 40 ? '#fff7ed' :
+                      '#f0fdf4',
+                    color:
+                      row.risk_score >= 70 ? '#dc2626' :
+                      row.risk_score >= 40 ? '#ea580c' :
+                      '#16a34a',
+                    border:
+                      row.risk_score >= 70 ? '1.5px solid #fca5a5' :
+                      row.risk_score >= 40 ? '1.5px solid #fdba74' :
+                      '1.5px solid #86efac'
+                  }}>{row.risk_score}</span>
+                ) : (
+                  <span style={{ color: '#cbd5e1', fontSize: '11px' }}>—</span>
+                )}
+              </td>
               <td style={{ padding: '10px 12px', color: '#0f172a', fontWeight: '600' }}>{row.resident_name}</td>
               <td style={{ padding: '10px 12px', color: '#94a3b8' }}>{row.unit_number}</td>
               <td style={{ padding: '10px 12px', color: '#cbd5e1' }}>{row.property_name}</td>
