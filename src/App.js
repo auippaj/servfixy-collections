@@ -237,6 +237,15 @@ function AdminTab({ token, initialSection }) {
   const [generating, setGenerating] = useState(false);
   const [genResult, setGenResult] = useState(null);
 
+  // WA notice state
+  const [waFiles, setWaFiles] = useState([]);
+  const [waServiceDate, setWaServiceDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [waTermDate, setWaTermDate] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() + 32); return d.toISOString().split('T')[0];
+  });
+  const [waGenerating, setWaGenerating] = useState(false);
+  const [waResult, setWaResult] = useState(null);
+
   const ROLES = ['admin', 'dispatcher', 'coordinator', 'read_only'];
   const ROLE_COLORS = { admin: '#dc2626', dispatcher: '#1B3A6B', coordinator: '#14B8A6', read_only: '#94a3b8' };
   const JURISDICTIONS = ['TX', 'OH', 'TN', 'MO', 'WA'];
@@ -424,6 +433,32 @@ function AdminTab({ token, initialSection }) {
       setGenResult(d);
     } catch (err) { setGenResult({ error: err.message }); }
     finally { setGenerating(false); }
+  };
+
+  // ── WA Notice Generation ─────────────────────────────────────────────────────
+  const handleGenerateWA = async () => {
+    if (waFiles.length === 0) return;
+    const prop = properties.find(p => p.id === selectedProperty);
+    if (!prop) return;
+    setWaGenerating(true); setWaResult(null);
+    try {
+      const formData = new FormData();
+      formData.append('property_id', selectedProperty);
+      formData.append('property_name', prop.name);
+      formData.append('service_date', waServiceDate);
+      formData.append('termination_date', waTermDate);
+      formData.append('generated_by', 'Collections Admin');
+      waFiles.forEach(f => formData.append('ledgers', f));
+      const res = await fetch(`${API_URL}/api/collections/cases/batch-notices-wa`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'WA generation failed');
+      setWaResult(d);
+    } catch (err) { setWaResult({ error: err.message }); }
+    finally { setWaGenerating(false); }
   };
 
   useEffect(() => { fetchUsers(); fetchProperties(); }, [token]);
@@ -650,11 +685,14 @@ function AdminTab({ token, initialSection }) {
         )}
 
         {/* ── BULK NOTICES ── */}
-        {activeSection === 'bulk-notices' && (
+        {activeSection === 'bulk-notices' && (() => {
+          const selectedPropObj = properties.find(p => p.id === selectedProperty);
+          const isWA = selectedPropObj?.state === 'WA' || selectedPropObj?.notice_jurisdiction === 'WA';
+          return (
           <div>
             <div style={{ marginBottom: '24px' }}>
               <h1 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>Generate Notices</h1>
-              <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Select a property, review eligible cases, and generate Pay or Quit notices in bulk.</p>
+              <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Select a property to generate notices. Washington State properties use ledger-based 30-day notices.</p>
             </div>
 
             {/* Property selector */}
@@ -662,10 +700,10 @@ function AdminTab({ token, initialSection }) {
               <label style={labelStyle}>Select Property</label>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <PropertySelector properties={properties} value={selectedProperty}
-                  onChange={v => { setSelectedProperty(v); fetchEligible(v); }}
+                  onChange={v => { setSelectedProperty(v); setWaFiles([]); setWaResult(null); setGenResult(null); fetchEligible(v); }}
                   placeholder='Choose a property...'
                   style={{ maxWidth: '480px' }} />
-                {selectedProperty && (
+                {selectedProperty && !isWA && (
                   <button onClick={() => fetchEligible(selectedProperty)} disabled={eligibleLoading}
                     style={{ padding: '9px 16px', backgroundColor: '#F0F4F8', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#475569', fontSize: '13px', cursor: 'pointer' }}>
                     {eligibleLoading ? 'Loading...' : '↻ Refresh'}
@@ -674,8 +712,123 @@ function AdminTab({ token, initialSection }) {
               </div>
             </div>
 
-            {/* Eligible cases */}
-            {eligibleData && (
+            {/* ── WA: Ledger upload UI ── */}
+            {isWA && (
+              <div>
+                <div style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '13px', color: '#1e40af' }}>
+                  <strong>Washington State</strong> — 30-day itemized notice. Upload one ledger PDF per delinquent resident. Each ledger will be parsed and a compliant notice generated automatically.
+                </div>
+
+                {/* Dates */}
+                <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label style={labelStyle}>Date of Service</label>
+                      <input type='date' value={waServiceDate}
+                        onChange={e => {
+                          setWaServiceDate(e.target.value);
+                          const d = new Date(e.target.value + 'T00:00:00');
+                          d.setDate(d.getDate() + 32);
+                          setWaTermDate(d.toISOString().split('T')[0]);
+                        }}
+                        style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '7px', fontSize: '13px', boxSizing: 'border-box' }} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Termination Date (32 days)</label>
+                      <input type='date' value={waTermDate}
+                        onChange={e => setWaTermDate(e.target.value)}
+                        style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '7px', fontSize: '13px', boxSizing: 'border-box' }} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* File upload */}
+                <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
+                  <label style={labelStyle}>Resident Ledger PDFs</label>
+                  <div
+                    onClick={() => document.getElementById('wa-ledger-input').click()}
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => { e.preventDefault(); const files = [...e.dataTransfer.files].filter(f => f.name.toLowerCase().endsWith('.pdf')); setWaFiles(prev => { const existing = new Set(prev.map(f => f.name)); return [...prev, ...files.filter(f => !existing.has(f.name))]; }); }}
+                    style={{ border: '2px dashed #cbd5e1', borderRadius: '8px', padding: '28px', textAlign: 'center', cursor: 'pointer', backgroundColor: '#f8fafc' }}>
+                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>📁</div>
+                    <div style={{ fontSize: '13px', color: '#64748b' }}>Drop ledger PDFs here or click to browse</div>
+                    <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>One PDF per resident — upload as many as needed</div>
+                  </div>
+                  <input id='wa-ledger-input' type='file' accept='.pdf' multiple style={{ display: 'none' }}
+                    onChange={e => { const files = [...e.target.files]; setWaFiles(prev => { const existing = new Set(prev.map(f => f.name)); return [...prev, ...files.filter(f => !existing.has(f.name))]; }); e.target.value = ''; }} />
+                  {waFiles.length > 0 && (
+                    <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {waFiles.map((f, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', backgroundColor: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                          <span style={{ fontSize: '13px', flex: 1, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📄 {f.name}</span>
+                          <button onClick={() => setWaFiles(prev => prev.filter((_, idx) => idx !== i))}
+                            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '16px', padding: '0 4px' }}>×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Generate button */}
+                <button onClick={handleGenerateWA} disabled={waGenerating || waFiles.length === 0}
+                  style={{ padding: '12px 28px', backgroundColor: waFiles.length === 0 ? '#94a3b8' : '#dc2626', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '14px', fontWeight: '700', cursor: waFiles.length === 0 ? 'not-allowed' : 'pointer', width: '100%', marginBottom: '16px' }}>
+                  {waGenerating ? `Parsing ${waFiles.length} ledger${waFiles.length !== 1 ? 's' : ''} and generating notices…` : `Generate ${waFiles.length > 0 ? waFiles.length : ''} WA Notice${waFiles.length !== 1 ? 's' : ''}`}
+                </button>
+                {waGenerating && (
+                  <div style={{ fontSize: '12px', color: '#64748b', textAlign: 'center', marginBottom: '16px' }}>
+                    This may take 30–60 seconds depending on the number of ledgers…
+                  </div>
+                )}
+
+                {/* WA Result */}
+                {waResult && (
+                  <div style={{ backgroundColor: waResult.error ? '#fef2f2' : '#f0fdf4', border: `1px solid ${waResult.error ? '#fca5a5' : '#bbf7d0'}`, borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+                    {waResult.error ? (
+                      <div style={{ color: '#dc2626', fontWeight: '700' }}>❌ {waResult.error}</div>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: '16px', fontWeight: '700', color: '#15803d', marginBottom: '16px' }}>
+                          ✅ {waResult.notices_generated} notice{waResult.notices_generated !== 1 ? 's' : ''} generated
+                          {waResult.notices_failed > 0 && <span style={{ color: '#dc2626', marginLeft: '8px' }}>· {waResult.notices_failed} failed</span>}
+                        </div>
+                        {/* Resident list */}
+                        <div style={{ marginBottom: '16px' }}>
+                          {(waResult.residents || []).map((r, i) => (
+                            <div key={i} style={{ fontSize: '13px', color: '#334155', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+                              {r.name} — {r.address}
+                            </div>
+                          ))}
+                        </div>
+                        <a href={waResult.pdf_url} download
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#1B3A6B', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: '700', fontSize: '14px', marginBottom: '16px' }}>
+                          ⬇ Download PDF ({waResult.notices_generated} notices)
+                        </a>
+                        <div style={{ marginTop: '16px' }}>
+                          <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email Draft</div>
+                          <textarea readOnly value={waResult.email_draft || ''}
+                            style={{ width: '100%', minHeight: '160px', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', color: '#334155', backgroundColor: '#f8fafc', resize: 'vertical', boxSizing: 'border-box' }} />
+                          <button onClick={() => navigator.clipboard.writeText(waResult.email_draft || '')}
+                            style={{ marginTop: '8px', padding: '7px 14px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', color: '#475569', cursor: 'pointer' }}>
+                            Copy to Clipboard
+                          </button>
+                        </div>
+                        {waResult.notices_failed > 0 && (
+                          <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#fef2f2', borderRadius: '8px', border: '1px solid #fca5a5' }}>
+                            <div style={{ fontSize: '12px', fontWeight: '700', color: '#dc2626', marginBottom: '6px' }}>Failed:</div>
+                            {(waResult.failed_cases || []).map((f, i) => (
+                              <div key={i} style={{ fontSize: '12px', color: '#dc2626' }}>{f.resident} — {f.error}</div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Non-WA: Eligible cases */}
+            {!isWA && eligibleData && (
               <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: '20px' }}>
                 <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                   <div>
@@ -747,8 +900,8 @@ function AdminTab({ token, initialSection }) {
               </div>
             )}
 
-            {/* Generation result */}
-            {genResult && (
+            {/* Non-WA Generation result */}
+            {!isWA && genResult && (
               <div style={{ backgroundColor: genResult.error ? '#fef2f2' : '#f0fdf4', border: `1px solid ${genResult.error ? '#fca5a5' : '#bbf7d0'}`, borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
                 {genResult.error ? (
                   <div style={{ color: '#dc2626', fontWeight: '700' }}>❌ {genResult.error}</div>
@@ -807,7 +960,8 @@ function AdminTab({ token, initialSection }) {
               </div>
             )}
           </div>
-        )}
+        );
+        })()}
       </div>
     </div>
   );
