@@ -2172,13 +2172,9 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
   useEffect(() => { fetchCases(); }, [filterProperty, filterStatus, filterAging]);
 
   useEffect(() => {
-    if (!nameSearch) return;
-    const matches = cases.filter(c =>
-      c.resident_name.toLowerCase().includes(nameSearch.toLowerCase()) ||
-      (c.unit_number || '').toLowerCase().includes(nameSearch.toLowerCase())
-    );
-    if (matches.length === 1) handleSelectCase(matches[0]);
-  }, [nameSearch, cases]);
+    const t = setTimeout(() => { fetchCases(1); }, 350);
+    return () => clearTimeout(t);
+  }, [nameSearch]);
 
   const handleSelectCase = (c) => {
     setSelectedCase(c);
