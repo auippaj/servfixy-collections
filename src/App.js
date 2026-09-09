@@ -255,7 +255,7 @@ function AdminTab({ token, initialSection }) {
 
   const inputStyle = { width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#111827', fontSize: '13px', boxSizing: 'border-box', backgroundColor: '#fff' };
   const labelStyle = { fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' };
-  const fmtCurrency = v => '$' + Math.round(Number(v || 0)).toLocaleString('en-US');
+  const fmtCurrency = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   // ── Users ────────────────────────────────────────────────────────────────────
   const fetchUsers = async () => {
@@ -1024,7 +1024,7 @@ function YardiImportTab({ token }) {
   const [importResults, setImportResults] = useState(null);
   const [detectedProperty, setDetectedProperty] = useState('');
 
-  const fmtCurrency = v => '$' + Math.round(Number(v || 0)).toLocaleString('en-US');
+  const fmtCurrency = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   useEffect(() => {
     fetch(`${API_URL}/api/properties`, { headers: { Authorization: `Bearer ${token}` } })
@@ -1573,7 +1573,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
     possession_granted: '#15803d', closed_paid: '#34d399', closed_written_off: '#94a3b8'
   };
 
-  const fmtCurrency = v => '$' + Math.round(Number(v || 0)).toLocaleString('en-US');
+  const fmtCurrency = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtStatus = (s) => (s || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
   const BarChart = ({ rows, valueKey, labelKey, colorMap, maxVal }) => {
@@ -5783,7 +5783,7 @@ function WritTrackerTab({ token }) {
   const [reviewSaving, setReviewSaving] = useState(false);
   const [ptps, setPtps] = useState([]);
 
-  const fmtCurrency = v => '$' + Math.round(Number(v || 0)).toLocaleString('en-US');
+  const fmtCurrency = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
   const today = new Date().toISOString().split('T')[0];
 
@@ -6229,7 +6229,7 @@ function PromisesToPayTab({ token }) {
   const [hoveredDay, setHoveredDay] = useState(null);
   const [ptpSearch, setPtpSearch] = useState('');
 
-  const fmtCurrency = v => '$' + Math.round(Number(v || 0)).toLocaleString('en-US');
+  const fmtCurrency = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
   const fetchRequests = async () => {
