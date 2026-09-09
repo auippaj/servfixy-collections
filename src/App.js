@@ -1702,108 +1702,111 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
         ))}
       </div>
 
-      {/* AI Prediction Widgets */}
+      {/* PTP Widgets */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px', marginBottom: '20px' }}>
 
-        {/* Widget 1: Will Pay Before Possession */}
-        <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#fef9c3', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#92400e' }}>⚖️ Will Pay Before Possession</div>
-              <div style={{ fontSize: '11px', color: '#a16207', marginTop: '2px' }}>Cases in eviction predicted to pay at the last minute</div>
+        {/* Widget 1: Upcoming PTPs — next 7 days */}
+        {(() => {
+          const today = new Date().toISOString().split('T')[0];
+          const in7 = new Date(Date.now() + 7*86400000).toISOString().split('T')[0];
+          const upcoming = (ptpStats?.upcoming || []).filter(p => {
+            const dk = String(p.promise_date||'').split('T')[0];
+            return dk >= today && dk <= in7 && p.status === 'pending';
+          }).sort((a,b) => String(a.promise_date).localeCompare(String(b.promise_date)));
+          const totalAmt = upcoming.reduce((s,p) => s + Number(p.promise_amount||0), 0);
+          return (
+            <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f0fdf4', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: '#15803d' }}>🤝 Upcoming Promises to Pay</div>
+                  <div style={{ fontSize: '11px', color: '#16a34a', marginTop: '2px' }}>Due in the next 7 days</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '28px', fontWeight: '800', color: '#15803d', lineHeight: 1 }}>{upcoming.length}</div>
+                  <div style={{ fontSize: '10px', color: '#94a3b8' }}>${Math.round(totalAmt).toLocaleString('en-US')} promised</div>
+                </div>
+              </div>
+              <div style={{ padding: '0', maxHeight: '320px', overflowY: 'auto' }}>
+                {upcoming.length === 0 ? (
+                  <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No PTPs due in the next 7 days</div>
+                ) : upcoming.map((p, i) => {
+                  const dk = String(p.promise_date||'').split('T')[0];
+                  const isToday = dk === today;
+                  const isTomorrow = dk === new Date(Date.now()+86400000).toISOString().split('T')[0];
+                  const label = isToday ? 'TODAY' : isTomorrow ? 'TOMORROW' : new Date(dk+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+                  return (
+                    <div key={p.id||i} style={{ padding: '12px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>{p.resident_name}</div>
+                        <div style={{ fontSize: '11px', color: '#94a3b8' }}>Unit {p.unit_number} · {p.property_name || ''}</div>
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: '11px', fontWeight: '700', backgroundColor: isToday ? '#dcfce7' : '#f0fdf4', color: isToday ? '#15803d' : '#16a34a', padding: '2px 7px', borderRadius: '4px', marginBottom: '3px' }}>{label}</div>
+                        <div style={{ fontSize: '13px', fontWeight: '700', color: '#15803d' }}>${Number(p.promise_amount||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {upcoming.length > 0 && (
+                <div style={{ padding: '10px 20px', backgroundColor: '#f8fafc', fontSize: '11px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>{upcoming.filter(p=>String(p.promise_date||'').split('T')[0]===today).length} due today</span>
+                  <span>{upcoming.filter(p=>String(p.promise_date||'').split('T')[0]===new Date(Date.now()+86400000).toISOString().split('T')[0]).length} due tomorrow</span>
+                </div>
+              )}
             </div>
-            {predictions && (
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '28px', fontWeight: '800', color: '#d97706', lineHeight: 1 }}>
-                  {predictions.pre_possession.will_pay_count}
-                  <span style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '400' }}>/{predictions.pre_possession.total_count}</span>
-                </div>
-                <div style={{ fontSize: '10px', color: '#94a3b8' }}>likely to pay</div>
-              </div>
-            )}
-          </div>
-          <div style={{ padding: '0', maxHeight: '320px', overflowY: 'auto' }}>
-            {predictionsLoading ? (
-              <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>🤖 AI analyzing payment patterns...</div>
-            ) : predictions?.pre_possession.cases.length === 0 ? (
-              <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No cases currently in eviction pipeline</div>
-            ) : predictions?.pre_possession.cases.map((c, i) => (
-              <div key={i} style={{ padding: '12px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {c.resident_name}
-                    {c.pattern_flag && <span title="Repeat last-minute payer" style={{ fontSize: '10px', backgroundColor: '#fef9c3', color: '#92400e', padding: '1px 5px', borderRadius: '4px', fontWeight: '700' }}>REPEAT</span>}
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#94a3b8' }}>Unit {c.unit_number} · {c.property_name}</div>
-                  <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px', fontStyle: 'italic' }}>{c.reasoning}</div>
-                </div>
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontSize: '13px', fontWeight: '700', color: c.will_pay_probability >= 70 ? '#d97706' : c.will_pay_probability >= 50 ? '#ea580c' : '#94a3b8' }}>
-                    {c.will_pay_probability}%
-                  </div>
-                  <div style={{ fontSize: '10px', color: '#94a3b8' }}>{c.confidence} confidence</div>
-                  <div style={{ fontSize: '11px', color: '#dc2626', fontWeight: '600' }}>${Number(c.balance_owed).toLocaleString()}</div>
-                </div>
-              </div>
-            ))}
-            {predictions && predictions.pre_possession.total_count > 0 && (
-              <div style={{ padding: '10px 20px', backgroundColor: '#f8fafc', display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748b' }}>
-                <span>🔁 {predictions.pre_possession.repeat_payers} repeat last-minute payer{predictions.pre_possession.repeat_payers !== 1 ? 's' : ''}</span>
-                <span>At-risk (won't pay): ${predictions.pre_possession.total_at_risk.toLocaleString('en-US', {minimumFractionDigits: 0})}</span>
-              </div>
-            )}
-          </div>
-        </div>
+          );
+        })()}
 
-        {/* Widget 2: Will Pay Before Writ Execution */}
-        <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#fef2f2', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#991b1b' }}>🔑 Will Pay Before Writ Execution</div>
-              <div style={{ fontSize: '11px', color: '#b91c1c', marginTop: '2px' }}>Possession granted — predicted to pay before writ executes</div>
+        {/* Widget 2: Broken / Overdue PTPs */}
+        {(() => {
+          const today = new Date().toISOString().split('T')[0];
+          const broken = (ptpStats?.upcoming || []).filter(p => {
+            const dk = String(p.promise_date||'').split('T')[0];
+            return p.status === 'broken' || (p.status === 'pending' && dk < today);
+          }).sort((a,b) => String(a.promise_date).localeCompare(String(b.promise_date)));
+          const totalAmt = broken.reduce((s,p) => s + Number(p.promise_amount||0), 0);
+          return (
+            <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#fef2f2', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: '#991b1b' }}>⚠️ Broken / Overdue PTPs</div>
+                  <div style={{ fontSize: '11px', color: '#b91c1c', marginTop: '2px' }}>Promises past due or marked broken</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '28px', fontWeight: '800', color: '#dc2626', lineHeight: 1 }}>{broken.length}</div>
+                  <div style={{ fontSize: '10px', color: '#94a3b8' }}>${Math.round(totalAmt).toLocaleString('en-US')} at risk</div>
+                </div>
+              </div>
+              <div style={{ padding: '0', maxHeight: '320px', overflowY: 'auto' }}>
+                {broken.length === 0 ? (
+                  <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No broken or overdue promises</div>
+                ) : broken.map((p, i) => {
+                  const dk = String(p.promise_date||'').split('T')[0];
+                  const daysOver = Math.floor((Date.now() - new Date(dk+'T12:00:00').getTime())/86400000);
+                  return (
+                    <div key={p.id||i} style={{ padding: '12px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>{p.resident_name}</div>
+                        <div style={{ fontSize: '11px', color: '#94a3b8' }}>Unit {p.unit_number} · {p.property_name || ''}</div>
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: '11px', fontWeight: '700', backgroundColor: '#fef2f2', color: '#dc2626', padding: '2px 7px', borderRadius: '4px', marginBottom: '3px' }}>{p.status === 'broken' ? 'BROKEN' : daysOver + 'd overdue'}</div>
+                        <div style={{ fontSize: '13px', fontWeight: '700', color: '#dc2626' }}>${Number(p.promise_amount||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {broken.length > 0 && (
+                <div style={{ padding: '10px 20px', backgroundColor: '#f8fafc', fontSize: '11px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>{broken.filter(p=>p.status==='broken').length} marked broken</span>
+                  <span>{broken.filter(p=>p.status==='pending').length} past due date</span>
+                </div>
+              )}
             </div>
-            {predictions && (
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '28px', fontWeight: '800', color: '#dc2626', lineHeight: 1 }}>
-                  {predictions.pre_writ.will_pay_count}
-                  <span style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '400' }}>/{predictions.pre_writ.total_count}</span>
-                </div>
-                <div style={{ fontSize: '10px', color: '#94a3b8' }}>likely to pay</div>
-              </div>
-            )}
-          </div>
-          <div style={{ padding: '0', maxHeight: '320px', overflowY: 'auto' }}>
-            {predictionsLoading ? (
-              <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>🤖 AI analyzing payment patterns...</div>
-            ) : predictions?.pre_writ.cases.length === 0 ? (
-              <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No cases with possession granted</div>
-            ) : predictions?.pre_writ.cases.map((c, i) => (
-              <div key={i} style={{ padding: '12px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {c.resident_name}
-                    {c.pattern_flag && <span title="Repeat last-minute payer" style={{ fontSize: '10px', backgroundColor: '#fef2f2', color: '#991b1b', padding: '1px 5px', borderRadius: '4px', fontWeight: '700' }}>REPEAT</span>}
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#94a3b8' }}>Unit {c.unit_number} · {c.property_name}</div>
-                  <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px', fontStyle: 'italic' }}>{c.reasoning}</div>
-                </div>
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontSize: '13px', fontWeight: '700', color: c.will_pay_probability >= 70 ? '#dc2626' : c.will_pay_probability >= 50 ? '#ea580c' : '#94a3b8' }}>
-                    {c.will_pay_probability}%
-                  </div>
-                  <div style={{ fontSize: '10px', color: '#94a3b8' }}>{c.confidence} confidence</div>
-                  <div style={{ fontSize: '11px', color: '#dc2626', fontWeight: '600' }}>${Number(c.balance_owed).toLocaleString()}</div>
-                </div>
-              </div>
-            ))}
-            {predictions && predictions.pre_writ.total_count > 0 && (
-              <div style={{ padding: '10px 20px', backgroundColor: '#f8fafc', display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748b' }}>
-                <span>🔁 {predictions.pre_writ.repeat_payers} repeat last-minute payer{predictions.pre_writ.repeat_payers !== 1 ? 's' : ''}</span>
-                <span>At-risk (won't pay): ${predictions.pre_writ.total_at_risk.toLocaleString('en-US', {minimumFractionDigits: 0})}</span>
-              </div>
-            )}
-          </div>
-        </div>
+          );
+        })()}
 
       </div>
 
