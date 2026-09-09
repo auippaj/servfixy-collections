@@ -6669,7 +6669,7 @@ function PromisesToPayTab({ token }) {
               </div>
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-              <button onClick={() => setShowAddModal(false)}
+              <button onClick={() => { setShowAddModal(false); setForm({ property_id: '', resident_name: '', unit_number: '', promise_amount: '', promise_date: '', payment_method: 'Portal', notes: '' }); setFormError(''); setCaseQuery(''); setCaseResults([]); }}
                 style={{ flex: 1, padding: '10px', border: '1px solid #cbd5e1', borderRadius: '7px', backgroundColor: '#fff', color: '#475569', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
                 Cancel
               </button>
