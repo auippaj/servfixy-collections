@@ -6108,6 +6108,9 @@ function WritTrackerTab({ token }) {
       {/* List View */}
       {activeView === 'manager' && view === 'list' && (
         <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#F8FAFC' }}>
+            <input value={ptpSearch} onChange={e => setPtpSearch(e.target.value)} placeholder="🔍 Search resident or unit..." style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box', backgroundColor: '#fff' }} />
+          </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ backgroundColor: '#F0F4F8', borderBottom: '2px solid #e2e8f0' }}>
@@ -6221,6 +6224,7 @@ function PromisesToPayTab({ token }) {
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
   const [hoveredDay, setHoveredDay] = useState(null);
+  const [ptpSearch, setPtpSearch] = useState('');
 
   const fmtCurrency = v => '$' + Math.round(Number(v || 0)).toLocaleString('en-US');
   const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
@@ -6482,10 +6486,10 @@ function PromisesToPayTab({ token }) {
               </tr>
             </thead>
             <tbody>
-              {ptps.length === 0 && (
-                <tr><td colSpan={8} style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No PTPs found. Add one above.</td></tr>
+              {(ptpSearch ? ptps.filter(p => p.resident_name?.toLowerCase().includes(ptpSearch.toLowerCase()) || (p.unit_number||'').toLowerCase().includes(ptpSearch.toLowerCase())) : ptps).length === 0 && (
+                <tr><td colSpan={8} style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>{ptpSearch ? 'No matches found.' : 'No PTPs found. Add one above.'}</td></tr>
               )}
-              {ptps.map((p, idx) => {
+              {(ptpSearch ? ptps.filter(p => p.resident_name?.toLowerCase().includes(ptpSearch.toLowerCase()) || (p.unit_number||'').toLowerCase().includes(ptpSearch.toLowerCase())) : ptps).map((p, idx) => {
                 const isOverdue = p.status === 'pending' && p.promise_date < today;
                 const sc = statusColor(p.status, p.promise_date);
                 const sb = statusBg(p.status, p.promise_date);
