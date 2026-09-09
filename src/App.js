@@ -6223,6 +6223,9 @@ function PromisesToPayTab({ token }) {
   const [form, setForm] = useState({ property_id: '', resident_name: '', unit_number: '', promise_amount: '', promise_date: '', payment_method: 'Portal', notes: '' });
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [caseQuery, setCaseQuery] = useState('');
+  const [caseResults, setCaseResults] = useState([]);
+  const [caseDropOpen, setCaseDropOpen] = useState(false);
   const [hoveredDay, setHoveredDay] = useState(null);
   const [ptpSearch, setPtpSearch] = useState('');
 
@@ -6586,7 +6589,7 @@ function PromisesToPayTab({ token }) {
             onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>Add Promise to Pay</div>
-              <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', fontSize: '20px', color: '#94a3b8', cursor: 'pointer' }}>✕</button>
+              <button onClick={() => { setShowAddModal(false); setCaseQuery(''); setCaseResults([]); }} style={{ background: 'none', border: 'none', fontSize: '20px', color: '#94a3b8', cursor: 'pointer' }}>✕</button>
             </div>
             {formError && <div style={{ backgroundColor: '#fef2f2', color: '#dc2626', padding: '10px 12px', borderRadius: '7px', marginBottom: '14px', fontSize: '13px' }}>{formError}</div>}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -6597,14 +6600,51 @@ function PromisesToPayTab({ token }) {
                   {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} disabled style={{fontWeight:'700',color:'#94a3b8',backgroundColor:'#F0F4F8'}}>── {s} ──</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
                 </select>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={labelStyle}>Resident Name</label>
-                  <input value={form.resident_name} onChange={e => setForm(f => ({ ...f, resident_name: e.target.value }))} placeholder="Full name" style={inputStyle} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Unit Number</label>
-                  <input value={form.unit_number} onChange={e => setForm(f => ({ ...f, unit_number: e.target.value }))} placeholder="e.g. 104" style={inputStyle} />
+              <div>
+                <label style={labelStyle}>Resident / Unit</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    value={caseQuery}
+                    onChange={async e => {
+                      const q = e.target.value;
+                      setCaseQuery(q);
+                      setForm(f => ({ ...f, resident_name: q, unit_number: '' }));
+                      if (q.length < 2) { setCaseResults([]); setCaseDropOpen(false); return; }
+                      try {
+                        const propParam = form.property_id ? '&property_id=' + form.property_id : '';
+                        const r = await fetch(API_URL + '/api/collections/cases?page=1&limit=20&search=' + encodeURIComponent(q) + propParam, { headers: { Authorization: 'Bearer ' + token } });
+                        if (r.ok) {
+                          const data = await r.json();
+                          const rows = Array.isArray(data) ? data : (data.cases || []);
+                          setCaseResults(rows);
+                          setCaseDropOpen(rows.length > 0);
+                        }
+                      } catch(e) { console.error(e); }
+                    }}
+                    placeholder="Type resident name or unit..."
+                    style={{ ...inputStyle, marginBottom: 0 }}
+                    onFocus={() => caseResults.length > 0 && setCaseDropOpen(true)}
+                    onBlur={() => setTimeout(() => setCaseDropOpen(false), 200)}
+                  />
+                  {caseDropOpen && (
+                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 999, backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: '180px', overflowY: 'auto' }}>
+                      {caseResults.map(c => (
+                        <div key={c.id}
+                          onMouseDown={() => {
+                            setForm(f => ({ ...f, resident_name: c.resident_name, unit_number: c.unit_number, property_id: c.property_id, promise_amount: Math.round(Number(c.balance_owed || 0)) }));
+                            setCaseQuery(c.resident_name + ' · Unit ' + c.unit_number);
+                            setCaseDropOpen(false);
+                          }}
+                          style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontSize: '13px' }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f0fdf4'}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}>
+                          <span style={{ fontWeight: '600', color: '#0f172a' }}>{c.resident_name}</span>
+                          <span style={{ color: '#64748b', marginLeft: '8px' }}>Unit {c.unit_number}</span>
+                          <span style={{ color: '#dc2626', marginLeft: '8px', fontWeight: '700' }}>${Math.round(Number(c.balance_owed||0)).toLocaleString('en-US')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
