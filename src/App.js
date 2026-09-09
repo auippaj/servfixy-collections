@@ -2132,6 +2132,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
       if (filterProperty) url += `property_id=${filterProperty}&`;
       if (filterStatus)   url += `status=${filterStatus}&`;
       if (filterAging)    url += `aging_bucket=${encodeURIComponent(filterAging)}&`;
+      if (nameSearch)     url += `search=${encodeURIComponent(nameSearch)}&`;
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Failed to load cases');
@@ -2454,7 +2455,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
           </div>
           <input
             value={nameSearch}
-            onChange={e => setNameSearch(e.target.value)}
+            onChange={e => { setNameSearch(e.target.value); setCurrentPage(1); }}
             placeholder='🔍 Search by name or unit...'
             style={{ ...inputStyle, marginBottom: '8px' }}
           />
