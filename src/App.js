@@ -2632,14 +2632,16 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                 </div>
                 {/* Editable date fields */}
                 {[
-                  { label: 'Notice Issued', field: 'notice_issued_date' },
-                  { label: 'FED Date',       field: 'fed_date' },
-                  { label: 'Writ Filed',     field: 'writ_file_date' },
-                  { label: 'Court Hearing',  field: 'court_hearing_date' },
-                  { label: 'Possession Granted', field: 'possession_granted_date' },
+                  { label: 'Notice Issued',    field: 'notice_issued_date' },
+                  { label: 'FED Date',         field: 'fed_date' },
+                  { label: 'Writ Filed',        field: 'writ_file_date' },
+                  { label: 'Court Hearing',     field: 'court_hearing_date' },
+                  { label: 'Possession Granted',field: 'possession_granted_date' },
+                  { label: 'Writ Eligible Date',field: 'writ_eligible_date' },
+                  { label: 'Writ Filed Date',   field: 'writ_filed_date' },
                 ].map(({ label, field }) => (
-                  <div key={field} style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '10px 12px' }}>
-                    <div style={{ fontSize: '10px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{label}</div>
+                  <div key={field} style={{ backgroundColor: field === 'writ_eligible_date' ? '#eff6ff' : field === 'writ_filed_date' ? '#f0fdf4' : '#ffffff', borderRadius: '8px', padding: '10px 12px', border: field === 'writ_eligible_date' ? '1.5px solid #bfdbfe' : field === 'writ_filed_date' ? '1.5px solid #86efac' : 'none' }}>
+                    <div style={{ fontSize: '10px', color: field === 'writ_eligible_date' ? '#1d4ed8' : field === 'writ_filed_date' ? '#15803d' : '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px', fontWeight: field === 'writ_eligible_date' || field === 'writ_filed_date' ? '700' : '400' }}>{field === 'writ_eligible_date' ? '📅 ' : field === 'writ_filed_date' ? '✅ ' : ''}{label}</div>
                     <input
                       type='date'
                       defaultValue={caseDetail[field] ? caseDetail[field].split('T')[0] : ''}
