@@ -6319,8 +6319,10 @@ function PromisesToPayTab({ token }) {
 
   const ptpsByDate = {};
   ptps.forEach(p => {
-    if (!ptpsByDate[p.promise_date]) ptpsByDate[p.promise_date] = [];
-    ptpsByDate[p.promise_date].push(p);
+    if (!p.promise_date) return;
+    const dk = String(p.promise_date).split('T')[0];
+    if (!ptpsByDate[dk]) ptpsByDate[dk] = [];
+    ptpsByDate[dk].push(p);
   });
 
   const statusColor = (s, date) => {
