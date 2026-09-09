@@ -3404,7 +3404,7 @@ function CollectionsReportsTab({ token, onBack }) {
             <tr key={i} style={{ borderBottom: '1px solid #ffffff' }}>
               <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                 {row.risk_score != null ? (
-                  <span title={} style={{
+                  <span title={row.risk_score != null ? ("F:" + row.financial_score + " L:" + row.legal_score + " R:" + row.recovery_score + " E:" + row.escalation_score) : ""} style={{
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                     width: '32px', height: '32px', borderRadius: '50%', fontWeight: '700', fontSize: '12px', cursor: 'default',
                     backgroundColor:
