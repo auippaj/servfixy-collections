@@ -1573,7 +1573,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
     possession_granted: '#15803d', closed_paid: '#34d399', closed_written_off: '#94a3b8'
   };
 
-  const fmtCurrency = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtCurrency = v => '$' + Math.round(Number(v || 0)).toLocaleString('en-US');
   const fmtStatus = (s) => (s || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
   const BarChart = ({ rows, valueKey, labelKey, colorMap, maxVal }) => {
