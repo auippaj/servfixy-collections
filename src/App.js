@@ -1554,7 +1554,8 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
             pending: rows.filter(p => p.status === 'pending' && p.promise_date >= today).length,
             kept: rows.filter(p => p.status === 'kept').length,
             broken: rows.filter(p => p.status === 'broken' || (p.status === 'pending' && p.promise_date < today)).length,
-            totalAmt: rows.filter(p => p.status === 'pending' && p.promise_date >= today).reduce((s, p) => s + Number(p.promise_amount), 0)
+            totalAmt: rows.filter(p => p.status === 'pending' && p.promise_date >= today).reduce((s, p) => s + Number(p.promise_amount), 0),
+            upcoming: rows
           });
         }
       }).catch(() => {});
