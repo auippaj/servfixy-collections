@@ -5777,7 +5777,7 @@ function WritTrackerTab({ token }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedWrit, setSelectedWrit] = useState(null);
   const [editingDates, setEditingDates] = useState(false);
-  const [dateForm, setDateForm] = useState({ writ_filed_date: '', writ_execution_date: '' });
+  const [dateForm, setDateForm] = useState({ writ_eligible_date: '', writ_filed_date: '', writ_execution_date: '' });
   const [saving, setSaving] = useState(false);
   const [hoveredDay, setHoveredDay] = useState(null);
   const [activeView, setActiveView] = useState('manager');
@@ -5829,6 +5829,7 @@ function WritTrackerTab({ token }) {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
         body: JSON.stringify({
+          writ_eligible_date: dateForm.writ_eligible_date || null,
           writ_filed_date: dateForm.writ_filed_date || null,
           writ_execution_date: dateForm.writ_execution_date || null
         })
@@ -5853,6 +5854,21 @@ function WritTrackerTab({ token }) {
       const d = w.writ_execution_date.split('T')[0];
       if (!executionsByDate[d]) executionsByDate[d] = [];
       executionsByDate[d].push(w);
+    }
+  });
+
+  const eligibleByDate = {};
+  const filedByDate = {};
+  writs.forEach(w => {
+    if (w.writ_eligible_date) {
+      const d = w.writ_eligible_date.split('T')[0];
+      if (!eligibleByDate[d]) eligibleByDate[d] = [];
+      eligibleByDate[d].push(w);
+    }
+    if (w.writ_filed_date) {
+      const d = w.writ_filed_date.split('T')[0];
+      if (!filedByDate[d]) filedByDate[d] = [];
+      filedByDate[d].push(w);
     }
   });
 
@@ -6081,9 +6097,23 @@ function WritTrackerTab({ token }) {
                   <div style={{ fontSize: '12px', fontWeight: isToday ? '800' : '500', color: isToday ? '#7c3aed' : '#475569', width: '22px', height: '22px', borderRadius: '50%', backgroundColor: isToday ? '#ede9fe' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' }}>{day}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                     {dayWrits.map(w => (
-                      <div key={w.id} onClick={() => { setSelectedWrit(w); setDateForm({ writ_filed_date: w.writ_filed_date?.split('T')[0] || '', writ_execution_date: w.writ_execution_date?.split('T')[0] || '' }); }}
+                      <div key={w.id} onClick={() => { setSelectedWrit(w); setDateForm({ writ_eligible_date: w.writ_eligible_date?.split('T')[0] || '', writ_filed_date: w.writ_filed_date?.split('T')[0] || '', writ_execution_date: w.writ_execution_date?.split('T')[0] || '' }); }}
                         style={{ fontSize: '10px', padding: '3px 6px', borderRadius: '4px', backgroundColor: isAlert ? '#fee2e2' : '#ede9fe', color: isAlert ? '#dc2626' : '#7c3aed', fontWeight: '700', cursor: 'pointer', lineHeight: '1.3', border: `1px solid ${isAlert ? '#fca5a5' : '#c4b5fd'}` }}>
                         {isAlert ? '⚠️ ' : ''}{w.resident_name.split(' ')[0]} · U{w.unit_number}
+                      </div>
+                    ))}
+                    {(eligibleByDate[dateStr] || []).map(w => (
+                      <div key={'elig-'+w.id}
+                        title={'Eligible to file: ' + w.resident_name + ' · Unit ' + w.unit_number}
+                        style={{ fontSize: '10px', padding: '3px 6px', borderRadius: '4px', backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: '700', lineHeight: '1.3', border: '1.5px solid #bfdbfe', cursor: 'default' }}>
+                        📅 {w.resident_name.split(' ')[0]} · U{w.unit_number}
+                      </div>
+                    ))}
+                    {(filedByDate[dateStr] || []).map(w => (
+                      <div key={'filed-'+w.id}
+                        title={'Writ filed: ' + w.resident_name + ' · Unit ' + w.unit_number}
+                        style={{ fontSize: '10px', padding: '3px 6px', borderRadius: '4px', backgroundColor: '#dcfce7', color: '#15803d', fontWeight: '700', lineHeight: '1.3', border: '1.5px solid #86efac', cursor: 'default' }}>
+                        ✅ {w.resident_name.split(' ')[0]} · U{w.unit_number}
                       </div>
                     ))}
                     {dayPtps.map(p => (
@@ -6099,7 +6129,7 @@ function WritTrackerTab({ token }) {
             })}
           </div>
           <div style={{ display: 'flex', gap: '20px', padding: '12px 20px', borderTop: '1px solid #e2e8f0', backgroundColor: '#F0F4F8', flexWrap: 'wrap' }}>
-            {[{ label: 'Execution Scheduled', bg: '#ede9fe', color: '#7c3aed' }, { label: '48-Hour Alert', bg: '#fee2e2', color: '#dc2626' }, { label: 'Promise to Pay', bg: '#f0fdf4', color: '#16a34a' }].map(l => (
+            {[{ label: 'Execution Scheduled', bg: '#ede9fe', color: '#7c3aed' }, { label: '48-Hour Alert', bg: '#fee2e2', color: '#dc2626' }, { label: 'Promise to Pay', bg: '#f0fdf4', color: '#16a34a' }, { label: 'Writ Eligible', bg: '#eff6ff', color: '#1d4ed8' }, { label: 'Writ Filed', bg: '#dcfce7', color: '#15803d' }].map(l => (
               <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#64748b' }}>
                 <div style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: l.bg, border: `1px solid ${l.color}55` }} />
                 {l.label}
@@ -6176,10 +6206,17 @@ function WritTrackerTab({ token }) {
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px', display: 'block' }}>Writ Filed Date</label>
+                <label style={{ fontSize: '11px', fontWeight: '600', color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px', display: 'block' }}>📅 Writ Eligible Date</label>
+                <input type="date" value={dateForm.writ_eligible_date}
+                  onChange={e => setDateForm(f => ({ ...f, writ_eligible_date: e.target.value }))}
+                  style={{ width: '100%', padding: '9px 11px', border: '2px solid #bfdbfe', borderRadius: '7px', fontSize: '13px', color: '#0f172a', boxSizing: 'border-box' }} />
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>Court-granted date you can first file the writ</div>
+              </div>
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: '600', color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px', display: 'block' }}>✅ Writ Filed Date</label>
                 <input type="date" value={dateForm.writ_filed_date}
                   onChange={e => setDateForm(f => ({ ...f, writ_filed_date: e.target.value }))}
-                  style={{ width: '100%', padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '7px', fontSize: '13px', color: '#0f172a', boxSizing: 'border-box' }} />
+                  style={{ width: '100%', padding: '9px 11px', border: '2px solid #bbf7d0', borderRadius: '7px', fontSize: '13px', color: '#0f172a', boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ fontSize: '11px', fontWeight: '600', color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px', display: 'block' }}>⚠️ Execution Date (Constable)</label>
