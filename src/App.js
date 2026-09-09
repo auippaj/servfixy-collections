@@ -6631,7 +6631,7 @@ function PromisesToPayTab({ token }) {
                       {caseResults.map(c => (
                         <div key={c.id}
                           onMouseDown={() => {
-                            setForm(f => ({ ...f, resident_name: c.resident_name, unit_number: c.unit_number, property_id: c.property_id, promise_amount: Math.round(Number(c.balance_owed || 0)) }));
+                            setForm(f => ({ ...f, resident_name: c.resident_name, unit_number: c.unit_number, property_id: c.property_id, promise_amount: Number(c.balance_owed || 0).toFixed(2) }));
                             setCaseQuery(c.resident_name + ' · Unit ' + c.unit_number);
                             setCaseDropOpen(false);
                           }}
