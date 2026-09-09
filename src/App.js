@@ -6292,7 +6292,7 @@ function PromisesToPayTab({ token }) {
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
         body: JSON.stringify({ ...form, promise_amount: parseFloat(form.promise_amount) })
       });
-      if (res.ok) { setShowAddModal(false); setForm({ property_id: '', resident_name: '', unit_number: '', promise_amount: '', promise_date: '', payment_method: 'Portal', notes: '' }); setFormError(''); fetchAll(); }
+      if (res.ok) { setShowAddModal(false); setForm({ property_id: '', resident_name: '', unit_number: '', promise_amount: '', promise_date: '', payment_method: 'Portal', notes: '' }); setFormError(''); setCaseQuery(''); setCaseResults([]); fetchAll(); }
     } catch (e) { setFormError('Save failed.'); }
     setSaving(false);
   };
