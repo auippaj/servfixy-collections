@@ -2055,6 +2055,9 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
   const [error, setError] = useState('');
   const [selectedCase, setSelectedCase] = useState(null);
   const [caseDetail, setCaseDetail] = useState(null);
+  const [dateEdits, setDateEdits] = useState({});
+  const [dateSaving, setDateSaving] = useState(false);
+  const [dateSaved, setDateSaved] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [filterProperty, setFilterProperty] = useState(initialFilters?.property_id || '');
   const [filterStatus, setFilterStatus] = useState(initialFilters?.status || '');
@@ -2182,7 +2185,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
 
   const handleSelectCase = (c) => {
     setSelectedCase(c);
-    fetchCaseDetail(c.id);
+    fetchCaseDetail(c.id); setDateEdits({});
     setShowTouchpoint(false);
     setShowPaymentPlan(false);
   };
@@ -2644,21 +2647,19 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                     <div style={{ fontSize: '10px', color: field === 'writ_eligible_date' ? '#1d4ed8' : field === 'writ_filed_date' ? '#15803d' : '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px', fontWeight: field === 'writ_eligible_date' || field === 'writ_filed_date' ? '700' : '400' }}>{field === 'writ_eligible_date' ? '📅 ' : field === 'writ_filed_date' ? '✅ ' : ''}{label}</div>
                     <input
                       type='date'
-                      defaultValue={caseDetail[field] ? caseDetail[field].split('T')[0] : ''}
-                      onBlur={async e => {
-                        const val = e.target.value || null;
-                        await fetch(`${API_URL}/api/collections/cases/${caseDetail.id}`, {
-                          method: 'PATCH',
-                          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ [field]: val })
-                        });
-                        fetchCaseDetail(caseDetail.id);
-                        fetchCases();
-                      }}
+                      value={dateEdits[field] !== undefined ? dateEdits[field] : (caseDetail[field] ? caseDetail[field].split('T')[0] : '')}
+                      onChange={e => setDateEdits(prev => ({ ...prev, [field]: e.target.value }))}
                       style={{ fontSize: '13px', fontWeight: '600', color: '#111827', border: 'none', backgroundColor: 'transparent', width: '100%', padding: 0, cursor: 'pointer', outline: 'none' }}
                     />
                   </div>
                 ))}
+                {Object.keys(dateEdits).length > 0 && (
+                  <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}>
+                    <button disabled={dateSaving} onClick={async () => { setDateSaving(true); await fetch(`${API_URL}/api/collections/cases/${caseDetail.id}`, { method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(Object.entries(dateEdits).map(([k,v]) => [k, v || null]))) }); setDateEdits({}); setDateSaving(false); setDateSaved(true); setTimeout(() => setDateSaved(false), 2000); fetchCaseDetail(caseDetail.id); fetchCases(); }} style={{ padding: '8px 20px', backgroundColor: '#1B3A6B', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: dateSaving ? 'not-allowed' : 'pointer', opacity: dateSaving ? 0.7 : 1 }}>{dateSaving ? 'Saving...' : 'Save Dates'}</button>
+                    <button onClick={() => setDateEdits({})} style={{ padding: '8px 14px', backgroundColor: 'transparent', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
+                    {dateSaved && <span style={{ fontSize: '12px', color: '#15803d', fontWeight: '600' }}>Saved</span>}
+                  </div>
+                )}
                 {/* Editable text fields */}
                 {[
                   { label: 'Attorney',   field: 'attorney_name' },
