@@ -6230,7 +6230,12 @@ function PromisesToPayTab({ token }) {
   const [ptpSearch, setPtpSearch] = useState('');
 
   const fmtCurrency = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+  const fmtDate = d => {
+    if (!d) return '—';
+    const s = String(d);
+    const dt = s.includes('T') ? new Date(s) : new Date(s + 'T12:00:00');
+    return isNaN(dt) ? '—' : dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
 
   const fetchRequests = async () => {
     try {
