@@ -2858,6 +2858,16 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                   <div style={{ fontSize: '10px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Times Late</div>
                   <div style={{ fontSize: '13px', fontWeight: '600', color: '#111827' }}>{caseDetail.times_late || 0}</div>
                 </div>
+                {/* TN 10-day writ tickler */}
+                {(caseDetail.property_state || '').toUpperCase() === 'TN' && (
+                  <div style={{ backgroundColor: '#fef9c3', border: '1px solid #fde68a', borderRadius: '8px', padding: '10px 14px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '16px' }}>⏰</span>
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: '700', color: '#92400e' }}>Tennessee — 10-Day Writ Eligibility Rule</div>
+                      <div style={{ fontSize: '11px', color: '#b45309' }}>Setting Possession Granted auto-fills Writ Eligible Date 10 calendar days later.</div>
+                    </div>
+                  </div>
+                )}
                 {/* Editable date fields */}
                 {[
                   { label: 'Notice Issued',    field: 'notice_issued_date' },
