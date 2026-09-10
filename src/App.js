@@ -120,6 +120,7 @@ const NAV_ITEMS = [
     { label: 'Court Calendar',       icon: '🗓️', tab: 'Court Calendar' },
     { label: 'Promise to Pay',       icon: '🤝', tab: 'Promise to Pay' },
     { label: 'Writ Tracker',         icon: '⚖️', tab: 'Writ Tracker' },
+    { label: 'Notice Delivery',      icon: '📬', tab: 'Notice Delivery' },
     { label: 'Escalation Rules',     icon: '⚡', tab: 'Escalation Rules' },
   ]},
   { group: 'TOOLS', items: [
@@ -8602,6 +8603,7 @@ function App() {
         {activeTab === 'Court Calendar' && <CollectionsCalendarTab token={token} />}
         {activeTab === 'Promise to Pay' && <PromisesToPayTab token={token} />}
         {activeTab === 'Writ Tracker' && <WritTrackerTab token={token} />}
+        {activeTab === 'Notice Delivery' && <NoticeDeliveryTab token={token} />}
         {activeTab === 'Owner Summary' && <CollectionsOwnerSummaryTab token={token} />}
         {activeTab === 'Onboarding' && <CollectionsOnboardingTab token={token} />}
         {activeTab === 'Collections Risk' && <CollectionsRiskTab token={token} />}
