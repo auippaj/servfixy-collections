@@ -2873,7 +2873,17 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                     <input
                       type='date'
                       value={dateEdits[field] !== undefined ? dateEdits[field] : (caseDetail[field] ? caseDetail[field].split('T')[0] : '')}
-                      onChange={e => setDateEdits(prev => ({ ...prev, [field]: e.target.value }))}
+                      onChange={e => {
+                        const val = e.target.value;
+                        const updates = { [field]: val };
+                        // TN rule: possession granted -> auto-fill writ eligible +10 calendar days
+                        if (field === 'possession_granted_date' && val && (caseDetail.property_state || '').toUpperCase() === 'TN') {
+                          const d = new Date(val + 'T12:00:00');
+                          d.setDate(d.getDate() + 10);
+                          updates['writ_eligible_date'] = d.toISOString().split('T')[0];
+                        }
+                        setDateEdits(prev => ({ ...prev, ...updates }));
+                      }}
                       style={{ fontSize: '13px', fontWeight: '600', color: '#111827', border: 'none', backgroundColor: 'transparent', width: '100%', padding: 0, cursor: 'pointer', outline: 'none' }}
                     />
                   </div>
