@@ -1492,6 +1492,230 @@ function UnitDirectoryTab({ token }) {
 }
 // ── End Unit Directory Tab ─────────────────────────────────────────────────────
 
+
+// ── Notice Delivery Tab ───────────────────────────────────────────────────────
+function NoticeDeliveryTab({ token }) {
+  const API_URL = process.env.REACT_APP_API_URL || 'https://servfixy-production.up.railway.app';
+  const [deliveries, setDeliveries] = React.useState([]);
+  const [properties, setProperties] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const [success, setSuccess] = React.useState('');
+  const [filterProp, setFilterProp] = React.useState('');
+  const [search, setSearch] = React.useState('');
+  const [caseResults, setCaseResults] = React.useState([]);
+  const [caseDropOpen, setCaseDropOpen] = React.useState(false);
+  const [form, setForm] = React.useState({ case_id: '', resident_name: '', unit_number: '', property_id: '', property_state: '', notice_date: '', delivery_method: '', notes: '' });
+  const [photo, setPhoto] = React.useState(null);
+  const photoRef = React.useRef();
+  const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '\u2014';
+
+  const fetchAll = async () => {
+    setLoading(true);
+    try {
+      const [dRes, pRes] = await Promise.all([
+        fetch(API_URL + '/api/notice-deliveries' + (filterProp ? '?property_id=' + filterProp : ''), { headers: { Authorization: 'Bearer ' + token } }),
+        fetch(API_URL + '/api/properties', { headers: { Authorization: 'Bearer ' + token } })
+      ]);
+      if (dRes.ok) setDeliveries(await dRes.json());
+      if (pRes.ok) setProperties(await pRes.json());
+    } catch(e) { console.error(e); }
+    setLoading(false);
+  };
+
+  React.useEffect(() => { fetchAll(); }, [filterProp]);
+
+  const searchCases = async q => {
+    if (q.length < 2) { setCaseResults([]); setCaseDropOpen(false); return; }
+    try {
+      const propParam = form.property_id ? '&property_id=' + form.property_id : '';
+      const r = await fetch(API_URL + '/api/collections/cases?page=1&limit=20&search=' + encodeURIComponent(q) + propParam, { headers: { Authorization: 'Bearer ' + token } });
+      if (r.ok) { const data = await r.json(); const rows = Array.isArray(data) ? data : (data.cases || []); setCaseResults(rows); setCaseDropOpen(rows.length > 0); }
+    } catch(e) {}
+  };
+
+  const handleSubmit = async () => {
+    setError(''); setSuccess('');
+    if (!form.case_id || !form.delivery_method || !form.notice_date) { setError('Please select a case, delivery method, and notice date.'); return; }
+    if ((form.delivery_method === 'posted_door' || form.delivery_method === 'both') && !photo) { setError('A photo is required when posting on the door.'); return; }
+    setSaving(true);
+    try {
+      const fd = new FormData();
+      Object.entries(form).forEach(([k,v]) => fd.append(k, v));
+      if (photo) fd.append('photo', photo);
+      const r = await fetch(API_URL + '/api/notice-deliveries', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd });
+      if (r.ok) {
+        setSuccess('Notice delivery recorded.');
+        setForm({ case_id: '', resident_name: '', unit_number: '', property_id: '', property_state: '', notice_date: '', delivery_method: '', notes: '' });
+        setPhoto(null); setSearch(''); setCaseResults([]);
+        if (photoRef.current) photoRef.current.value = '';
+        fetchAll();
+      } else { const err = await r.json(); setError(err.error || 'Save failed.'); }
+    } catch(e) { setError('Save failed.'); }
+    setSaving(false);
+  };
+
+  const handleMailed = async id => {
+    await fetch(API_URL + '/api/notice-deliveries/' + id + '/mailed', { method: 'PATCH', headers: { Authorization: 'Bearer ' + token } });
+    fetchAll();
+  };
+
+  const isWA = form.property_state === 'WA';
+  const ls = { fontSize: '11px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '5px', display: 'block' };
+  const is = { width: '100%', padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box', color: '#0f172a', outline: 'none' };
+
+  return (
+    <div style={{ padding: '24px', maxWidth: '1100px', fontFamily: 'Arial, sans-serif' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', margin: 0 }}>Notice Delivery Log</h2>
+        <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0' }}>Record how each 30-day notice was delivered. Photo required for door postings. WA properties must also log mailing.</p>
+      </div>
+
+      <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
+        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '16px' }}>+ Record New Delivery</div>
+        {error && <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 14px', color: '#dc2626', fontSize: '13px', marginBottom: '14px' }}>{error}</div>}
+        {success && <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '10px 14px', color: '#15803d', fontSize: '13px', marginBottom: '14px' }}>Saved: {success}</div>}
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={ls}>Resident / Unit</label>
+            <div style={{ position: 'relative' }}>
+              <input value={search} onChange={async e => { setSearch(e.target.value); setForm(f => ({ ...f, case_id: '', resident_name: e.target.value, unit_number: '' })); searchCases(e.target.value); }}
+                placeholder="Type resident name or unit..." style={is}
+                onBlur={() => setTimeout(() => setCaseDropOpen(false), 200)}
+                onFocus={() => caseResults.length > 0 && setCaseDropOpen(true)} />
+              {caseDropOpen && (
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 999, backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: '180px', overflowY: 'auto' }}>
+                  {caseResults.map(c => (
+                    <div key={c.id} onMouseDown={() => {
+                      const prop = properties.find(p => p.id === c.property_id) || {};
+                      const state = (prop.notice_jurisdiction || prop.state || '').toUpperCase();
+                      setForm(f => ({ ...f, case_id: c.id, resident_name: c.resident_name, unit_number: c.unit_number, property_id: c.property_id, property_state: state }));
+                      setSearch(c.resident_name + ' - Unit ' + c.unit_number); setCaseDropOpen(false);
+                    }} style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontSize: '13px' }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor='#f0fdf4'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor='#fff'}>
+                      <span style={{ fontWeight: '600' }}>{c.resident_name}</span>
+                      <span style={{ color: '#64748b', marginLeft: '8px' }}>Unit {c.unit_number}</span>
+                      <span style={{ color: '#94a3b8', marginLeft: '8px', fontSize: '11px' }}>{c.property_name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label style={ls}>Notice Date</label>
+            <input type="date" value={form.notice_date} onChange={e => setForm(f => ({ ...f, notice_date: e.target.value }))} style={is} />
+          </div>
+
+          <div>
+            <label style={ls}>Delivery Method</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+              {[
+                { value: 'posted_door', label: 'Posted on Door', sub: 'Photo required', icon: 'Door' },
+                { value: 'handed_resident', label: 'Handed to Resident', sub: 'No photo required', icon: 'Hand' },
+                { value: 'both', label: 'Posted + Handed to Resident', sub: 'Photo required', icon: 'Both' }
+              ].map(opt => (
+                <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '10px 14px', borderRadius: '8px', border: '2px solid ' + (form.delivery_method === opt.value ? '#14b8a6' : '#e2e8f0'), backgroundColor: form.delivery_method === opt.value ? '#f0fdfa' : '#fff' }}>
+                  <input type="radio" name="delivery_method" value={opt.value} checked={form.delivery_method === opt.value} onChange={() => setForm(f => ({ ...f, delivery_method: opt.value }))} style={{ accentColor: '#14b8a6' }} />
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>{opt.label}</div>
+                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>{opt.sub}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {(form.delivery_method === 'posted_door' || form.delivery_method === 'both') && (
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ ...ls, color: '#dc2626' }}>Door Photo (Required)</label>
+              <input ref={photoRef} type="file" accept="image/*" onChange={e => setPhoto(e.target.files[0])} style={{ ...is, padding: '8px', cursor: 'pointer' }} />
+              {photo && <div style={{ fontSize: '11px', color: '#15803d', marginTop: '4px' }}>Selected: {photo.name}</div>}
+            </div>
+          )}
+
+          {isWA && (
+            <div style={{ gridColumn: '1 / -1', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '12px 14px' }}>
+              <div style={{ fontSize: '12px', fontWeight: '700', color: '#1d4ed8', marginBottom: '2px' }}>Washington State - Mailing Required</div>
+              <div style={{ fontSize: '12px', color: '#3b82f6' }}>WA courts require both posting and mailing. After saving, mark this record as mailed in the log below.</div>
+            </div>
+          )}
+
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={ls}>Notes (Optional)</label>
+            <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Any additional context..." style={{ ...is, resize: 'vertical' }} />
+          </div>
+        </div>
+
+        <button onClick={handleSubmit} disabled={saving} style={{ marginTop: '16px', padding: '10px 28px', backgroundColor: '#1B3A6B', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
+          {saving ? 'Saving...' : 'Save Delivery Record'}
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', alignItems: 'center' }}>
+        <select value={filterProp} onChange={e => setFilterProp(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', color: '#0f172a' }}>
+          <option value="">All Properties</option>
+          {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+        <span style={{ fontSize: '12px', color: '#94a3b8' }}>{deliveries.length} records</span>
+      </div>
+
+      <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
+        {loading ? (
+          <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>Loading...</div>
+        ) : deliveries.length === 0 ? (
+          <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No delivery records yet.</div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #e2e8f0' }}>
+                {['Resident', 'Unit', 'Property', 'Notice Date', 'Method', 'Photo', 'Mailed (WA)', 'Logged By'].map(h => (
+                  <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {deliveries.map((d, i) => {
+                const methodLabel = d.delivery_method === 'posted_door' ? 'Posted on Door' : d.delivery_method === 'handed_resident' ? 'Handed to Resident' : 'Posted + Handed';
+                const methodColor = d.delivery_method === 'handed_resident' ? { bg: '#f0fdf4', color: '#15803d' } : { bg: '#fef9c3', color: '#92400e' };
+                const isWARow = (d.state || '').toUpperCase() === 'WA';
+                return (
+                  <tr key={d.id} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: i % 2 === 0 ? '#fff' : '#fafafa' }}>
+                    <td style={{ padding: '10px 14px', fontWeight: '600', color: '#0f172a' }}>{d.resident_name}</td>
+                    <td style={{ padding: '10px 14px', color: '#475569' }}>Unit {d.unit_number}</td>
+                    <td style={{ padding: '10px 14px', color: '#475569' }}>{d.property_name}</td>
+                    <td style={{ padding: '10px 14px', color: '#475569' }}>{fmtDate(d.notice_date)}</td>
+                    <td style={{ padding: '10px 14px' }}>
+                      <span style={{ fontSize: '12px', padding: '3px 8px', borderRadius: '6px', backgroundColor: methodColor.bg, color: methodColor.color, fontWeight: '600' }}>{methodLabel}</span>
+                    </td>
+                    <td style={{ padding: '10px 14px' }}>
+                      {d.photo_url ? <a href={d.photo_url} target="_blank" rel="noreferrer" style={{ fontSize: '12px', color: '#1d4ed8', fontWeight: '600', textDecoration: 'none' }}>View Photo</a> : <span style={{ color: '#cbd5e1', fontSize: '12px' }}>None</span>}
+                    </td>
+                    <td style={{ padding: '10px 14px' }}>
+                      {isWARow ? (
+                        d.mailed ? (
+                          <span style={{ fontSize: '12px', color: '#15803d', fontWeight: '600' }}>Mailed {d.mailed_at ? new Date(d.mailed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</span>
+                        ) : (
+                          <button onClick={() => handleMailed(d.id)} style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: '6px', fontWeight: '700', cursor: 'pointer' }}>Mark Mailed</button>
+                        )
+                      ) : <span style={{ color: '#cbd5e1', fontSize: '12px' }}>N/A</span>}
+                    </td>
+                    <td style={{ padding: '10px 14px', color: '#94a3b8', fontSize: '11px' }}>{d.created_by}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── App Shell ──────────────────────────────────────────────────────────────────
 // ── Collections Analytics Tab ──────────────────────────────────────────────────
 function CollectionsAnalyticsTab({ token, onNavigate }) {
