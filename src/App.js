@@ -2887,10 +2887,11 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                         const val = e.target.value;
                         const updates = { [field]: val };
                         // TN rule: possession granted -> auto-fill writ eligible +10 calendar days
-                        if (field === 'possession_granted_date' && val && (caseDetail.property_state || '').toUpperCase() === 'TN') {
-                          const d = new Date(val + 'T12:00:00');
-                          d.setDate(d.getDate() + 10);
-                          updates['writ_eligible_date'] = d.toISOString().split('T')[0];
+                        const propState = (caseDetail.property_state || caseDetail.notice_jurisdiction || '').toUpperCase();
+                        if (field === 'possession_granted_date' && val && propState === 'TN') {
+                          const dt = new Date(val + 'T12:00:00');
+                          dt.setDate(dt.getDate() + 10);
+                          updates['writ_eligible_date'] = dt.toISOString().split('T')[0];
                         }
                         setDateEdits(prev => ({ ...prev, ...updates }));
                       }}
