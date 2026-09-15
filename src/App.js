@@ -70,117 +70,131 @@ function Login({ onLogin }) {
       alignItems: 'center',
       justifyContent: 'center',
       fontFamily: "'Inter', 'Segoe UI', Arial, sans-serif",
-      background: 'linear-gradient(160deg, #5bc8f5 0%, #3ab5e8 30%, #1a9fd4 60%, #0e8abf 100%)',
+      background: 'linear-gradient(160deg, #5bc8f5 0%, #3ab5e8 35%, #1a9fd4 70%, #0e8abf 100%)',
       position: 'relative',
       overflow: 'hidden',
-      padding: '60px 20px 0',
+      padding: '32px 16px',
       boxSizing: 'border-box',
     }}>
-      {/* Subtle grid overlay */}
+      {/* Grid overlay */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: 'linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)',
+        backgroundImage: 'linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px)',
         backgroundSize: '48px 48px',
       }} />
-      {/* Light radial glow top-center */}
-      <div style={{ position: 'absolute', top: '-80px', left: '50%', transform: 'translateX(-50%)', width: '700px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.25) 0%, transparent 65%)', pointerEvents: 'none' }} />
+      {/* Centre glow */}
+      <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%,-50%)', width: '800px', height: '600px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 65%)', pointerEvents: 'none' }} />
 
-      {/* Main layout: logo above, card in middle, hands underneath */}
-      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '480px' }}>
+      {/* Outer wrapper — constrains max width */}
+      <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '520px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
-        {/* Servfixy logo above card */}
-        <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-          <img src="/servfixy-logo.png" alt="Servfixy" style={{ height: '56px', objectFit: 'contain', background: 'white', borderRadius: '10px', padding: '6px 14px' }} />
-          <span style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.18em', color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase' }}>Collections</span>
+        {/* Logo above card */}
+        <div style={{ marginBottom: '18px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+          <img src="/servfixy-logo.png" alt="Servfixy" style={{ height: '52px', objectFit: 'contain', background: 'white', borderRadius: '12px', padding: '6px 18px' }} />
+          <span style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '0.22em', color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase' }}>Collections</span>
         </div>
 
-        {/* Login card */}
-        <div style={{
-          width: '100%',
-          background: 'rgba(225,242,252,0.92)',
-          border: '1px solid rgba(255,255,255,0.7)',
-          borderRadius: '24px',
-          padding: '40px',
-          backdropFilter: 'blur(20px)',
-          boxShadow: '0 32px 80px rgba(10,60,110,0.25), 0 2px 0 rgba(255,255,255,0.8) inset',
-          position: 'relative',
-          zIndex: 2,
-        }}>
-          {/* Card top accent */}
-          <div style={{ height: '3px', background: 'linear-gradient(90deg, #14B8A6, #38bdf8, #0ea5e9)', borderRadius: '2px', marginBottom: '28px' }} />
+        {/* Card + hands container */}
+        <div style={{ position: 'relative', width: '100%' }}>
 
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'rgba(20,184,166,0.12)', border: '1px solid rgba(20,184,166,0.3)', borderRadius: '20px', padding: '4px 12px', marginBottom: '14px' }}>
-              <span style={{ fontSize: '13px' }}>🔒</span>
-              <span style={{ fontSize: '11px', fontWeight: '700', color: '#0d9488', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Secure Access</span>
+          {/* Login card */}
+          <div style={{
+            width: '100%',
+            background: 'linear-gradient(170deg, rgba(220,240,255,0.97) 0%, rgba(200,232,255,0.95) 100%)',
+            border: '1px solid rgba(255,255,255,0.85)',
+            borderRadius: '28px',
+            padding: '36px 40px 32px',
+            backdropFilter: 'blur(24px)',
+            boxShadow: '0 40px 100px rgba(10,60,120,0.3), 0 0 0 1px rgba(255,255,255,0.6) inset',
+            position: 'relative',
+            zIndex: 2,
+            boxSizing: 'border-box',
+          }}>
+            {/* Top accent bar */}
+            <div style={{ height: '3px', background: 'linear-gradient(90deg, #14B8A6, #38bdf8, #0ea5e9)', borderRadius: '2px', marginBottom: '26px' }} />
+
+            <div style={{ marginBottom: '22px' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'rgba(20,184,166,0.12)', border: '1px solid rgba(20,184,166,0.3)', borderRadius: '20px', padding: '4px 12px', marginBottom: '12px' }}>
+                <span style={{ fontSize: '12px' }}>🔒</span>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#0d9488', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Secure Access</span>
+              </div>
+              <h2 style={{ color: '#0c2a4a', margin: '0 0 4px', fontSize: '28px', fontWeight: '800', letterSpacing: '-0.02em' }}>Welcome back</h2>
+              <p style={{ color: '#4a7a9b', margin: 0, fontSize: '14px' }}>Sign in to your Collections account</p>
             </div>
-            <h2 style={{ color: '#0c2a4a', margin: '0 0 5px', fontSize: '26px', fontWeight: '800', letterSpacing: '-0.02em' }}>Welcome back</h2>
-            <p style={{ color: '#4a7a9b', margin: 0, fontSize: '14px' }}>Sign in to your Collections account</p>
-          </div>
 
-          {error && (
-            <div style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)', color: '#b91c1c', padding: '12px 14px', borderRadius: '10px', marginBottom: '18px', fontSize: '13px' }}>
-              {error}
+            {error && (
+              <div style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)', color: '#b91c1c', padding: '12px 14px', borderRadius: '10px', marginBottom: '16px', fontSize: '13px' }}>
+                {error}
+              </div>
+            )}
+
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ color: '#3a6080', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '7px' }}>Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                placeholder="you@servfixy.com"
+                style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid rgba(14,138,191,0.18)', background: 'rgba(255,255,255,0.92)', color: '#0c2a4a', fontSize: '14px', boxSizing: 'border-box', outline: 'none', boxShadow: '0 2px 8px rgba(14,138,191,0.08)' }} />
             </div>
-          )}
 
-          <div style={{ marginBottom: '14px' }}>
-            <label style={{ color: '#3a6080', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '7px' }}>Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleLogin()}
-              placeholder="you@servfixy.com"
-              style={{ width: '100%', padding: '13px 16px', borderRadius: '12px', border: '1.5px solid rgba(14,138,191,0.2)', background: 'rgba(255,255,255,0.9)', color: '#0c2a4a', fontSize: '14px', boxSizing: 'border-box', outline: 'none', boxShadow: '0 2px 6px rgba(14,138,191,0.08)' }} />
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ color: '#3a6080', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '7px' }}>Password</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                placeholder="••••••••"
+                style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid rgba(14,138,191,0.18)', background: 'rgba(255,255,255,0.92)', color: '#0c2a4a', fontSize: '14px', boxSizing: 'border-box', outline: 'none', boxShadow: '0 2px 8px rgba(14,138,191,0.08)' }} />
+            </div>
+
+            <button onClick={handleLogin} disabled={loading}
+              style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', background: loading ? 'rgba(20,184,166,0.5)' : 'linear-gradient(135deg, #14B8A6 0%, #0ea5e9 100%)', color: '#fff', fontSize: '16px', fontWeight: '800', cursor: loading ? 'not-allowed' : 'pointer', letterSpacing: '0.02em', boxShadow: loading ? 'none' : '0 8px 28px rgba(14,165,233,0.5)', transition: 'all 0.2s' }}>
+              {loading ? 'Signing in…' : 'Sign In →'}
+            </button>
+
+            <div style={{ margin: '16px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(14,138,191,0.15)' }} />
+              <span style={{ color: '#6a9ab8', fontSize: '12px' }}>or</span>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(14,138,191,0.15)' }} />
+            </div>
+
+            <button onClick={handleDemoLogin} disabled={loading || seedingDemo}
+              style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid rgba(14,138,191,0.22)', background: 'rgba(255,255,255,0.65)', color: '#0c4a6e', fontSize: '14px', fontWeight: '700', cursor: (loading || seedingDemo) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '13px', color: '#14B8A6' }}>▶</span>
+              {seedingDemo ? 'Loading demo data…' : 'Investor Demo Login'}
+            </button>
+            <div style={{ marginTop: '8px', textAlign: 'center', fontSize: '11px', color: '#6a9ab8' }}>
+              200 real-scenario cases across 3 properties
+            </div>
+
+            <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(14,138,191,0.12)', textAlign: 'center', fontSize: '11px', color: '#6a9ab8' }}>
+              © 2025 Servfixy Inc. · Secure encrypted connection
+            </div>
           </div>
 
-          <div style={{ marginBottom: '26px' }}>
-            <label style={{ color: '#3a6080', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '7px' }}>Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleLogin()}
-              placeholder="••••••••"
-              style={{ width: '100%', padding: '13px 16px', borderRadius: '12px', border: '1.5px solid rgba(14,138,191,0.2)', background: 'rgba(255,255,255,0.9)', color: '#0c2a4a', fontSize: '14px', boxSizing: 'border-box', outline: 'none', boxShadow: '0 2px 6px rgba(14,138,191,0.08)' }} />
-          </div>
+          {/* Hands — left bottom corner */}
+          <img src="/hands.png" alt="" style={{
+            position: 'absolute',
+            bottom: '-30px',
+            left: '-80px',
+            width: '55%',
+            pointerEvents: 'none',
+            zIndex: 3,
+            objectFit: 'contain',
+            objectPosition: 'right bottom',
+            transform: 'scaleX(-1)',
+          }} />
 
-          <button onClick={handleLogin} disabled={loading}
-            style={{ width: '100%', padding: '15px', borderRadius: '12px', border: 'none', background: loading ? 'rgba(20,184,166,0.5)' : 'linear-gradient(135deg, #14B8A6 0%, #0ea5e9 100%)', color: '#fff', fontSize: '15px', fontWeight: '800', cursor: loading ? 'not-allowed' : 'pointer', letterSpacing: '0.02em', boxShadow: loading ? 'none' : '0 6px 24px rgba(14,165,233,0.45)', transition: 'all 0.2s' }}>
-            {loading ? 'Signing in…' : 'Sign In →'}
-          </button>
+          {/* Hands — right bottom corner */}
+          <img src="/hands.png" alt="" style={{
+            position: 'absolute',
+            bottom: '-30px',
+            right: '-80px',
+            width: '55%',
+            pointerEvents: 'none',
+            zIndex: 3,
+            objectFit: 'contain',
+            objectPosition: 'left bottom',
+          }} />
 
-          <div style={{ margin: '18px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ flex: 1, height: '1px', background: 'rgba(14,138,191,0.15)' }} />
-            <span style={{ color: '#6a9ab8', fontSize: '12px' }}>or</span>
-            <div style={{ flex: 1, height: '1px', background: 'rgba(14,138,191,0.15)' }} />
-          </div>
-
-          <button onClick={handleDemoLogin} disabled={loading || seedingDemo}
-            style={{ width: '100%', padding: '13px', borderRadius: '12px', border: '1.5px solid rgba(14,138,191,0.25)', background: 'rgba(255,255,255,0.6)', color: '#0c4a6e', fontSize: '13px', fontWeight: '700', cursor: (loading || seedingDemo) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 2px 8px rgba(14,138,191,0.1)' }}>
-            <span style={{ fontSize: '13px', color: '#14B8A6' }}>▶</span>
-            {seedingDemo ? 'Loading demo data…' : 'Investor Demo Login'}
-          </button>
-          <div style={{ marginTop: '8px', textAlign: 'center', fontSize: '11px', color: '#6a9ab8' }}>
-            200 real-scenario cases across 3 properties
-          </div>
-
-          <div style={{ marginTop: '24px', paddingTop: '18px', borderTop: '1px solid rgba(14,138,191,0.12)', textAlign: 'center', fontSize: '11px', color: '#6a9ab8' }}>
-            © 2025 Servfixy Inc. · Secure encrypted connection
-          </div>
         </div>
-
-        {/* Real hands holding the card from below */}
-        <div style={{ width: '120%', marginTop: '-24px', position: 'relative', zIndex: 1, pointerEvents: 'none', overflow: 'hidden', height: '180px' }}>
-          <img
-            src="/hands.png"
-            alt=""
-            style={{
-              width: '100%',
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              objectFit: 'cover',
-              objectPosition: 'center bottom',
-            }}
-          />
-        </div>
-
       </div>
     </div>
   );
