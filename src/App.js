@@ -250,7 +250,27 @@ function AdminTab({ token, initialSection }) {
   const [waMergeUrls, setWaMergeUrls] = useState([]);
   const [waMerging, setWaMerging] = useState(false);
 
-  // Balance Due Letter state
+  // Overdue writ alerts
+  const [overdueWrits, setOverdueWrits] = useState([]);
+  const [showOverdueDetail, setShowOverdueDetail] = useState(false);
+
+  // PTP Analytics
+  const [ptpAnalytics, setPtpAnalytics] = useState(null);
+  const [ptpAnalyticsLoading, setPtpAnalyticsLoading] = useState(false);
+  const [ptpMonths, setPtpMonths] = useState(6);
+
+  const fetchPtpAnalytics = async (propId, months = 6) => {
+    setPtpAnalyticsLoading(true);
+    try {
+      const url = `${API_URL}/api/ptp/analytics?months=${months}${propId ? `&property_id=${propId}` : ''}`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      const d = await res.json();
+      if (res.ok) setPtpAnalytics(d);
+    } catch (_) {}
+    finally { setPtpAnalyticsLoading(false); }
+  };
+
+  // Balance Due Letters
   const [bdEligibleData, setBdEligibleData] = useState(null);
   const [bdEligibleLoading, setBdEligibleLoading] = useState(false);
   const [bdSelectedCases, setBdSelectedCases] = useState(new Set());
@@ -279,11 +299,7 @@ function AdminTab({ token, initialSection }) {
       const res = await fetch(`${API_URL}/api/collections/cases/batch-balance-due`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          property_id: bdSelectedProperty,
-          generated_by: 'Collections Admin',
-          case_ids: [...bdSelectedCases],
-        })
+        body: JSON.stringify({ property_id: bdSelectedProperty, generated_by: 'Collections Admin', case_ids: [...bdSelectedCases] })
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'Generation failed');
@@ -1047,128 +1063,117 @@ function AdminTab({ token, initialSection }) {
                 <div style={{ marginTop: '12px', fontSize: '12px', color: '#475569' }}>Summary email sent to {eligibleData?.property?.notice_recipient_email || 'configured recipient'}.</div>
               </div>
             )}
-          );
-        })()}
+          </div>
 
-        {/* ── BALANCE DUE LETTERS ── */}
-        {activeSection === 'balance-due' && (
-          <div>
-            <div style={{ marginBottom: '24px' }}>
-              <h1 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>Balance Due Letters</h1>
-              <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Select a property, choose delinquent residents, and generate demand letters for any region.</p>
-            </div>
-
-            {/* Property selector */}
-            <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
-              <label style={labelStyle}>Select Property</label>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <PropertySelector properties={properties} value={bdSelectedProperty}
-                  onChange={v => { setBdSelectedProperty(v); fetchBdEligible(v); }}
-                  placeholder='Choose a property...'
-                  style={{ maxWidth: '480px' }} />
-                {bdSelectedProperty && (
-                  <button onClick={() => fetchBdEligible(bdSelectedProperty)} disabled={bdEligibleLoading}
-                    style={{ padding: '9px 16px', backgroundColor: '#F0F4F8', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#475569', fontSize: '13px', cursor: 'pointer' }}>
-                    {bdEligibleLoading ? 'Loading...' : '↻ Refresh'}
-                  </button>
-                )}
+          {/* ── BALANCE DUE LETTERS ── */}
+          {activeSection === 'balance-due' && (
+            <div>
+              <div style={{ marginBottom: '24px' }}>
+                <h1 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>Balance Due Letters</h1>
+                <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Select a property, choose delinquent residents, and generate demand letters for any region.</p>
               </div>
-            </div>
-
-            {/* Case checklist */}
-            {bdEligibleLoading && (
-              <div style={{ color: '#94a3b8', fontSize: '13px', padding: '20px' }}>Loading eligible residents…</div>
-            )}
-            {bdEligibleData && !bdEligibleLoading && (
-              <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: '20px' }}>
-                <div style={{ padding: '14px 18px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div
-                      onClick={() => {
-                        const allSelected = (bdEligibleData.cases || []).every(c => bdSelectedCases.has(c.id));
-                        allSelected ? setBdSelectedCases(new Set()) : setBdSelectedCases(new Set((bdEligibleData.cases || []).map(c => c.id)));
-                      }}
-                      style={{ width: '16px', height: '16px', borderRadius: '3px', border: `2px solid ${bdSelectedCases.size > 0 ? '#14B8A6' : '#cbd5e1'}`, backgroundColor: bdSelectedCases.size > 0 ? '#14B8A6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                      {(bdEligibleData.cases || []).every(c => bdSelectedCases.has(c.id)) && <span style={{ color: '#fff', fontSize: '10px', fontWeight: '900' }}>✓</span>}
-                    </div>
-                    <span style={{ fontSize: '13px', color: '#475569' }}>
-                      {bdSelectedCases.size > 0 ? `${bdSelectedCases.size} selected` : `${(bdEligibleData.cases || []).length} delinquent resident(s)`}
-                    </span>
-                  </div>
-                  {bdSelectedCases.size > 0 && (
-                    <button onClick={handleGenerateBalanceDue} disabled={bdGenerating}
-                      style={{ padding: '10px 22px', backgroundColor: bdGenerating ? '#94a3b8' : '#1B3A6B', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: bdGenerating ? 'not-allowed' : 'pointer' }}>
-                      {bdGenerating ? 'Generating…' : `Generate ${bdSelectedCases.size} Letter${bdSelectedCases.size !== 1 ? 's' : ''}`}
+              <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
+                <label style={labelStyle}>Select Property</label>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <PropertySelector properties={properties} value={bdSelectedProperty}
+                    onChange={v => { setBdSelectedProperty(v); fetchBdEligible(v); }}
+                    placeholder='Choose a property...'
+                    style={{ maxWidth: '480px' }} />
+                  {bdSelectedProperty && (
+                    <button onClick={() => fetchBdEligible(bdSelectedProperty)} disabled={bdEligibleLoading}
+                      style={{ padding: '9px 16px', backgroundColor: '#F0F4F8', border: '1px solid #cbd5e1', borderRadius: '7px', color: '#475569', fontSize: '13px', cursor: 'pointer' }}>
+                      {bdEligibleLoading ? 'Loading...' : '↻ Refresh'}
                     </button>
                   )}
                 </div>
-                {(bdEligibleData.cases || []).length === 0 ? (
-                  <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No delinquent cases for this property.</div>
-                ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                    <thead>
-                      <tr style={{ backgroundColor: '#F0F4F8', borderBottom: '1px solid #e2e8f0' }}>
-                        <th style={{ padding: '10px 16px', width: '40px' }} />
-                        {['Resident', 'Unit', 'Balance', 'Aging', 'Status'].map(h => (
-                          <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#94a3b8', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+              </div>
+              {bdEligibleLoading && (
+                <div style={{ color: '#94a3b8', fontSize: '13px', padding: '20px' }}>Loading eligible residents…</div>
+              )}
+              {bdEligibleData && !bdEligibleLoading && (
+                <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: '20px' }}>
+                  <div style={{ padding: '14px 18px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div onClick={() => { const all = (bdEligibleData.cases || []).every(c => bdSelectedCases.has(c.id)); all ? setBdSelectedCases(new Set()) : setBdSelectedCases(new Set((bdEligibleData.cases || []).map(c => c.id))); }}
+                        style={{ width: '16px', height: '16px', borderRadius: '3px', border: `2px solid ${bdSelectedCases.size > 0 ? '#14B8A6' : '#cbd5e1'}`, backgroundColor: bdSelectedCases.size > 0 ? '#14B8A6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                        {(bdEligibleData.cases || []).every(c => bdSelectedCases.has(c.id)) && <span style={{ color: '#fff', fontSize: '10px', fontWeight: '900' }}>✓</span>}
+                      </div>
+                      <span style={{ fontSize: '13px', color: '#475569' }}>{bdSelectedCases.size > 0 ? `${bdSelectedCases.size} selected` : `${(bdEligibleData.cases || []).length} delinquent resident(s)`}</span>
+                    </div>
+                    {bdSelectedCases.size > 0 && (
+                      <button onClick={handleGenerateBalanceDue} disabled={bdGenerating}
+                        style={{ padding: '10px 22px', backgroundColor: bdGenerating ? '#94a3b8' : '#1B3A6B', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: bdGenerating ? 'not-allowed' : 'pointer' }}>
+                        {bdGenerating ? 'Generating…' : `Generate ${bdSelectedCases.size} Letter${bdSelectedCases.size !== 1 ? 's' : ''}`}
+                      </button>
+                    )}
+                  </div>
+                  {(bdEligibleData.cases || []).length === 0 ? (
+                    <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No delinquent cases for this property.</div>
+                  ) : (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#F0F4F8', borderBottom: '1px solid #e2e8f0' }}>
+                          <th style={{ padding: '10px 16px', width: '40px' }} />
+                          {['Resident', 'Unit', 'Balance', 'Aging', 'Status'].map(h => (
+                            <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#94a3b8', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(bdEligibleData.cases || []).map((c, i) => {
+                          const isSel = bdSelectedCases.has(c.id);
+                          return (
+                            <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: isSel ? 'rgba(20,184,166,0.06)' : '#fff', cursor: 'pointer' }}
+                              onClick={() => setBdSelectedCases(prev => { const n = new Set(prev); isSel ? n.delete(c.id) : n.add(c.id); return n; })}>
+                              <td style={{ padding: '12px 16px' }}>
+                                <div style={{ width: '16px', height: '16px', borderRadius: '3px', border: `2px solid ${isSel ? '#14B8A6' : '#cbd5e1'}`, backgroundColor: isSel ? '#14B8A6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  {isSel && <span style={{ color: '#fff', fontSize: '10px', fontWeight: '900' }}>✓</span>}
+                                </div>
+                              </td>
+                              <td style={{ padding: '12px 16px', fontWeight: '600', color: '#0f172a' }}>{c.resident_name}</td>
+                              <td style={{ padding: '12px 16px', color: '#475569' }}>{c.unit_number}</td>
+                              <td style={{ padding: '12px 16px', fontWeight: '700', color: '#dc2626' }}>${Number(c.balance_owed).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                              <td style={{ padding: '12px 16px', color: '#64748b' }}>{c.aging_bucket || '—'}</td>
+                              <td style={{ padding: '12px 16px' }}>
+                                <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '4px', fontWeight: '700', backgroundColor: '#fef9c3', color: '#92400e' }}>{c.status}</span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
+              {bdResult && (
+                <div style={{ backgroundColor: bdResult.error ? '#fef2f2' : '#f0fdf4', border: `1px solid ${bdResult.error ? '#fca5a5' : '#bbf7d0'}`, borderRadius: '12px', padding: '20px' }}>
+                  {bdResult.error ? (
+                    <div style={{ color: '#dc2626', fontWeight: '700' }}>❌ {bdResult.error}</div>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#15803d', marginBottom: '16px' }}>
+                        ✅ {bdResult.letters_generated} balance due letter{bdResult.letters_generated !== 1 ? 's' : ''} generated for {bdResult.property_name}
+                      </div>
+                      <a href={bdResult.zip_url} download style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#1B3A6B', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: '700', fontSize: '14px', marginBottom: '16px' }}>
+                        ⬇ Download All Letters (ZIP)
+                      </a>
+                      <div style={{ marginTop: '12px' }}>
+                        {(bdResult.residents || []).map((r, i) => (
+                          <div key={i} style={{ fontSize: '13px', color: '#334155', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+                            {r.name} · Unit {r.unit} · <strong style={{ color: '#dc2626' }}>${Number(r.balance).toFixed(2)}</strong>
+                          </div>
                         ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(bdEligibleData.cases || []).map((c, i) => {
-                        const isSel = bdSelectedCases.has(c.id);
-                        return (
-                          <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: isSel ? 'rgba(20,184,166,0.06)' : '#fff', cursor: 'pointer' }}
-                            onClick={() => setBdSelectedCases(prev => { const n = new Set(prev); isSel ? n.delete(c.id) : n.add(c.id); return n; })}>
-                            <td style={{ padding: '12px 16px' }}>
-                              <div style={{ width: '16px', height: '16px', borderRadius: '3px', border: `2px solid ${isSel ? '#14B8A6' : '#cbd5e1'}`, backgroundColor: isSel ? '#14B8A6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                {isSel && <span style={{ color: '#fff', fontSize: '10px', fontWeight: '900' }}>✓</span>}
-                              </div>
-                            </td>
-                            <td style={{ padding: '12px 16px', fontWeight: '600', color: '#0f172a' }}>{c.resident_name}</td>
-                            <td style={{ padding: '12px 16px', color: '#475569' }}>{c.unit_number}</td>
-                            <td style={{ padding: '12px 16px', fontWeight: '700', color: '#dc2626' }}>${Number(c.balance_owed).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                            <td style={{ padding: '12px 16px', color: '#64748b' }}>{c.aging_bucket || '—'}</td>
-                            <td style={{ padding: '12px 16px' }}>
-                              <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '4px', fontWeight: '700', backgroundColor: '#fef9c3', color: '#92400e' }}>{c.status}</span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            )}
-
-            {/* Result */}
-            {bdResult && (
-              <div style={{ backgroundColor: bdResult.error ? '#fef2f2' : '#f0fdf4', border: `1px solid ${bdResult.error ? '#fca5a5' : '#bbf7d0'}`, borderRadius: '12px', padding: '20px' }}>
-                {bdResult.error ? (
-                  <div style={{ color: '#dc2626', fontWeight: '700' }}>❌ {bdResult.error}</div>
-                ) : (
-                  <>
-                    <div style={{ fontSize: '16px', fontWeight: '700', color: '#15803d', marginBottom: '16px' }}>
-                      ✅ {bdResult.letters_generated} balance due letter{bdResult.letters_generated !== 1 ? 's' : ''} generated for {bdResult.property_name}
-                    </div>
-                    <a href={bdResult.zip_url} download
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#1B3A6B', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: '700', fontSize: '14px', marginBottom: '16px' }}>
-                      ⬇ Download All Letters (ZIP)
-                    </a>
-                    <div style={{ marginTop: '12px' }}>
-                      {(bdResult.residents || []).map((r, i) => (
-                        <div key={i} style={{ fontSize: '13px', color: '#334155', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
-                          {r.name} · Unit {r.unit} · <strong style={{ color: '#dc2626' }}>${Number(r.balance).toFixed(2)}</strong>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        );
+        })()}
+      </div>
+    </div>
   );
 }
 // ── End Admin Tab ──────────────────────────────────────────────────────────────
@@ -1880,8 +1885,6 @@ function NoticeDeliveryTab({ token }) {
 // ── Collections Analytics Tab ──────────────────────────────────────────────────
 function CollectionsAnalyticsTab({ token, onNavigate }) {
   const [pendingRequests, setPendingRequests] = useState(0);
-  const [overdueWrits, setOverdueWrits] = useState([]);
-  const [showOverdueDetail, setShowOverdueDetail] = useState(false);
   const [data, setData] = useState(null);
   const [properties, setProperties] = useState([]);
   const [selectedProperty, setSelectedProperty] = useState('');
@@ -1894,22 +1897,6 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   const [writStats, setWritStats] = useState({ total: 0, upcoming: 0 });
   const [predictions, setPredictions] = useState(null);
   const [predictionsLoading, setPredictionsLoading] = useState(false);
-
-  // PTP Analytics
-  const [ptpAnalytics, setPtpAnalytics] = useState(null);
-  const [ptpAnalyticsLoading, setPtpAnalyticsLoading] = useState(false);
-  const [ptpMonths, setPtpMonths] = useState(6);
-
-  const fetchPtpAnalytics = async (propId, months = 6) => {
-    setPtpAnalyticsLoading(true);
-    try {
-      const url = `${API_URL}/api/ptp/analytics?months=${months}${propId ? `&property_id=${propId}` : ''}`;
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-      const d = await res.json();
-      if (res.ok) setPtpAnalytics(d);
-    } catch (_) {}
-    finally { setPtpAnalyticsLoading(false); }
-  };
 
   const fetchData = async (propId) => {
     setLoading(true);
@@ -1945,8 +1932,6 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
       .then(r => r.json()).then(rows => setProperties(Array.isArray(rows) ? rows : [])).catch(() => {});
     fetch(`${API_URL}/api/ptp-requests/pending-count`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(d => { if (d.count !== undefined) setPendingRequests(d.count); }).catch(() => {});
-    fetch(`${API_URL}/api/collections/writs/overdue-filing`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json()).then(d => { if (d.overdue) setOverdueWrits(d.overdue); }).catch(() => {});
     fetch(`${API_URL}/api/collections/writs/reminders`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(rows => { if (Array.isArray(rows)) setWritStats(prev => ({ ...prev, upcoming: rows.length })); }).catch(() => {});
     fetch(`${API_URL}/api/collections/writs`, { headers: { Authorization: `Bearer ${token}` } })
@@ -1966,6 +1951,8 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
       }).catch(() => {});
     fetchData('');
     fetchPtpAnalytics('');
+    fetch(`${API_URL}/api/collections/writs/overdue-filing`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => { if (d.overdue) setOverdueWrits(d.overdue); }).catch(() => {});
   }, [token]);
 
   const handlePropertyChange = (e) => {
@@ -2059,36 +2046,25 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
     <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', color: '#111827' }}>
 
       {/* Header */}
-       {/* ── Overdue Writ Filing Alert ── */}
-      {overdueWrits.length > 0 && (
+       {overdueWrits.length > 0 && (
         <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', padding: '12px 18px', marginBottom: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-              <span style={{ fontSize: '20px', marginTop: '1px' }}>⚖️</span>
+              <span style={{ fontSize: '20px' }}>⚖️</span>
               <div>
-                <div style={{ fontSize: '13px', fontWeight: '800', color: '#991b1b' }}>
-                  {overdueWrits.length} Writ{overdueWrits.length > 1 ? 's' : ''} Not Filed — Eligible Date Passed
-                </div>
-                <div style={{ fontSize: '12px', color: '#b91c1c', marginTop: '2px' }}>
-                  These cases have a Writ Eligible Date in the past with no Writ Filed Date recorded.
-                </div>
+                <div style={{ fontSize: '13px', fontWeight: '800', color: '#991b1b' }}>{overdueWrits.length} Writ{overdueWrits.length > 1 ? 's' : ''} Not Filed — Eligible Date Passed</div>
+                <div style={{ fontSize: '12px', color: '#b91c1c', marginTop: '2px' }}>These cases have a Writ Eligible Date in the past with no Writ Filed Date recorded.</div>
                 {showOverdueDetail && (
                   <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {overdueWrits.map((c, i) => (
+                    {overdueWrits.map((c) => (
                       <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', backgroundColor: '#fff', borderRadius: '7px', border: '1px solid #fca5a5', gap: '12px', flexWrap: 'wrap' }}>
                         <div>
                           <span style={{ fontWeight: '700', fontSize: '13px', color: '#0f172a' }}>{c.resident_name}</span>
                           <span style={{ fontSize: '12px', color: '#64748b', marginLeft: '8px' }}>Unit {c.unit_number} · {c.property_name}</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <span style={{ fontSize: '11px', color: '#b91c1c', fontWeight: '700' }}>
-                            Eligible {new Date(c.writ_eligible_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {c.days_overdue} day{c.days_overdue !== 1 ? 's' : ''} overdue
-                          </span>
-                          <button
-                            onClick={() => onNavigate('Collections Cases', { case_id: c.id })}
-                            style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: '#dc2626', border: 'none', borderRadius: '5px', color: '#fff', fontWeight: '700', cursor: 'pointer' }}>
-                            Open Case →
-                          </button>
+                          <span style={{ fontSize: '11px', color: '#b91c1c', fontWeight: '700' }}>Eligible {new Date(c.writ_eligible_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {c.days_overdue}d overdue</span>
+                          <button onClick={() => onNavigate('Collections Cases', { case_id: c.id })} style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: '#dc2626', border: 'none', borderRadius: '5px', color: '#fff', fontWeight: '700', cursor: 'pointer' }}>Open Case →</button>
                         </div>
                       </div>
                     ))}
@@ -2096,15 +2072,12 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
                 )}
               </div>
             </div>
-            <button
-              onClick={() => setShowOverdueDetail(p => !p)}
-              style={{ padding: '7px 14px', backgroundColor: '#dc2626', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '12px', fontWeight: '700', cursor: 'pointer', flexShrink: 0 }}>
+            <button onClick={() => setShowOverdueDetail(p => !p)} style={{ padding: '7px 14px', backgroundColor: '#dc2626', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '12px', fontWeight: '700', cursor: 'pointer', flexShrink: 0, alignSelf: 'flex-start' }}>
               {showOverdueDetail ? 'Hide' : `View ${overdueWrits.length} Case${overdueWrits.length > 1 ? 's' : ''}`}
             </button>
           </div>
         </div>
       )}
-
       {pendingRequests > 0 && (
         <div style={{ backgroundColor: '#fef9c3', border: '1px solid #fde047', borderRadius: '10px', padding: '12px 18px', marginBottom: '18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -2428,157 +2401,6 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
           </div>
         </div>
       )}
-
-      {/* ── PTP Analytics Panel ─────────────────────────────────────── */}
-      <div style={{ padding: '0 16px 32px' }}>
-        <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '14px', overflow: 'hidden' }}>
-
-          {/* Panel header */}
-          <div style={{ padding: '18px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-            <div>
-              <div style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>🤝 Promise to Pay Analytics</div>
-              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>Broken vs. kept rates tracked automatically on every delinquency import</div>
-            </div>
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-              {[3, 6, 12].map(m => (
-                <button key={m} onClick={() => { setPtpMonths(m); fetchPtpAnalytics(selectedProperty, m); }}
-                  style={{ padding: '5px 12px', fontSize: '12px', fontWeight: ptpMonths === m ? '700' : '400', border: `1px solid ${ptpMonths === m ? '#1B3A6B' : '#e2e8f0'}`, borderRadius: '6px', backgroundColor: ptpMonths === m ? '#1B3A6B' : '#fff', color: ptpMonths === m ? '#fff' : '#64748b', cursor: 'pointer' }}>
-                  {m}mo
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {ptpAnalyticsLoading && (
-            <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>Loading PTP analytics…</div>
-          )}
-
-          {ptpAnalytics && !ptpAnalyticsLoading && (() => {
-            const t = ptpAnalytics.totals || {};
-            const monthly = ptpAnalytics.monthly || [];
-            const byProp = ptpAnalytics.by_property || [];
-            const breakers = ptpAnalytics.top_breakers || [];
-            const totalBroken = parseInt(t.total_broken || 0);
-            const totalKept = parseInt(t.total_kept || 0);
-            const total = totalBroken + totalKept;
-            const brokenPct = total > 0 ? Math.round((totalBroken / total) * 100) : 0;
-            const keptPct = 100 - brokenPct;
-            const fmtAmt = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 0 });
-
-            return (
-              <div>
-                {/* Summary KPIs */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0, borderBottom: '1px solid #f1f5f9' }}>
-                  {[
-                    { label: 'PTPs Broken', value: totalBroken, color: '#dc2626', bg: '#fef2f2' },
-                    { label: 'PTPs Kept', value: totalKept, color: '#15803d', bg: '#f0fdf4' },
-                    { label: 'Broken Rate', value: `${brokenPct}%`, color: brokenPct > 50 ? '#dc2626' : brokenPct > 30 ? '#d97706' : '#15803d', bg: '#fff' },
-                    { label: 'Broken Amount', value: fmtAmt(t.total_broken_amount), color: '#b91c1c', bg: '#fff' },
-                  ].map(({ label, value, color, bg }) => (
-                    <div key={label} style={{ padding: '18px 20px', backgroundColor: bg, borderRight: '1px solid #f1f5f9' }}>
-                      <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '4px' }}>{label}</div>
-                      <div style={{ fontSize: '22px', fontWeight: '800', color }}>{value}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Rate bar */}
-                {total > 0 && (
-                  <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9' }}>
-                    <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px', fontWeight: '600' }}>KEPT vs BROKEN — {ptpMonths}-MONTH WINDOW</div>
-                    <div style={{ display: 'flex', height: '20px', borderRadius: '6px', overflow: 'hidden' }}>
-                      <div style={{ width: `${keptPct}%`, backgroundColor: '#22c55e', transition: 'width .4s' }} />
-                      <div style={{ width: `${brokenPct}%`, backgroundColor: '#ef4444', transition: 'width .4s' }} />
-                    </div>
-                    <div style={{ display: 'flex', gap: '16px', marginTop: '6px' }}>
-                      <span style={{ fontSize: '11px', color: '#15803d' }}>■ Kept {keptPct}%</span>
-                      <span style={{ fontSize: '11px', color: '#dc2626' }}>■ Broken {brokenPct}%</span>
-                    </div>
-                  </div>
-                )}
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
-
-                  {/* Monthly trend */}
-                  <div style={{ padding: '18px 20px', borderRight: '1px solid #f1f5f9' }}>
-                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '12px' }}>Monthly Trend</div>
-                    {monthly.length === 0 ? (
-                      <div style={{ fontSize: '12px', color: '#94a3b8' }}>No events recorded yet. Will populate on next import.</div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {monthly.map((m, i) => {
-                          const max = Math.max(...monthly.map(x => parseInt(x.total) || 0), 1);
-                          const bPct = parseInt(m.broken) || 0;
-                          const kPct = parseInt(m.kept) || 0;
-                          const rowTotal = bPct + kPct;
-                          return (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <div style={{ width: '64px', fontSize: '11px', color: '#64748b', flexShrink: 0 }}>{m.month}</div>
-                              <div style={{ flex: 1, height: '16px', borderRadius: '4px', overflow: 'hidden', backgroundColor: '#f1f5f9', display: 'flex' }}>
-                                <div style={{ width: rowTotal > 0 ? `${(kPct / rowTotal) * 100}%` : '0%', backgroundColor: '#22c55e' }} />
-                                <div style={{ width: rowTotal > 0 ? `${(bPct / rowTotal) * 100}%` : '0%', backgroundColor: '#ef4444' }} />
-                              </div>
-                              <div style={{ fontSize: '11px', color: '#dc2626', width: '24px', textAlign: 'right', fontWeight: '600' }}>{bPct}</div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* By property */}
-                  <div style={{ padding: '18px 20px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '12px' }}>By Property</div>
-                    {byProp.length === 0 ? (
-                      <div style={{ fontSize: '12px', color: '#94a3b8' }}>No property data yet.</div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {byProp.map((p, i) => (
-                          <div key={i}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                              <span style={{ fontSize: '12px', color: '#334155', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%' }}>{p.property_name || 'Unknown'}</span>
-                              <span style={{ fontSize: '11px', color: p.broken_pct > 50 ? '#dc2626' : '#64748b' }}>{p.broken_pct}% broken</span>
-                            </div>
-                            <div style={{ height: '8px', borderRadius: '4px', overflow: 'hidden', backgroundColor: '#f1f5f9', display: 'flex' }}>
-                              <div style={{ width: `${100 - (parseFloat(p.broken_pct) || 0)}%`, backgroundColor: '#22c55e' }} />
-                              <div style={{ width: `${parseFloat(p.broken_pct) || 0}%`, backgroundColor: '#ef4444' }} />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Top breakers */}
-                {breakers.length > 0 && (
-                  <div style={{ padding: '18px 20px', borderTop: '1px solid #f1f5f9' }}>
-                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '12px' }}>⚠ Repeat Breakers</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
-                      {breakers.slice(0, 6).map((b, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', backgroundColor: '#fef2f2', borderRadius: '8px', border: '1px solid #fecaca' }}>
-                          <div>
-                            <div style={{ fontSize: '12px', fontWeight: '700', color: '#0f172a' }}>{b.resident_name}</div>
-                            <div style={{ fontSize: '11px', color: '#94a3b8' }}>Unit {b.unit_number} · {fmtAmt(b.total_broken_amount)} broken</div>
-                          </div>
-                          <div style={{ fontSize: '18px', fontWeight: '800', color: '#dc2626' }}>{b.times_broken}×</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {total === 0 && !ptpAnalyticsLoading && (
-                  <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
-                    No PTP events recorded yet. Upload a delinquency report to start tracking.
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-        </div>
-      </div>
-
     </div>
   );
 }
@@ -3239,7 +3061,14 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                 </div>
                 {/* TN 10-day writ tickler */}
                 {(caseDetail.property_state || '').toUpperCase() === 'TN' && (
-                  )}
+                  <div style={{ backgroundColor: '#fef9c3', border: '1px solid #fde68a', borderRadius: '8px', padding: '10px 14px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '16px' }}>⏰</span>
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: '700', color: '#92400e' }}>Tennessee — 10-Day Writ Eligibility Rule</div>
+                      <div style={{ fontSize: '11px', color: '#b45309' }}>Setting Possession Granted auto-fills Writ Eligible Date 10 calendar days later.</div>
+                    </div>
+                  </div>
+                )}
                 {/* Editable date fields */}
                 {[
                   { label: 'Notice Issued',    field: 'notice_issued_date' },
