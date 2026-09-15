@@ -6539,7 +6539,7 @@ function WritTrackerTab({ token }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedWrit, setSelectedWrit] = useState(null);
   const [editingDates, setEditingDates] = useState(false);
-  const [dateForm, setDateForm] = useState({ writ_eligible_date: '', writ_filed_date: '', writ_execution_date: '' });
+  const [dateForm, setDateForm] = useState({ writ_eligible_date: '', writ_filed_date: '', writ_execution_date: '', filed_with_attorney_date: '' });
   const [saving, setSaving] = useState(false);
   const [hoveredDay, setHoveredDay] = useState(null);
   const [activeView, setActiveView] = useState('manager');
@@ -6591,7 +6591,8 @@ function WritTrackerTab({ token }) {
         body: JSON.stringify({
           writ_eligible_date: dateForm.writ_eligible_date || null,
           writ_filed_date: dateForm.writ_filed_date || null,
-          writ_execution_date: dateForm.writ_execution_date || null
+          writ_execution_date: dateForm.writ_execution_date || null,
+          filed_with_attorney_date: dateForm.filed_with_attorney_date || null
         })
       });
       setEditingDates(false);
@@ -6847,7 +6848,7 @@ function WritTrackerTab({ token }) {
                   <div style={{ fontSize: '12px', fontWeight: isToday ? '800' : '500', color: isToday ? '#7c3aed' : '#475569', width: '22px', height: '22px', borderRadius: '50%', backgroundColor: isToday ? '#ede9fe' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' }}>{day}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                     {dayWrits.map(w => (
-                      <div key={w.id} onClick={() => { setSelectedWrit(w); setDateForm({ writ_eligible_date: w.writ_eligible_date?.split('T')[0] || '', writ_filed_date: w.writ_filed_date?.split('T')[0] || '', writ_execution_date: w.writ_execution_date?.split('T')[0] || '' }); }}
+                      <div key={w.id} onClick={() => { setSelectedWrit(w); setDateForm({ writ_eligible_date: w.writ_eligible_date?.split('T')[0] || '', writ_filed_date: w.writ_filed_date?.split('T')[0] || '', writ_execution_date: w.writ_execution_date?.split('T')[0] || '', filed_with_attorney_date: w.filed_with_attorney_date?.split('T')[0] || '' }); }}
                         style={{ fontSize: '10px', padding: '3px 6px', borderRadius: '4px', backgroundColor: isAlert ? '#fee2e2' : '#ede9fe', color: isAlert ? '#dc2626' : '#7c3aed', fontWeight: '700', cursor: 'pointer', lineHeight: '1.3', border: `1px solid ${isAlert ? '#fca5a5' : '#c4b5fd'}` }}>
                         {isAlert ? '⚠️ ' : ''}{w.resident_name.split(' ')[0]} · U{w.unit_number}
                       </div>
