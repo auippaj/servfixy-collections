@@ -1940,6 +1940,29 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
 
   const API_URL = 'https://servfixy-production.up.railway.app';
 
+  // Hearing outcome modal state
+  const [hearingOutcomeModal, setHearingOutcomeModal] = useState(null);
+  const [hearingOutcomeValue, setHearingOutcomeValue] = useState('possession_granted');
+  const [hearingOutcomeDate, setHearingOutcomeDate] = useState('');
+  const [hearingOutcomeSaving, setHearingOutcomeSaving] = useState(false);
+
+  const saveHearingOutcome = async () => {
+    if (!hearingOutcomeModal) return;
+    setHearingOutcomeSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/api/collections/cases/${hearingOutcomeModal.case_id}/hearing-outcome`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hearing_outcome: hearingOutcomeValue, hearing_outcome_date: hearingOutcomeDate })
+      });
+      if (res.ok) {
+        setAlerts(prev => prev.filter(a => !(a.type === 'hearing_outcome_pending' && a.case_id === hearingOutcomeModal.case_id)));
+        setHearingOutcomeModal(null);
+      }
+    } catch (_) {}
+    finally { setHearingOutcomeSaving(false); }
+  };
+
   const fetchPtpAnalytics = async (propId, months = 6) => {
     setPtpAnalyticsLoading(true);
     try {
