@@ -1435,6 +1435,29 @@ function YardiImportTab({ token }) {
               </button>
             </div>
           </div>
+
+          {/* Hearing Outcome */}
+          {selectedCase && selectedCase.court_hearing_date && (
+            <div style={{ marginTop: '12px', backgroundColor: selectedCase.hearing_outcome ? '#f0fdf4' : '#fefce8', border: `1px solid ${selectedCase.hearing_outcome ? '#86efac' : '#fde68a'}`, borderRadius: '10px', padding: '14px 18px' }}>
+              <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>Hearing Outcome</div>
+              {selectedCase.hearing_outcome ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: '700', color: '#15803d' }}>
+                    {{possession_granted:'Possession Granted',dismissed:'Dismissed',continued:'Continued',settled:'Settled / Agreed Order',default_judgment:'Default Judgment'}[selectedCase.hearing_outcome] || selectedCase.hearing_outcome}
+                  </span>
+                  {selectedCase.hearing_outcome_date && <span style={{ fontSize: '12px', color: '#64748b' }}>on {new Date(selectedCase.hearing_outcome_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>}
+                  <button onClick={() => { setHearingOutcomeModal({ case_id: selectedCase.id, resident_name: selectedCase.resident_name, unit_number: selectedCase.unit_number }); setHearingOutcomeValue(selectedCase.hearing_outcome); setHearingOutcomeDate(selectedCase.hearing_outcome_date || ''); }}
+                    style={{ fontSize: '11px', padding: '3px 8px', backgroundColor: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '5px', color: '#475569', cursor: 'pointer' }}>Edit</button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '12px', color: '#92400e' }}>No outcome recorded yet</span>
+                  <button onClick={() => { setHearingOutcomeModal({ case_id: selectedCase.id, resident_name: selectedCase.resident_name, unit_number: selectedCase.unit_number }); setHearingOutcomeDate(new Date().toISOString().split('T')[0]); }}
+                    style={{ fontSize: '11px', padding: '4px 12px', backgroundColor: '#7c3aed', border: 'none', borderRadius: '5px', color: '#fff', fontWeight: '700', cursor: 'pointer' }}>Record Outcome</button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -3247,6 +3270,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                 {/* Editable date fields */}
                 {[
                   { label: 'Notice Issued',    field: 'notice_issued_date' },
+                  { label: 'Filed w/ Attorney', field: 'filed_with_attorney_date' },
                   { label: 'FED Date',         field: 'fed_date' },
                   { label: 'Writ Filed',        field: 'writ_file_date' },
                   { label: 'Court Hearing',     field: 'court_hearing_date' },
