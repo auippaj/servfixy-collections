@@ -268,10 +268,9 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
   const SidebarInner = () => (
     <div style={{ width: '224px', minWidth: '224px', backgroundColor: '#185FA5', borderRight: '1px solid #185FA5', display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* Logo */}
-      <div style={{ padding: '20px 18px 14px', borderBottom: '1px solid #243f73', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <img src="https://i.imgur.com/OKIqq0K.png" alt="Servfixy" style={{ height: '40px', objectFit: 'contain' }} />
-          <div style={{ marginTop: '6px', display: 'inline-block', background: '#0f766e', borderRadius: '5px', padding: '2px 8px', fontSize: '10px', fontWeight: '700', color: '#fff', letterSpacing: '0.08em' }}>COLLECTIONS</div>
+      <div style={{ padding: '16px 18px', borderBottom: '1px solid rgba(255,255,255,0.12)', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <img src="/servfixy-logo.png" alt="Servfixy" style={{ height: '38px', objectFit: 'contain', objectPosition: 'left' }} />
         </div>
         {isMobile && (
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '22px', color: '#64748b', cursor: 'pointer', padding: '4px' }}>✕</button>
