@@ -67,10 +67,14 @@ function Login({ onLogin }) {
     <div style={{
       minHeight: '100vh',
       display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       fontFamily: "'Inter', 'Segoe UI', Arial, sans-serif",
       background: 'linear-gradient(135deg, #0a1628 0%, #0d2144 50%, #0a1628 100%)',
       position: 'relative',
       overflow: 'hidden',
+      padding: '40px 20px',
+      boxSizing: 'border-box',
     }}>
       {/* Background grid pattern */}
       <div style={{
@@ -79,61 +83,96 @@ function Login({ onLogin }) {
         backgroundSize: '48px 48px',
       }} />
       {/* Glow orbs */}
-      <div style={{ position: 'absolute', top: '-120px', left: '-120px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(20,184,166,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: '-120px', left: '-120px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(20,184,166,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', bottom: '-100px', right: '-100px', width: '400px', height: '400px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(27,58,107,0.4) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '700px', height: '700px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(20,184,166,0.05) 0%, transparent 65%)', pointerEvents: 'none' }} />
 
-      {/* Left panel — brand */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 80px', position: 'relative', zIndex: 1 }}>
-        <img src="https://i.imgur.com/OKIqq0K.png" alt="Servfixy" style={{ height: '52px', objectFit: 'contain', objectPosition: 'left', marginBottom: '32px' }} />
-        <div style={{ fontSize: '38px', fontWeight: '800', color: '#ffffff', lineHeight: 1.15, marginBottom: '16px', letterSpacing: '-0.02em' }}>
-          Collections<br />
-          <span style={{ background: 'linear-gradient(90deg, #14B8A6, #38bdf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Management</span>
-        </div>
-        <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, maxWidth: '380px', margin: '0 0 48px' }}>
-          Delinquency tracking, legal escalation, and collections workflow — purpose-built for multifamily Sun Belt portfolios.
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {[
-            { icon: '⚖️', text: 'Automated writ & notice tracking' },
-            { icon: '📊', text: 'Real-time delinquency analytics' },
-            { icon: '🤝', text: 'Promise-to-pay management' },
-          ].map(({ icon, text }) => (
-            <div key={text} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(20,184,166,0.12)', border: '1px solid rgba(20,184,166,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>{icon}</div>
-              <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>{text}</span>
-            </div>
-          ))}
+      {/* Centered column: hands + logo + card */}
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '460px' }}>
+
+        {/* SVG: two hands holding up the logo box */}
+        <div style={{ width: '100%', position: 'relative', marginBottom: '-2px' }}>
+          <svg viewBox="0 0 460 180" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', display: 'block', overflow: 'visible' }}>
+            <defs>
+              <linearGradient id="skinL" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#c8956c" />
+                <stop offset="100%" stopColor="#a0714f" />
+              </linearGradient>
+              <linearGradient id="skinR" x1="1" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#c8956c" />
+                <stop offset="100%" stopColor="#a0714f" />
+              </linearGradient>
+              <linearGradient id="sleeveL" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#1B3A6B" />
+                <stop offset="100%" stopColor="#0d2144" />
+              </linearGradient>
+              <linearGradient id="sleeveR" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#1B3A6B" />
+                <stop offset="100%" stopColor="#0d2144" />
+              </linearGradient>
+              <linearGradient id="logoBox" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#0f2a4a" />
+                <stop offset="100%" stopColor="#0a1e38" />
+              </linearGradient>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
+              <filter id="shadow">
+                <feDropShadow dx="0" dy="4" stdDeviation="8" floodColor="#000" floodOpacity="0.4" />
+              </filter>
+            </defs>
+
+            {/* LEFT ARM — sleeve coming from bottom-left */}
+            <path d="M 40 185 C 50 160 70 140 95 128 L 145 118 C 155 116 162 120 162 130 L 160 148 C 160 155 154 160 147 160 L 120 162 C 105 163 95 170 88 182 Z" fill="url(#sleeveL)" />
+            {/* Left wrist/hand */}
+            <path d="M 145 118 C 158 115 168 118 172 126 L 178 140 C 180 147 176 154 169 156 L 147 160 C 140 162 133 158 131 151 L 128 138 C 126 130 133 120 145 118 Z" fill="url(#skinL)" />
+            {/* Left thumb */}
+            <path d="M 131 138 C 126 134 122 136 121 141 C 120 146 123 150 128 151 Z" fill="url(#skinL)" />
+            {/* Left fingers (holding flat) */}
+            <path d="M 162 128 L 178 124 C 183 123 186 126 185 130 C 184 134 180 136 176 136 L 162 138 Z" fill="url(#skinL)" />
+            <path d="M 162 136 L 176 134 C 181 133 184 136 183 140 C 182 144 178 146 174 146 L 162 146 Z" fill="url(#skinL)" />
+            <path d="M 162 146 L 174 145 C 179 145 181 148 180 152 C 179 155 176 157 172 157 L 162 157 Z" fill="url(#skinL)" />
+
+            {/* RIGHT ARM — sleeve coming from bottom-right */}
+            <path d="M 420 185 C 410 160 390 140 365 128 L 315 118 C 305 116 298 120 298 130 L 300 148 C 300 155 306 160 313 160 L 340 162 C 355 163 365 170 372 182 Z" fill="url(#sleeveR)" />
+            {/* Right wrist/hand */}
+            <path d="M 315 118 C 302 115 292 118 288 126 L 282 140 C 280 147 284 154 291 156 L 313 160 C 320 162 327 158 329 151 L 332 138 C 334 130 327 120 315 118 Z" fill="url(#skinR)" />
+            {/* Right thumb */}
+            <path d="M 329 138 C 334 134 338 136 339 141 C 340 146 337 150 332 151 Z" fill="url(#skinR)" />
+            {/* Right fingers (holding flat) */}
+            <path d="M 298 128 L 282 124 C 277 123 274 126 275 130 C 276 134 280 136 284 136 L 298 138 Z" fill="url(#skinR)" />
+            <path d="M 298 136 L 284 134 C 279 133 276 136 277 140 C 278 144 282 146 286 146 L 298 146 Z" fill="url(#skinR)" />
+            <path d="M 298 146 L 286 145 C 281 145 279 148 280 152 C 281 155 284 157 288 157 L 298 157 Z" fill="url(#skinR)" />
+
+            {/* Logo box being held up */}
+            <rect x="148" y="60" width="164" height="68" rx="12" fill="url(#logoBox)" stroke="rgba(20,184,166,0.35)" strokeWidth="1.5" filter="url(#shadow)" />
+            {/* Accent line at top of logo box */}
+            <rect x="148" y="60" width="164" height="3" rx="1.5" fill="url(#logoBox)" />
+            <line x1="148" y1="63" x2="312" y2="63" stroke="url(#accentGrad)" strokeWidth="2.5" strokeLinecap="round" />
+            <defs>
+              <linearGradient id="accentGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#14B8A6" />
+                <stop offset="50%" stopColor="#38bdf8" />
+                <stop offset="100%" stopColor="#1B3A6B" />
+              </linearGradient>
+              <linearGradient id="textGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#14B8A6" />
+                <stop offset="100%" stopColor="#38bdf8" />
+              </linearGradient>
+            </defs>
+            {/* S mark */}
+            <text x="168" y="104" fontFamily="'Inter',Arial,sans-serif" fontWeight="800" fontSize="28" fill="url(#textGrad)" filter="url(#glow)">S</text>
+            {/* "ervfixy" in white */}
+            <text x="188" y="104" fontFamily="'Inter',Arial,sans-serif" fontWeight="700" fontSize="22" fill="#ffffff">ervfixy</text>
+            {/* Subtle tagline inside box */}
+            <text x="230" y="118" fontFamily="'Inter',Arial,sans-serif" fontSize="8" fill="rgba(255,255,255,0.3)" textAnchor="middle" letterSpacing="2">COLLECTIONS</text>
+          </svg>
         </div>
 
-        {/* Product preview image */}
-        <div style={{ marginTop: '40px', position: 'relative', maxWidth: '460px' }}>
-          <div style={{
-            borderRadius: '12px',
-            overflow: 'hidden',
-            border: '1px solid rgba(20,184,166,0.15)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
-          }}>
-            <img
-              src="https://i.imgur.com/dnZrPs1.png"
-              alt="Servfixy Collections platform preview"
-              style={{ width: '100%', display: 'block', objectFit: 'cover' }}
-            />
-          </div>
-          <div style={{
-            position: 'absolute',
-            bottom: 0, left: 0, right: 0,
-            height: '80px',
-            background: 'linear-gradient(to top, #0a1628, transparent)',
-            borderRadius: '0 0 12px 12px',
-            pointerEvents: 'none',
-          }} />
-        </div>
-      </div>
-
-      {/* Right panel — login card */}
-      <div style={{ width: '480px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px', position: 'relative', zIndex: 1 }}>
+        {/* Login card */}
         <div style={{
-          width: '100%', maxWidth: '400px',
+          width: '100%',
           background: 'rgba(255,255,255,0.04)',
           border: '1px solid rgba(255,255,255,0.1)',
           borderRadius: '20px',
