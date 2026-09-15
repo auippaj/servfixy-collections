@@ -6887,7 +6887,6 @@ function WritTrackerTab({ token }) {
           )}
         </div>
       )}
-    </div>
 
     {/* Hearing Outcome Modal */}
     {hearingOutcomeModal && (
@@ -6924,6 +6923,7 @@ function WritTrackerTab({ token }) {
         </div>
       </div>
     )}
+    </div>
   );
 }
 // ── End Writ Tracker ──────────────────────────────────────────────────────────
