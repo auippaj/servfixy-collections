@@ -1882,6 +1882,8 @@ function NoticeDeliveryTab({ token }) {
 // ── Collections Analytics Tab ──────────────────────────────────────────────────
 function CollectionsAnalyticsTab({ token, onNavigate }) {
   const [pendingRequests, setPendingRequests] = useState(0);
+  const [overdueWrits, setOverdueWrits] = useState([]);
+  const [showOverdueDetail, setShowOverdueDetail] = useState(false);
   const [data, setData] = useState(null);
   const [properties, setProperties] = useState([]);
   const [selectedProperty, setSelectedProperty] = useState('');
@@ -1945,6 +1947,8 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
       .then(r => r.json()).then(rows => setProperties(Array.isArray(rows) ? rows : [])).catch(() => {});
     fetch(`${API_URL}/api/ptp-requests/pending-count`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(d => { if (d.count !== undefined) setPendingRequests(d.count); }).catch(() => {});
+    fetch(`${API_URL}/api/collections/writs/overdue-filing`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => { if (d.overdue) setOverdueWrits(d.overdue); }).catch(() => {});
     fetch(`${API_URL}/api/collections/writs/reminders`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(rows => { if (Array.isArray(rows)) setWritStats(prev => ({ ...prev, upcoming: rows.length })); }).catch(() => {});
     fetch(`${API_URL}/api/collections/writs`, { headers: { Authorization: `Bearer ${token}` } })
@@ -2057,7 +2061,53 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
     <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', color: '#111827' }}>
 
       {/* Header */}
-       {pendingRequests > 0 && (
+       {/* ── Overdue Writ Filing Alert ── */}
+      {overdueWrits.length > 0 && (
+        <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', padding: '12px 18px', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+              <span style={{ fontSize: '20px', marginTop: '1px' }}>⚖️</span>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: '800', color: '#991b1b' }}>
+                  {overdueWrits.length} Writ{overdueWrits.length > 1 ? 's' : ''} Not Filed — Eligible Date Passed
+                </div>
+                <div style={{ fontSize: '12px', color: '#b91c1c', marginTop: '2px' }}>
+                  These cases have a Writ Eligible Date in the past with no Writ Filed Date recorded.
+                </div>
+                {showOverdueDetail && (
+                  <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {overdueWrits.map((c, i) => (
+                      <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', backgroundColor: '#fff', borderRadius: '7px', border: '1px solid #fca5a5', gap: '12px', flexWrap: 'wrap' }}>
+                        <div>
+                          <span style={{ fontWeight: '700', fontSize: '13px', color: '#0f172a' }}>{c.resident_name}</span>
+                          <span style={{ fontSize: '12px', color: '#64748b', marginLeft: '8px' }}>Unit {c.unit_number} · {c.property_name}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <span style={{ fontSize: '11px', color: '#b91c1c', fontWeight: '700' }}>
+                            Eligible {new Date(c.writ_eligible_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {c.days_overdue} day{c.days_overdue !== 1 ? 's' : ''} overdue
+                          </span>
+                          <button
+                            onClick={() => onNavigate('Collections Cases', { case_id: c.id })}
+                            style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: '#dc2626', border: 'none', borderRadius: '5px', color: '#fff', fontWeight: '700', cursor: 'pointer' }}>
+                            Open Case →
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => setShowOverdueDetail(p => !p)}
+              style={{ padding: '7px 14px', backgroundColor: '#dc2626', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '12px', fontWeight: '700', cursor: 'pointer', flexShrink: 0 }}>
+              {showOverdueDetail ? 'Hide' : `View ${overdueWrits.length} Case${overdueWrits.length > 1 ? 's' : ''}`}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {pendingRequests > 0 && (
         <div style={{ backgroundColor: '#fef9c3', border: '1px solid #fde047', borderRadius: '10px', padding: '12px 18px', marginBottom: '18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '20px' }}>🤝</span>
