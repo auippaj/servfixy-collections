@@ -1093,11 +1093,14 @@ function AdminTab({ token, initialSection }) {
                 <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: '20px' }}>
                   <div style={{ padding: '14px 18px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div onClick={() => { const all = (bdEligibleData.cases || []).every(c => bdSelectedCases.has(c.id)); all ? setBdSelectedCases(new Set()) : setBdSelectedCases(new Set((bdEligibleData.cases || []).map(c => c.id))); }}
+                      <div
+                        onClick={() => { const all = (bdEligibleData.cases || []).every(c => bdSelectedCases.has(c.id)); all ? setBdSelectedCases(new Set()) : setBdSelectedCases(new Set((bdEligibleData.cases || []).map(c => c.id))); }}
                         style={{ width: '16px', height: '16px', borderRadius: '3px', border: `2px solid ${bdSelectedCases.size > 0 ? '#14B8A6' : '#cbd5e1'}`, backgroundColor: bdSelectedCases.size > 0 ? '#14B8A6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                         {(bdEligibleData.cases || []).every(c => bdSelectedCases.has(c.id)) && <span style={{ color: '#fff', fontSize: '10px', fontWeight: '900' }}>✓</span>}
                       </div>
-                      <span style={{ fontSize: '13px', color: '#475569' }}>{bdSelectedCases.size > 0 ? `${bdSelectedCases.size} selected` : `${(bdEligibleData.cases || []).length} delinquent resident(s)`}</span>
+                      <span style={{ fontSize: '13px', color: '#475569' }}>
+                        {bdSelectedCases.size > 0 ? `${bdSelectedCases.size} selected` : `${(bdEligibleData.cases || []).length} delinquent resident(s)`}
+                      </span>
                     </div>
                     {bdSelectedCases.size > 0 && (
                       <button onClick={handleGenerateBalanceDue} disabled={bdGenerating}
@@ -1137,9 +1140,6 @@ function AdminTab({ token, initialSection }) {
                                 <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '4px', fontWeight: '700', backgroundColor: '#fef9c3', color: '#92400e' }}>{c.status}</span>
                               </td>
                             </tr>
-
-          </div>
-
                           );
                         })}
                       </tbody>
@@ -1172,6 +1172,8 @@ function AdminTab({ token, initialSection }) {
               )}
             </div>
           )}
+
+          </div>
         );
         })()}
       </div>
