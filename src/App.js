@@ -1167,7 +1167,6 @@ function AdminTab({ token, initialSection }) {
               </div>
             )}
           </div>
-        )}
 
       </div>
     </div>
