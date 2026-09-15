@@ -90,7 +90,7 @@ function Login({ onLogin }) {
 
         {/* Servfixy logo above card */}
         <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-          <img src="https://i.imgur.com/OKIqq0K.png" alt="Servfixy" style={{ height: '44px', objectFit: 'contain', filter: 'brightness(0) invert(1)', dropShadow: '0 2px 12px rgba(0,0,0,0.2)' }} />
+          <img src="/servfixy-logo.png" alt="Servfixy" style={{ height: '56px', objectFit: 'contain', background: 'white', borderRadius: '10px', padding: '6px 14px' }} />
           <span style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.18em', color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase' }}>Collections</span>
         </div>
 
@@ -9498,7 +9498,7 @@ function App() {
         <div style={{ position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', flexShrink: 0 }}>
           <button onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#0C447C', padding: '4px 8px', borderRadius: '6px' }}>☰</button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <img src="https://i.imgur.com/OKIqq0K.png" alt="Servfixy" style={{ height: '22px', objectFit: 'contain' }} />
+            <img src="/servfixy-logo.png" alt="Servfixy" style={{ height: '22px', objectFit: 'contain' }} />
             <div style={{ background: '#185FA5', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', fontWeight: '700', color: '#fff', letterSpacing: '0.08em' }}>COLLECTIONS</div>
           </div>
           <div style={{ fontSize: '11px', color: '#94a3b8', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeTab.replace('Collections ', '')}</div>
