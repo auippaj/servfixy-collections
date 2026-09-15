@@ -64,44 +64,116 @@ function Login({ onLogin }) {
   };
 
   return (
-    <div style={{ backgroundColor: '#F0F4F8', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Arial, sans-serif' }}>
-      <div style={{ backgroundColor: '#ffffff', padding: '48px', borderRadius: '12px', width: '100%', maxWidth: '420px', boxShadow: '0 4px 40px rgba(192,132,252,0.15)', border: '1px solid #111827' }}>
-        <div style={{ marginBottom: '24px' }}>
-          <img src="https://i.imgur.com/OKIqq0K.png" alt="Servfixy" style={{ height: '36px', objectFit: 'contain' }} />
-          <div style={{ display: 'inline-block', marginLeft: '10px', verticalAlign: 'middle', background: '#1B3A6B', borderRadius: '6px', padding: '3px 10px', fontSize: '12px', fontWeight: '700', color: '#fff', letterSpacing: '0.05em' }}>COLLECTIONS</div>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      fontFamily: "'Inter', 'Segoe UI', Arial, sans-serif",
+      background: 'linear-gradient(135deg, #0a1628 0%, #0d2144 50%, #0a1628 100%)',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      {/* Background grid pattern */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        backgroundImage: 'linear-gradient(rgba(20,184,166,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(20,184,166,0.04) 1px, transparent 1px)',
+        backgroundSize: '48px 48px',
+      }} />
+      {/* Glow orbs */}
+      <div style={{ position: 'absolute', top: '-120px', left: '-120px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(20,184,166,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: '-100px', right: '-100px', width: '400px', height: '400px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(27,58,107,0.4) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+      {/* Left panel — brand */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 80px', position: 'relative', zIndex: 1 }}>
+        <img src="https://i.imgur.com/OKIqq0K.png" alt="Servfixy" style={{ height: '52px', objectFit: 'contain', objectPosition: 'left', marginBottom: '32px' }} />
+        <div style={{ fontSize: '38px', fontWeight: '800', color: '#ffffff', lineHeight: 1.15, marginBottom: '16px', letterSpacing: '-0.02em' }}>
+          Collections<br />
+          <span style={{ background: 'linear-gradient(90deg, #14B8A6, #38bdf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Management</span>
         </div>
-        <h2 style={{ color: '#0f172a', margin: '0 0 6px 0', fontSize: '20px', fontWeight: '700' }}>Sign in</h2>
-        <p style={{ color: '#94a3b8', margin: '0 0 28px 0', fontSize: '13px' }}>Delinquency &amp; Collections Management</p>
-        {error && <div style={{ backgroundColor: '#fef2f2', color: '#dc2626', padding: '12px', borderRadius: '8px', marginBottom: '20px', fontSize: '13px' }}>{error}</div>}
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ color: '#94a3b8', fontSize: '12px', display: 'block', marginBottom: '6px' }}>Email</label>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            placeholder="you@servfixy.com"
-            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #111827', backgroundColor: '#ffffff', color: '#0f172a', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }} />
+        <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, maxWidth: '380px', margin: '0 0 48px' }}>
+          Delinquency tracking, legal escalation, and collections workflow — purpose-built for multifamily Sun Belt portfolios.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {[
+            { icon: '⚖️', text: 'Automated writ & notice tracking' },
+            { icon: '📊', text: 'Real-time delinquency analytics' },
+            { icon: '🤝', text: 'Promise-to-pay management' },
+          ].map(({ icon, text }) => (
+            <div key={text} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(20,184,166,0.12)', border: '1px solid rgba(20,184,166,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>{icon}</div>
+              <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>{text}</span>
+            </div>
+          ))}
         </div>
-        <div style={{ marginBottom: '28px' }}>
-          <label style={{ color: '#94a3b8', fontSize: '12px', display: 'block', marginBottom: '6px' }}>Password</label>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            placeholder="••••••••"
-            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #111827', backgroundColor: '#ffffff', color: '#0f172a', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }} />
-        </div>
-        <button onClick={handleLogin} disabled={loading}
-          style={{ width: '100%', padding: '13px', borderRadius: '8px', border: 'none', background: loading ? '#152d54' : '#1B3A6B', color: '#fff', fontSize: '15px', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer', letterSpacing: '0.02em' }}>
-          {loading ? 'Signing in...' : 'Sign In'}
-        </button>
-        <div style={{ margin: '20px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }} />
-          <span style={{ color: '#94a3b8', fontSize: '12px', whiteSpace: 'nowrap' }}>or</span>
-          <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }} />
-        </div>
-        <button onClick={handleDemoLogin} disabled={loading}
-          style={{ width: '100%', padding: '13px', borderRadius: '8px', border: '2px solid #14B8A6', background: 'transparent', color: '#0f766e', fontSize: '14px', fontWeight: '700', cursor: (loading || seedingDemo) ? 'not-allowed' : 'pointer', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '16px' }}>▶</span> {seedingDemo ? 'Loading demo data...' : 'Investor Demo Login'}
-        </button>
-        <div style={{ marginTop: '10px', textAlign: 'center', fontSize: '11px', color: '#94a3b8' }}>
-          Pre-loaded with 200 real-scenario cases across 3 properties
+      </div>
+
+      {/* Right panel — login card */}
+      <div style={{ width: '480px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px', position: 'relative', zIndex: 1 }}>
+        <div style={{
+          width: '100%', maxWidth: '400px',
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: '20px',
+          padding: '40px',
+          backdropFilter: 'blur(20px)',
+          boxShadow: '0 24px 80px rgba(0,0,0,0.4)',
+        }}>
+          {/* Card top accent */}
+          <div style={{ height: '3px', background: 'linear-gradient(90deg, #14B8A6, #38bdf8, #1B3A6B)', borderRadius: '2px', marginBottom: '32px' }} />
+
+          <div style={{ marginBottom: '28px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(20,184,166,0.1)', border: '1px solid rgba(20,184,166,0.2)', borderRadius: '20px', padding: '4px 12px', marginBottom: '16px' }}>
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#14B8A6' }} />
+              <span style={{ fontSize: '11px', fontWeight: '600', color: '#14B8A6', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Secure Access</span>
+            </div>
+            <h2 style={{ color: '#ffffff', margin: '0 0 6px', fontSize: '24px', fontWeight: '700', letterSpacing: '-0.01em' }}>Welcome back</h2>
+            <p style={{ color: 'rgba(255,255,255,0.4)', margin: 0, fontSize: '13px' }}>Sign in to your Collections account</p>
+          </div>
+
+          {error && (
+            <div style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#fca5a5', padding: '12px 14px', borderRadius: '10px', marginBottom: '20px', fontSize: '13px' }}>
+              {error}
+            </div>
+          )}
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '8px' }}>Email</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleLogin()}
+              placeholder="you@servfixy.com"
+              style={{ width: '100%', padding: '13px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: '#ffffff', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }} />
+          </div>
+
+          <div style={{ marginBottom: '28px' }}>
+            <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '8px' }}>Password</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleLogin()}
+              placeholder="••••••••"
+              style={{ width: '100%', padding: '13px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: '#ffffff', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }} />
+          </div>
+
+          <button onClick={handleLogin} disabled={loading}
+            style={{ width: '100%', padding: '14px', borderRadius: '10px', border: 'none', background: loading ? 'rgba(20,184,166,0.4)' : 'linear-gradient(135deg, #14B8A6 0%, #0d9488 100%)', color: '#fff', fontSize: '15px', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer', letterSpacing: '0.02em', boxShadow: loading ? 'none' : '0 4px 20px rgba(20,184,166,0.35)', transition: 'all 0.2s' }}>
+            {loading ? 'Signing in…' : 'Sign In →'}
+          </button>
+
+          <div style={{ margin: '20px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+            <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '12px' }}>or</span>
+            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+          </div>
+
+          <button onClick={handleDemoLogin} disabled={loading || seedingDemo}
+            style={{ width: '100%', padding: '13px', borderRadius: '10px', border: '1px solid rgba(27,58,107,0.6)', background: 'rgba(27,58,107,0.25)', color: 'rgba(255,255,255,0.7)', fontSize: '13px', fontWeight: '600', cursor: (loading || seedingDemo) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '14px' }}>▶</span>
+            {seedingDemo ? 'Loading demo data…' : 'Investor Demo Login'}
+          </button>
+          <div style={{ marginTop: '10px', textAlign: 'center', fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>
+            200 real-scenario cases across 3 properties
+          </div>
+
+          <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.06)', textAlign: 'center', fontSize: '11px', color: 'rgba(255,255,255,0.2)' }}>
+            © 2025 Servfixy Inc. · Secure encrypted connection
+          </div>
         </div>
       </div>
     </div>
