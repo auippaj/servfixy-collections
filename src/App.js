@@ -250,9 +250,33 @@ function AdminTab({ token, initialSection }) {
   const [waMergeUrls, setWaMergeUrls] = useState([]);
   const [waMerging, setWaMerging] = useState(false);
 
-  // Overdue writ alerts
-  const [overdueWrits, setOverdueWrits] = useState([]);
-  const [showOverdueDetail, setShowOverdueDetail] = useState(false);
+  // Unified alert engine
+  const [alerts, setAlerts] = useState([]);
+  const [alertsExpanded, setAlertsExpanded] = useState({});
+  const [hearingOutcomeModal, setHearingOutcomeModal] = useState(null); // { case_id, resident_name, court_hearing_date }
+  const [hearingOutcomeValue, setHearingOutcomeValue] = useState('possession_granted');
+  const [hearingOutcomeDate, setHearingOutcomeDate] = useState('');
+  const [hearingOutcomeSaving, setHearingOutcomeSaving] = useState(false);
+
+  const alertsByType = (type) => alerts.filter(a => a.type === type);
+  const toggleAlertGroup = (type) => setAlertsExpanded(p => ({ ...p, [type]: !p[type] }));
+
+  const saveHearingOutcome = async () => {
+    if (!hearingOutcomeModal) return;
+    setHearingOutcomeSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/api/collections/cases/${hearingOutcomeModal.case_id}/hearing-outcome`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hearing_outcome: hearingOutcomeValue, hearing_outcome_date: hearingOutcomeDate })
+      });
+      if (res.ok) {
+        setAlerts(prev => prev.filter(a => !(a.type === 'hearing_outcome_pending' && a.case_id === hearingOutcomeModal.case_id)));
+        setHearingOutcomeModal(null);
+      }
+    } catch (_) {}
+    finally { setHearingOutcomeSaving(false); }
+  };
 
   // PTP Analytics
   const [ptpAnalytics, setPtpAnalytics] = useState(null);
@@ -1955,8 +1979,8 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
       }).catch(() => {});
     fetchData('');
     fetchPtpAnalytics('');
-    fetch(`${API_URL}/api/collections/writs/overdue-filing`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json()).then(d => { if (d.overdue) setOverdueWrits(d.overdue); }).catch(() => {});
+    fetch(`${API_URL}/api/collections/alerts`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => { if (d.alerts) setAlerts(d.alerts); }).catch(() => {});
   }, [token]);
 
   const handlePropertyChange = (e) => {
@@ -2050,25 +2074,30 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
     <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', color: '#111827' }}>
 
       {/* Header */}
-       {overdueWrits.length > 0 && (
-        <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', padding: '12px 18px', marginBottom: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+ 
+      {alertsByType('writ_eligible_overdue').length > 0 && (
+        <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', padding: '12px 18px', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-              <span style={{ fontSize: '20px' }}>⚖️</span>
+              <span style={{ fontSize: '18px' }}>⚖️</span>
               <div>
-                <div style={{ fontSize: '13px', fontWeight: '800', color: '#991b1b' }}>{overdueWrits.length} Writ{overdueWrits.length > 1 ? 's' : ''} Not Filed — Eligible Date Passed</div>
-                <div style={{ fontSize: '12px', color: '#b91c1c', marginTop: '2px' }}>These cases have a Writ Eligible Date in the past with no Writ Filed Date recorded.</div>
-                {showOverdueDetail && (
+                <div style={{ fontSize: '13px', fontWeight: '800', color: '#991b1b' }}>{alertsByType('writ_eligible_overdue').length} — Writ Eligible Date Passed — Not Filed</div>
+                <div style={{ fontSize: '12px', color: '#b91c1c', marginTop: '2px' }}>Writ eligible date has passed with no writ filed date recorded.</div>
+                {alertsExpanded['writ_eligible_overdue'] && (
                   <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {overdueWrits.map((c) => (
-                      <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', backgroundColor: '#fff', borderRadius: '7px', border: '1px solid #fca5a5', gap: '12px', flexWrap: 'wrap' }}>
+                    {alertsByType('writ_eligible_overdue').map((a) => (
+                      <div key={a.case_id + 'writ_eligible_overdue'} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', backgroundColor: '#fff', borderRadius: '7px', border: '1px solid #fca5a5', gap: '12px', flexWrap: 'wrap' }}>
                         <div>
-                          <span style={{ fontWeight: '700', fontSize: '13px', color: '#0f172a' }}>{c.resident_name}</span>
-                          <span style={{ fontSize: '12px', color: '#64748b', marginLeft: '8px' }}>Unit {c.unit_number} · {c.property_name}</span>
+                          <span style={{ fontWeight: '700', fontSize: '13px', color: '#0f172a' }}>{a.resident_name}</span>
+                          <span style={{ fontSize: '12px', color: '#64748b', marginLeft: '8px' }}>Unit {a.unit_number} · {a.property_name}</span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <span style={{ fontSize: '11px', color: '#b91c1c', fontWeight: '700' }}>Eligible {new Date(c.writ_eligible_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {c.days_overdue}d overdue</span>
-                          <button onClick={() => onNavigate('Collections Cases', { case_id: c.id })} style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: '#dc2626', border: 'none', borderRadius: '5px', color: '#fff', fontWeight: '700', cursor: 'pointer' }}>Open Case →</button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '11px', color: '#b91c1c', fontWeight: '600' }}>{a.message}</span>
+                          {a.type === 'hearing_outcome_pending' ? (
+                            <button onClick={() => { setHearingOutcomeModal(a); setHearingOutcomeDate(new Date().toISOString().split('T')[0]); }} style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: '#7c3aed', border: 'none', borderRadius: '5px', color: '#fff', fontWeight: '700', cursor: 'pointer' }}>Record Outcome</button>
+                          ) : (
+                            <button onClick={() => onNavigate('Collections Cases', { case_id: a.case_id })} style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: '#dc2626', border: 'none', borderRadius: '5px', color: '#fff', fontWeight: '700', cursor: 'pointer' }}>Open Case →</button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -2076,9 +2105,151 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
                 )}
               </div>
             </div>
-            <button onClick={() => setShowOverdueDetail(p => !p)} style={{ padding: '7px 14px', backgroundColor: '#dc2626', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '12px', fontWeight: '700', cursor: 'pointer', flexShrink: 0, alignSelf: 'flex-start' }}>
-              {showOverdueDetail ? 'Hide' : `View ${overdueWrits.length} Case${overdueWrits.length > 1 ? 's' : ''}`}
+            <button onClick={() => toggleAlertGroup('writ_eligible_overdue')} style={{ padding: '6px 12px', backgroundColor: '#dc2626', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '11px', fontWeight: '700', cursor: 'pointer', flexShrink: 0, alignSelf: 'flex-start' }}>
+              {alertsExpanded['writ_eligible_overdue'] ? 'Hide' : 'View'}
             </button>
+          </div>
+        </div>
+      )}
+      {alertsByType('writ_not_executed').length > 0 && (
+        <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', padding: '12px 18px', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+              <span style={{ fontSize: '18px' }}>📋</span>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: '800', color: '#991b1b' }}>{alertsByType('writ_not_executed').length} — Writ Filed — No Execution Recorded</div>
+                <div style={{ fontSize: '12px', color: '#b91c1c', marginTop: '2px' }}>Writ was filed but no possession granted date has been recorded.</div>
+                {alertsExpanded['writ_not_executed'] && (
+                  <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {alertsByType('writ_not_executed').map((a) => (
+                      <div key={a.case_id + 'writ_not_executed'} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', backgroundColor: '#fff', borderRadius: '7px', border: '1px solid #fca5a5', gap: '12px', flexWrap: 'wrap' }}>
+                        <div>
+                          <span style={{ fontWeight: '700', fontSize: '13px', color: '#0f172a' }}>{a.resident_name}</span>
+                          <span style={{ fontSize: '12px', color: '#64748b', marginLeft: '8px' }}>Unit {a.unit_number} · {a.property_name}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '11px', color: '#b91c1c', fontWeight: '600' }}>{a.message}</span>
+                          {a.type === 'hearing_outcome_pending' ? (
+                            <button onClick={() => { setHearingOutcomeModal(a); setHearingOutcomeDate(new Date().toISOString().split('T')[0]); }} style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: '#7c3aed', border: 'none', borderRadius: '5px', color: '#fff', fontWeight: '700', cursor: 'pointer' }}>Record Outcome</button>
+                          ) : (
+                            <button onClick={() => onNavigate('Collections Cases', { case_id: a.case_id })} style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: '#dc2626', border: 'none', borderRadius: '5px', color: '#fff', fontWeight: '700', cursor: 'pointer' }}>Open Case →</button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <button onClick={() => toggleAlertGroup('writ_not_executed')} style={{ padding: '6px 12px', backgroundColor: '#dc2626', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '11px', fontWeight: '700', cursor: 'pointer', flexShrink: 0, alignSelf: 'flex-start' }}>
+              {alertsExpanded['writ_not_executed'] ? 'Hide' : 'View'}
+            </button>
+          </div>
+        </div>
+      )}
+      {alertsByType('fed_no_hearing').length > 0 && (
+        <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', padding: '12px 18px', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+              <span style={{ fontSize: '18px' }}>📅</span>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: '800', color: '#991b1b' }}>{alertsByType('fed_no_hearing').length} — FED Filed — No Hearing Date Set</div>
+                <div style={{ fontSize: '12px', color: '#b91c1c', marginTop: '2px' }}>FED date has passed 30+ days with no court hearing date scheduled.</div>
+                {alertsExpanded['fed_no_hearing'] && (
+                  <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {alertsByType('fed_no_hearing').map((a) => (
+                      <div key={a.case_id + 'fed_no_hearing'} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', backgroundColor: '#fff', borderRadius: '7px', border: '1px solid #fca5a5', gap: '12px', flexWrap: 'wrap' }}>
+                        <div>
+                          <span style={{ fontWeight: '700', fontSize: '13px', color: '#0f172a' }}>{a.resident_name}</span>
+                          <span style={{ fontSize: '12px', color: '#64748b', marginLeft: '8px' }}>Unit {a.unit_number} · {a.property_name}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '11px', color: '#b91c1c', fontWeight: '600' }}>{a.message}</span>
+                          {a.type === 'hearing_outcome_pending' ? (
+                            <button onClick={() => { setHearingOutcomeModal(a); setHearingOutcomeDate(new Date().toISOString().split('T')[0]); }} style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: '#7c3aed', border: 'none', borderRadius: '5px', color: '#fff', fontWeight: '700', cursor: 'pointer' }}>Record Outcome</button>
+                          ) : (
+                            <button onClick={() => onNavigate('Collections Cases', { case_id: a.case_id })} style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: '#dc2626', border: 'none', borderRadius: '5px', color: '#fff', fontWeight: '700', cursor: 'pointer' }}>Open Case →</button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <button onClick={() => toggleAlertGroup('fed_no_hearing')} style={{ padding: '6px 12px', backgroundColor: '#dc2626', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '11px', fontWeight: '700', cursor: 'pointer', flexShrink: 0, alignSelf: 'flex-start' }}>
+              {alertsExpanded['fed_no_hearing'] ? 'Hide' : 'View'}
+            </button>
+          </div>
+        </div>
+      )}
+      {alertsByType('hearing_outcome_pending').length > 0 && (
+        <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', padding: '12px 18px', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+              <span style={{ fontSize: '18px' }}>⚠️</span>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: '800', color: '#991b1b' }}>{alertsByType('hearing_outcome_pending').length} — Hearing Date Passed — Outcome Needed</div>
+                <div style={{ fontSize: '12px', color: '#b91c1c', marginTop: '2px' }}>Court hearing date has passed with no outcome recorded.</div>
+                {alertsExpanded['hearing_outcome_pending'] && (
+                  <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {alertsByType('hearing_outcome_pending').map((a) => (
+                      <div key={a.case_id + 'hearing_outcome_pending'} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', backgroundColor: '#fff', borderRadius: '7px', border: '1px solid #fca5a5', gap: '12px', flexWrap: 'wrap' }}>
+                        <div>
+                          <span style={{ fontWeight: '700', fontSize: '13px', color: '#0f172a' }}>{a.resident_name}</span>
+                          <span style={{ fontSize: '12px', color: '#64748b', marginLeft: '8px' }}>Unit {a.unit_number} · {a.property_name}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '11px', color: '#b91c1c', fontWeight: '600' }}>{a.message}</span>
+                          {a.type === 'hearing_outcome_pending' ? (
+                            <button onClick={() => { setHearingOutcomeModal(a); setHearingOutcomeDate(new Date().toISOString().split('T')[0]); }} style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: '#7c3aed', border: 'none', borderRadius: '5px', color: '#fff', fontWeight: '700', cursor: 'pointer' }}>Record Outcome</button>
+                          ) : (
+                            <button onClick={() => onNavigate('Collections Cases', { case_id: a.case_id })} style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: '#dc2626', border: 'none', borderRadius: '5px', color: '#fff', fontWeight: '700', cursor: 'pointer' }}>Open Case →</button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <button onClick={() => toggleAlertGroup('hearing_outcome_pending')} style={{ padding: '6px 12px', backgroundColor: '#dc2626', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '11px', fontWeight: '700', cursor: 'pointer', flexShrink: 0, alignSelf: 'flex-start' }}>
+              {alertsExpanded['hearing_outcome_pending'] ? 'Hide' : 'View'}
+            </button>
+          </div>
+        </div>
+      )}
+      {hearingOutcomeModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#fff', borderRadius: '14px', padding: '28px', width: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+            <h2 style={{ margin: '0 0 4px', fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>Record Hearing Outcome</h2>
+            <p style={{ margin: '0 0 20px', fontSize: '13px', color: '#64748b' }}>{hearingOutcomeModal.resident_name} · Unit {hearingOutcomeModal.unit_number}</p>
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Outcome</label>
+              <select value={hearingOutcomeValue} onChange={e => setHearingOutcomeValue(e.target.value)}
+                style={{ width: '100%', padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '13px' }}>
+                <option value="possession_granted">Possession Granted</option>
+                <option value="dismissed">Dismissed</option>
+                <option value="continued">Continued</option>
+                <option value="settled">Settled / Agreed Order</option>
+                <option value="default_judgment">Default Judgment</option>
+              </select>
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Decision Date</label>
+              <input type="date" value={hearingOutcomeDate} onChange={e => setHearingOutcomeDate(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '13px' }} />
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={saveHearingOutcome} disabled={hearingOutcomeSaving}
+                style={{ flex: 1, padding: '10px', backgroundColor: '#1B3A6B', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
+                {hearingOutcomeSaving ? 'Saving…' : 'Save Outcome'}
+              </button>
+              <button onClick={() => setHearingOutcomeModal(null)}
+                style={{ flex: 1, padding: '10px', backgroundColor: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '7px', color: '#475569', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
