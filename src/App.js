@@ -165,61 +165,20 @@ function Login({ onLogin }) {
           </div>
         </div>
 
-        {/* SVG hands holding the card from below */}
-        <div style={{ width: '110%', marginTop: '-30px', position: 'relative', zIndex: 1, pointerEvents: 'none' }}>
-          <svg viewBox="0 0 520 220" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', display: 'block', overflow: 'visible' }}>
-            <defs>
-              <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#e8b89a" />
-                <stop offset="100%" stopColor="#c9845a" />
-              </linearGradient>
-              <linearGradient id="skinDark" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#d4956d" />
-                <stop offset="100%" stopColor="#b06840" />
-              </linearGradient>
-              <linearGradient id="sleeve" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#1e3a5f" />
-                <stop offset="100%" stopColor="#0d2144" />
-              </linearGradient>
-              <filter id="hShadow">
-                <feDropShadow dx="0" dy="-4" stdDeviation="10" floodColor="#0a3060" floodOpacity="0.25" />
-              </filter>
-            </defs>
-
-            {/* LEFT hand + arm */}
-            {/* Sleeve / forearm coming from bottom-left */}
-            <path d="M 0 220 C 20 180 55 150 95 130 L 145 108 C 160 103 172 108 175 120 L 175 220 Z" fill="url(#sleeve)" />
-            {/* Palm */}
-            <path d="M 120 90 C 135 78 158 76 172 85 L 185 100 C 192 108 190 120 183 126 L 175 130 L 120 130 C 108 130 100 120 103 108 Z" fill="url(#skin)" filter="url(#hShadow)" />
-            {/* Thumb left */}
-            <path d="M 103 108 C 95 100 88 102 87 112 C 86 120 92 128 103 128 Z" fill="url(#skin)" />
-            {/* Fingers left — four stacked rectangles poking right */}
-            <path d="M 183 88 C 183 88 200 86 202 92 C 204 98 198 103 185 104 L 183 100 Z" fill="url(#skin)" />
-            <path d="M 184 100 C 184 100 203 99 204 106 C 205 112 198 116 185 116 L 184 112 Z" fill="url(#skin)" />
-            <path d="M 184 114 C 184 114 202 113 203 120 C 204 126 197 129 185 129 L 184 125 Z" fill="url(#skin)" />
-            <path d="M 183 126 C 183 126 198 126 198 132 C 198 137 192 139 183 138 L 183 131 Z" fill="url(#skin)" />
-            {/* Knuckle shadow lines */}
-            <line x1="130" y1="90" x2="130" y2="130" stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
-            <line x1="145" y1="88" x2="145" y2="130" stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
-            <line x1="160" y1="87" x2="160" y2="130" stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
-
-            {/* RIGHT hand + arm */}
-            {/* Sleeve / forearm from bottom-right */}
-            <path d="M 520 220 C 500 180 465 150 425 130 L 375 108 C 360 103 348 108 345 120 L 345 220 Z" fill="url(#sleeve)" />
-            {/* Palm */}
-            <path d="M 400 90 C 385 78 362 76 348 85 L 335 100 C 328 108 330 120 337 126 L 345 130 L 400 130 C 412 130 420 120 417 108 Z" fill="url(#skin)" filter="url(#hShadow)" />
-            {/* Thumb right */}
-            <path d="M 417 108 C 425 100 432 102 433 112 C 434 120 428 128 417 128 Z" fill="url(#skin)" />
-            {/* Fingers right */}
-            <path d="M 337 88 C 337 88 320 86 318 92 C 316 98 322 103 335 104 L 337 100 Z" fill="url(#skin)" />
-            <path d="M 336 100 C 336 100 317 99 316 106 C 315 112 322 116 335 116 L 336 112 Z" fill="url(#skin)" />
-            <path d="M 336 114 C 336 114 318 113 317 120 C 316 126 323 129 335 129 L 336 125 Z" fill="url(#skin)" />
-            <path d="M 337 126 C 337 126 322 126 322 132 C 322 137 328 139 337 138 L 337 131 Z" fill="url(#skin)" />
-            {/* Knuckle shadow lines */}
-            <line x1="390" y1="90" x2="390" y2="130" stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
-            <line x1="375" y1="88" x2="375" y2="130" stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
-            <line x1="360" y1="87" x2="360" y2="130" stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
-          </svg>
+        {/* Real hands holding the card from below */}
+        <div style={{ width: '120%', marginTop: '-24px', position: 'relative', zIndex: 1, pointerEvents: 'none', overflow: 'hidden', height: '180px' }}>
+          <img
+            src="/hands.png"
+            alt=""
+            style={{
+              width: '100%',
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              objectFit: 'cover',
+              objectPosition: 'center bottom',
+            }}
+          />
         </div>
 
       </div>
