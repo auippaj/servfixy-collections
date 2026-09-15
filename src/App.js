@@ -6907,7 +6907,7 @@ function WritTrackerTab({ token }) {
                 const alert = execDate && isReminder(execDate);
                 return (
                   <tr key={w.id}
-                    onClick={() => { setSelectedWrit(w); setDateForm({ writ_filed_date: w.writ_filed_date?.split('T')[0] || '', writ_execution_date: w.writ_execution_date?.split('T')[0] || '' }); }}
+                    onClick={() => { setSelectedWrit(w); setDateForm({ writ_eligible_date: w.writ_eligible_date?.split('T')[0] || '', writ_filed_date: w.writ_filed_date?.split('T')[0] || '', writ_execution_date: w.writ_execution_date?.split('T')[0] || '', filed_with_attorney_date: w.filed_with_attorney_date?.split('T')[0] || '' }); }}
                     style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', backgroundColor: alert ? '#fef2f2' : idx % 2 === 0 ? '#fff' : '#F0F4F8' }}
                     onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f5f3ff'}
                     onMouseLeave={e => e.currentTarget.style.backgroundColor = alert ? '#fef2f2' : idx % 2 === 0 ? '#fff' : '#F0F4F8'}>
@@ -6919,7 +6919,7 @@ function WritTrackerTab({ token }) {
                     <td style={{ padding: '11px 14px', color: alert ? '#dc2626' : '#475569', fontWeight: alert ? '700' : '400' }}>{fmtDate(execDate) || <span style={{ color: '#f59e0b', fontWeight: '600' }}>Not set</span>}</td>
                     <td style={{ padding: '11px 14px', color: '#475569' }}>{w.attorney_name || '—'}</td>
                     <td style={{ padding: '11px 14px' }}>
-                      <button onClick={e => { e.stopPropagation(); setSelectedWrit(w); setDateForm({ writ_filed_date: w.writ_filed_date?.split('T')[0] || '', writ_execution_date: w.writ_execution_date?.split('T')[0] || '' }); setEditingDates(true); }}
+                      <button onClick={e => { e.stopPropagation(); setSelectedWrit(w); setDateForm({ writ_eligible_date: w.writ_eligible_date?.split('T')[0] || '', writ_filed_date: w.writ_filed_date?.split('T')[0] || '', writ_execution_date: w.writ_execution_date?.split('T')[0] || '', filed_with_attorney_date: w.filed_with_attorney_date?.split('T')[0] || '' }); setEditingDates(true); }}
                         style={{ fontSize: '11px', padding: '4px 10px', border: '1px solid #c4b5fd', borderRadius: '5px', backgroundColor: '#f5f3ff', color: '#7c3aed', cursor: 'pointer', fontWeight: '600' }}>
                         Set Dates
                       </button>
