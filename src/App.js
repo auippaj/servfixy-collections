@@ -104,6 +104,30 @@ function Login({ onLogin }) {
             </div>
           ))}
         </div>
+
+        {/* Product preview image */}
+        <div style={{ marginTop: '40px', position: 'relative', maxWidth: '460px' }}>
+          <div style={{
+            borderRadius: '12px',
+            overflow: 'hidden',
+            border: '1px solid rgba(20,184,166,0.15)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+          }}>
+            <img
+              src="https://i.imgur.com/dnZrPs1.png"
+              alt="Servfixy Collections platform preview"
+              style={{ width: '100%', display: 'block', objectFit: 'cover' }}
+            />
+          </div>
+          <div style={{
+            position: 'absolute',
+            bottom: 0, left: 0, right: 0,
+            height: '80px',
+            background: 'linear-gradient(to top, #0a1628, transparent)',
+            borderRadius: '0 0 12px 12px',
+            pointerEvents: 'none',
+          }} />
+        </div>
       </div>
 
       {/* Right panel — login card */}
