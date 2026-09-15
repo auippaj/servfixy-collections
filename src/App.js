@@ -836,6 +836,11 @@ function AdminTab({ token, initialSection }) {
                       style={{ padding: '8px 20px', backgroundColor: '#1B3A6B', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
                       {savingProp === prop.id ? 'Saving...' : 'Save Settings'}
                     </button>
+
+                    {/* ── Tenant Directory Upload (WA only) ── */}
+                    {(propSettings[prop.id]?.notice_jurisdiction === 'WA' || prop.state === 'WA') && (
+                      <TenantDirectoryUpload token={token} propertyId={prop.id} propertyName={prop.name} />
+                    )}
                   </div>
                 ))}
               </div>
@@ -1760,6 +1765,88 @@ function UnitDirectoryTab({ token }) {
 
 
 // ── Notice Delivery Tab ───────────────────────────────────────────────────────
+// ── Tenant Directory Upload Component ─────────────────────────────────────────
+function TenantDirectoryUpload({ token, propertyId, propertyName }) {
+  const [status, setStatus] = React.useState(null); // null | 'uploading' | 'success' | 'error'
+  const [message, setMessage] = React.useState('');
+  const [existing, setExisting] = React.useState(null);
+  const [loadingExisting, setLoadingExisting] = React.useState(true);
+  const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:3001' : 'https://servfixy-production.up.railway.app';
+
+  React.useEffect(() => {
+    fetch(`${API_URL}/api/collections/cases/properties/${propertyId}/tenant-directory`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(d => { setExisting(Array.isArray(d) ? d : []); setLoadingExisting(false); })
+      .catch(() => setLoadingExisting(false));
+  }, [propertyId, token]);
+
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setStatus('uploading');
+    setMessage('Parsing directory — this may take 20–30 seconds...');
+    try {
+      const formData = new FormData();
+      formData.append('pdf', file);
+      const res = await fetch(`${API_URL}/api/collections/cases/properties/${propertyId}/tenant-directory`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      setStatus('success');
+      setMessage(`✓ ${data.units_parsed} units stored successfully.`);
+      setExisting(null);
+      setLoadingExisting(true);
+      fetch(`${API_URL}/api/collections/cases/properties/${propertyId}/tenant-directory`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(r => r.json()).then(d => { setExisting(Array.isArray(d) ? d : []); setLoadingExisting(false); });
+    } catch (err) {
+      setStatus('error');
+      setMessage(err.message);
+    }
+    e.target.value = '';
+  };
+
+  const uploadedAt = existing?.[0]?.uploaded_at
+    ? new Date(existing[0].uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : null;
+
+  return (
+    <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e2e8f0' }}>
+      <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a', marginBottom: '6px' }}>
+        Tenant Directory
+      </div>
+      <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
+        Upload the Yardi tenant directory PDF so all leaseholders appear on WA notices.
+        {!loadingExisting && existing && existing.length > 0 && (
+          <span style={{ marginLeft: '8px', color: '#14B8A6', fontWeight: '600' }}>
+            ✓ {existing.length} units on file · uploaded {uploadedAt}
+          </span>
+        )}
+        {!loadingExisting && (!existing || existing.length === 0) && (
+          <span style={{ marginLeft: '8px', color: '#f59e0b', fontWeight: '600' }}>
+            ⚠ No directory uploaded yet
+          </span>
+        )}
+      </div>
+      <label style={{ display: 'inline-block', padding: '7px 16px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '7px', fontSize: '12px', fontWeight: '600', color: '#475569', cursor: 'pointer' }}>
+        {status === 'uploading' ? 'Uploading...' : existing && existing.length > 0 ? 'Replace Directory PDF' : 'Upload Directory PDF'}
+        <input type='file' accept='application/pdf' onChange={handleUpload} style={{ display: 'none' }} disabled={status === 'uploading'} />
+      </label>
+      {message && (
+        <div style={{ marginTop: '8px', fontSize: '12px', color: status === 'success' ? '#14B8A6' : status === 'error' ? '#ef4444' : '#64748b' }}>
+          {message}
+        </div>
+      )}
+    </div>
+  );
+}
+// ── End Tenant Directory Upload ────────────────────────────────────────────────
+
 function NoticeDeliveryTab({ token }) {
   const API_URL = process.env.REACT_APP_API_URL || 'https://servfixy-production.up.railway.app';
   const [deliveries, setDeliveries] = React.useState([]);
