@@ -70,174 +70,158 @@ function Login({ onLogin }) {
       alignItems: 'center',
       justifyContent: 'center',
       fontFamily: "'Inter', 'Segoe UI', Arial, sans-serif",
-      background: 'linear-gradient(135deg, #0a1628 0%, #0d2144 50%, #0a1628 100%)',
+      background: 'linear-gradient(160deg, #5bc8f5 0%, #3ab5e8 30%, #1a9fd4 60%, #0e8abf 100%)',
       position: 'relative',
       overflow: 'hidden',
-      padding: '40px 20px',
+      padding: '60px 20px 0',
       boxSizing: 'border-box',
     }}>
-      {/* Background grid pattern */}
+      {/* Subtle grid overlay */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: 'linear-gradient(rgba(20,184,166,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(20,184,166,0.04) 1px, transparent 1px)',
+        backgroundImage: 'linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)',
         backgroundSize: '48px 48px',
       }} />
-      {/* Glow orbs */}
-      <div style={{ position: 'absolute', top: '-120px', left: '-120px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(20,184,166,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', bottom: '-100px', right: '-100px', width: '400px', height: '400px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(27,58,107,0.4) 0%, transparent 70%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '700px', height: '700px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(20,184,166,0.05) 0%, transparent 65%)', pointerEvents: 'none' }} />
+      {/* Light radial glow top-center */}
+      <div style={{ position: 'absolute', top: '-80px', left: '50%', transform: 'translateX(-50%)', width: '700px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.25) 0%, transparent 65%)', pointerEvents: 'none' }} />
 
-      {/* Centered column: hands + logo + card */}
-      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '460px' }}>
+      {/* Main layout: logo above, card in middle, hands underneath */}
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '480px' }}>
 
-        {/* SVG: two hands holding up the logo box */}
-        <div style={{ width: '100%', position: 'relative', marginBottom: '-2px' }}>
-          <svg viewBox="0 0 460 180" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', display: 'block', overflow: 'visible' }}>
-            <defs>
-              <linearGradient id="skinL" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#c8956c" />
-                <stop offset="100%" stopColor="#a0714f" />
-              </linearGradient>
-              <linearGradient id="skinR" x1="1" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#c8956c" />
-                <stop offset="100%" stopColor="#a0714f" />
-              </linearGradient>
-              <linearGradient id="sleeveL" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#1B3A6B" />
-                <stop offset="100%" stopColor="#0d2144" />
-              </linearGradient>
-              <linearGradient id="sleeveR" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#1B3A6B" />
-                <stop offset="100%" stopColor="#0d2144" />
-              </linearGradient>
-              <linearGradient id="logoBox" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#0f2a4a" />
-                <stop offset="100%" stopColor="#0a1e38" />
-              </linearGradient>
-              <filter id="glow">
-                <feGaussianBlur stdDeviation="3" result="blur" />
-                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-              </filter>
-              <filter id="shadow">
-                <feDropShadow dx="0" dy="4" stdDeviation="8" floodColor="#000" floodOpacity="0.4" />
-              </filter>
-            </defs>
-
-            {/* LEFT ARM — sleeve coming from bottom-left */}
-            <path d="M 40 185 C 50 160 70 140 95 128 L 145 118 C 155 116 162 120 162 130 L 160 148 C 160 155 154 160 147 160 L 120 162 C 105 163 95 170 88 182 Z" fill="url(#sleeveL)" />
-            {/* Left wrist/hand */}
-            <path d="M 145 118 C 158 115 168 118 172 126 L 178 140 C 180 147 176 154 169 156 L 147 160 C 140 162 133 158 131 151 L 128 138 C 126 130 133 120 145 118 Z" fill="url(#skinL)" />
-            {/* Left thumb */}
-            <path d="M 131 138 C 126 134 122 136 121 141 C 120 146 123 150 128 151 Z" fill="url(#skinL)" />
-            {/* Left fingers (holding flat) */}
-            <path d="M 162 128 L 178 124 C 183 123 186 126 185 130 C 184 134 180 136 176 136 L 162 138 Z" fill="url(#skinL)" />
-            <path d="M 162 136 L 176 134 C 181 133 184 136 183 140 C 182 144 178 146 174 146 L 162 146 Z" fill="url(#skinL)" />
-            <path d="M 162 146 L 174 145 C 179 145 181 148 180 152 C 179 155 176 157 172 157 L 162 157 Z" fill="url(#skinL)" />
-
-            {/* RIGHT ARM — sleeve coming from bottom-right */}
-            <path d="M 420 185 C 410 160 390 140 365 128 L 315 118 C 305 116 298 120 298 130 L 300 148 C 300 155 306 160 313 160 L 340 162 C 355 163 365 170 372 182 Z" fill="url(#sleeveR)" />
-            {/* Right wrist/hand */}
-            <path d="M 315 118 C 302 115 292 118 288 126 L 282 140 C 280 147 284 154 291 156 L 313 160 C 320 162 327 158 329 151 L 332 138 C 334 130 327 120 315 118 Z" fill="url(#skinR)" />
-            {/* Right thumb */}
-            <path d="M 329 138 C 334 134 338 136 339 141 C 340 146 337 150 332 151 Z" fill="url(#skinR)" />
-            {/* Right fingers (holding flat) */}
-            <path d="M 298 128 L 282 124 C 277 123 274 126 275 130 C 276 134 280 136 284 136 L 298 138 Z" fill="url(#skinR)" />
-            <path d="M 298 136 L 284 134 C 279 133 276 136 277 140 C 278 144 282 146 286 146 L 298 146 Z" fill="url(#skinR)" />
-            <path d="M 298 146 L 286 145 C 281 145 279 148 280 152 C 281 155 284 157 288 157 L 298 157 Z" fill="url(#skinR)" />
-
-            {/* Logo box being held up */}
-            <rect x="148" y="60" width="164" height="68" rx="12" fill="url(#logoBox)" stroke="rgba(20,184,166,0.35)" strokeWidth="1.5" filter="url(#shadow)" />
-            {/* Accent line at top of logo box */}
-            <rect x="148" y="60" width="164" height="3" rx="1.5" fill="url(#logoBox)" />
-            <line x1="148" y1="63" x2="312" y2="63" stroke="url(#accentGrad)" strokeWidth="2.5" strokeLinecap="round" />
-            <defs>
-              <linearGradient id="accentGrad" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#14B8A6" />
-                <stop offset="50%" stopColor="#38bdf8" />
-                <stop offset="100%" stopColor="#1B3A6B" />
-              </linearGradient>
-              <linearGradient id="textGrad" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#14B8A6" />
-                <stop offset="100%" stopColor="#38bdf8" />
-              </linearGradient>
-            </defs>
-            {/* S mark */}
-            <text x="168" y="104" fontFamily="'Inter',Arial,sans-serif" fontWeight="800" fontSize="28" fill="url(#textGrad)" filter="url(#glow)">S</text>
-            {/* "ervfixy" in white */}
-            <text x="188" y="104" fontFamily="'Inter',Arial,sans-serif" fontWeight="700" fontSize="22" fill="#ffffff">ervfixy</text>
-            {/* Subtle tagline inside box */}
-            <text x="230" y="118" fontFamily="'Inter',Arial,sans-serif" fontSize="8" fill="rgba(255,255,255,0.3)" textAnchor="middle" letterSpacing="2">COLLECTIONS</text>
-          </svg>
+        {/* Servfixy logo above card */}
+        <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+          <img src="https://i.imgur.com/OKIqq0K.png" alt="Servfixy" style={{ height: '44px', objectFit: 'contain', filter: 'brightness(0) invert(1)', dropShadow: '0 2px 12px rgba(0,0,0,0.2)' }} />
+          <span style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.18em', color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase' }}>Collections</span>
         </div>
 
         {/* Login card */}
         <div style={{
           width: '100%',
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: '20px',
+          background: 'rgba(225,242,252,0.92)',
+          border: '1px solid rgba(255,255,255,0.7)',
+          borderRadius: '24px',
           padding: '40px',
           backdropFilter: 'blur(20px)',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.4)',
+          boxShadow: '0 32px 80px rgba(10,60,110,0.25), 0 2px 0 rgba(255,255,255,0.8) inset',
+          position: 'relative',
+          zIndex: 2,
         }}>
           {/* Card top accent */}
-          <div style={{ height: '3px', background: 'linear-gradient(90deg, #14B8A6, #38bdf8, #185FA5)', borderRadius: '2px', marginBottom: '32px' }} />
+          <div style={{ height: '3px', background: 'linear-gradient(90deg, #14B8A6, #38bdf8, #0ea5e9)', borderRadius: '2px', marginBottom: '28px' }} />
 
-          <div style={{ marginBottom: '28px' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(20,184,166,0.1)', border: '1px solid rgba(20,184,166,0.2)', borderRadius: '20px', padding: '4px 12px', marginBottom: '16px' }}>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#14B8A6' }} />
-              <span style={{ fontSize: '11px', fontWeight: '600', color: '#14B8A6', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Secure Access</span>
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'rgba(20,184,166,0.12)', border: '1px solid rgba(20,184,166,0.3)', borderRadius: '20px', padding: '4px 12px', marginBottom: '14px' }}>
+              <span style={{ fontSize: '13px' }}>🔒</span>
+              <span style={{ fontSize: '11px', fontWeight: '700', color: '#0d9488', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Secure Access</span>
             </div>
-            <h2 style={{ color: '#ffffff', margin: '0 0 6px', fontSize: '24px', fontWeight: '700', letterSpacing: '-0.01em' }}>Welcome back</h2>
-            <p style={{ color: 'rgba(255,255,255,0.4)', margin: 0, fontSize: '13px' }}>Sign in to your Collections account</p>
+            <h2 style={{ color: '#0c2a4a', margin: '0 0 5px', fontSize: '26px', fontWeight: '800', letterSpacing: '-0.02em' }}>Welcome back</h2>
+            <p style={{ color: '#4a7a9b', margin: 0, fontSize: '14px' }}>Sign in to your Collections account</p>
           </div>
 
           {error && (
-            <div style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#fca5a5', padding: '12px 14px', borderRadius: '10px', marginBottom: '20px', fontSize: '13px' }}>
+            <div style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)', color: '#b91c1c', padding: '12px 14px', borderRadius: '10px', marginBottom: '18px', fontSize: '13px' }}>
               {error}
             </div>
           )}
 
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '8px' }}>Email</label>
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ color: '#3a6080', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '7px' }}>Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleLogin()}
               placeholder="you@servfixy.com"
-              style={{ width: '100%', padding: '13px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: '#ffffff', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }} />
+              style={{ width: '100%', padding: '13px 16px', borderRadius: '12px', border: '1.5px solid rgba(14,138,191,0.2)', background: 'rgba(255,255,255,0.9)', color: '#0c2a4a', fontSize: '14px', boxSizing: 'border-box', outline: 'none', boxShadow: '0 2px 6px rgba(14,138,191,0.08)' }} />
           </div>
 
-          <div style={{ marginBottom: '28px' }}>
-            <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '8px' }}>Password</label>
+          <div style={{ marginBottom: '26px' }}>
+            <label style={{ color: '#3a6080', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '7px' }}>Password</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleLogin()}
               placeholder="••••••••"
-              style={{ width: '100%', padding: '13px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: '#ffffff', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }} />
+              style={{ width: '100%', padding: '13px 16px', borderRadius: '12px', border: '1.5px solid rgba(14,138,191,0.2)', background: 'rgba(255,255,255,0.9)', color: '#0c2a4a', fontSize: '14px', boxSizing: 'border-box', outline: 'none', boxShadow: '0 2px 6px rgba(14,138,191,0.08)' }} />
           </div>
 
           <button onClick={handleLogin} disabled={loading}
-            style={{ width: '100%', padding: '14px', borderRadius: '10px', border: 'none', background: loading ? 'rgba(20,184,166,0.4)' : 'linear-gradient(135deg, #14B8A6 0%, #0d9488 100%)', color: '#fff', fontSize: '15px', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer', letterSpacing: '0.02em', boxShadow: loading ? 'none' : '0 4px 20px rgba(20,184,166,0.35)', transition: 'all 0.2s' }}>
+            style={{ width: '100%', padding: '15px', borderRadius: '12px', border: 'none', background: loading ? 'rgba(20,184,166,0.5)' : 'linear-gradient(135deg, #14B8A6 0%, #0ea5e9 100%)', color: '#fff', fontSize: '15px', fontWeight: '800', cursor: loading ? 'not-allowed' : 'pointer', letterSpacing: '0.02em', boxShadow: loading ? 'none' : '0 6px 24px rgba(14,165,233,0.45)', transition: 'all 0.2s' }}>
             {loading ? 'Signing in…' : 'Sign In →'}
           </button>
 
-          <div style={{ margin: '20px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.08)' }} />
-            <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '12px' }}>or</span>
-            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+          <div style={{ margin: '18px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ flex: 1, height: '1px', background: 'rgba(14,138,191,0.15)' }} />
+            <span style={{ color: '#6a9ab8', fontSize: '12px' }}>or</span>
+            <div style={{ flex: 1, height: '1px', background: 'rgba(14,138,191,0.15)' }} />
           </div>
 
           <button onClick={handleDemoLogin} disabled={loading || seedingDemo}
-            style={{ width: '100%', padding: '13px', borderRadius: '10px', border: '1px solid rgba(27,58,107,0.6)', background: 'rgba(27,58,107,0.25)', color: 'rgba(255,255,255,0.7)', fontSize: '13px', fontWeight: '600', cursor: (loading || seedingDemo) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '14px' }}>▶</span>
+            style={{ width: '100%', padding: '13px', borderRadius: '12px', border: '1.5px solid rgba(14,138,191,0.25)', background: 'rgba(255,255,255,0.6)', color: '#0c4a6e', fontSize: '13px', fontWeight: '700', cursor: (loading || seedingDemo) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 2px 8px rgba(14,138,191,0.1)' }}>
+            <span style={{ fontSize: '13px', color: '#14B8A6' }}>▶</span>
             {seedingDemo ? 'Loading demo data…' : 'Investor Demo Login'}
           </button>
-          <div style={{ marginTop: '10px', textAlign: 'center', fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>
+          <div style={{ marginTop: '8px', textAlign: 'center', fontSize: '11px', color: '#6a9ab8' }}>
             200 real-scenario cases across 3 properties
           </div>
 
-          <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.06)', textAlign: 'center', fontSize: '11px', color: 'rgba(255,255,255,0.2)' }}>
+          <div style={{ marginTop: '24px', paddingTop: '18px', borderTop: '1px solid rgba(14,138,191,0.12)', textAlign: 'center', fontSize: '11px', color: '#6a9ab8' }}>
             © 2025 Servfixy Inc. · Secure encrypted connection
           </div>
         </div>
+
+        {/* SVG hands holding the card from below */}
+        <div style={{ width: '110%', marginTop: '-30px', position: 'relative', zIndex: 1, pointerEvents: 'none' }}>
+          <svg viewBox="0 0 520 220" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', display: 'block', overflow: 'visible' }}>
+            <defs>
+              <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#e8b89a" />
+                <stop offset="100%" stopColor="#c9845a" />
+              </linearGradient>
+              <linearGradient id="skinDark" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#d4956d" />
+                <stop offset="100%" stopColor="#b06840" />
+              </linearGradient>
+              <linearGradient id="sleeve" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#1e3a5f" />
+                <stop offset="100%" stopColor="#0d2144" />
+              </linearGradient>
+              <filter id="hShadow">
+                <feDropShadow dx="0" dy="-4" stdDeviation="10" floodColor="#0a3060" floodOpacity="0.25" />
+              </filter>
+            </defs>
+
+            {/* LEFT hand + arm */}
+            {/* Sleeve / forearm coming from bottom-left */}
+            <path d="M 0 220 C 20 180 55 150 95 130 L 145 108 C 160 103 172 108 175 120 L 175 220 Z" fill="url(#sleeve)" />
+            {/* Palm */}
+            <path d="M 120 90 C 135 78 158 76 172 85 L 185 100 C 192 108 190 120 183 126 L 175 130 L 120 130 C 108 130 100 120 103 108 Z" fill="url(#skin)" filter="url(#hShadow)" />
+            {/* Thumb left */}
+            <path d="M 103 108 C 95 100 88 102 87 112 C 86 120 92 128 103 128 Z" fill="url(#skin)" />
+            {/* Fingers left — four stacked rectangles poking right */}
+            <path d="M 183 88 C 183 88 200 86 202 92 C 204 98 198 103 185 104 L 183 100 Z" fill="url(#skin)" />
+            <path d="M 184 100 C 184 100 203 99 204 106 C 205 112 198 116 185 116 L 184 112 Z" fill="url(#skin)" />
+            <path d="M 184 114 C 184 114 202 113 203 120 C 204 126 197 129 185 129 L 184 125 Z" fill="url(#skin)" />
+            <path d="M 183 126 C 183 126 198 126 198 132 C 198 137 192 139 183 138 L 183 131 Z" fill="url(#skin)" />
+            {/* Knuckle shadow lines */}
+            <line x1="130" y1="90" x2="130" y2="130" stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
+            <line x1="145" y1="88" x2="145" y2="130" stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
+            <line x1="160" y1="87" x2="160" y2="130" stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
+
+            {/* RIGHT hand + arm */}
+            {/* Sleeve / forearm from bottom-right */}
+            <path d="M 520 220 C 500 180 465 150 425 130 L 375 108 C 360 103 348 108 345 120 L 345 220 Z" fill="url(#sleeve)" />
+            {/* Palm */}
+            <path d="M 400 90 C 385 78 362 76 348 85 L 335 100 C 328 108 330 120 337 126 L 345 130 L 400 130 C 412 130 420 120 417 108 Z" fill="url(#skin)" filter="url(#hShadow)" />
+            {/* Thumb right */}
+            <path d="M 417 108 C 425 100 432 102 433 112 C 434 120 428 128 417 128 Z" fill="url(#skin)" />
+            {/* Fingers right */}
+            <path d="M 337 88 C 337 88 320 86 318 92 C 316 98 322 103 335 104 L 337 100 Z" fill="url(#skin)" />
+            <path d="M 336 100 C 336 100 317 99 316 106 C 315 112 322 116 335 116 L 336 112 Z" fill="url(#skin)" />
+            <path d="M 336 114 C 336 114 318 113 317 120 C 316 126 323 129 335 129 L 336 125 Z" fill="url(#skin)" />
+            <path d="M 337 126 C 337 126 322 126 322 132 C 322 137 328 139 337 138 L 337 131 Z" fill="url(#skin)" />
+            {/* Knuckle shadow lines */}
+            <line x1="390" y1="90" x2="390" y2="130" stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
+            <line x1="375" y1="88" x2="375" y2="130" stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
+            <line x1="360" y1="87" x2="360" y2="130" stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
+          </svg>
+        </div>
+
       </div>
     </div>
   );
