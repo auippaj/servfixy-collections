@@ -525,7 +525,7 @@ function AdminTab({ token, initialSection }) {
       if (!Array.isArray(d)) throw new Error('Invalid properties response');
       setProperties(d);
       const settings = {};
-      d.forEach(p => { settings[p.id] = { grace_period_day: p.grace_period_day || 3, notice_jurisdiction: p.notice_jurisdiction || 'TX', notice_type: p.notice_type || 'pay_or_quit', notice_recipient_email: p.notice_recipient_email || '' }; });
+      d.forEach(p => { settings[p.id] = { grace_period_day: p.grace_period_day || 3, notice_jurisdiction: p.notice_jurisdiction || 'TX', notice_type: p.notice_type || 'pay_or_quit', notice_recipient_email: p.notice_recipient_email || '', signatory_name: p.signatory_name || '', signatory_title: p.signatory_title || '' }; });
       setPropSettings(settings);
     } catch (err) { console.error(err); }
     finally { setPropsLoading(false); }
@@ -606,6 +606,9 @@ function AdminTab({ token, initialSection }) {
       formData.append('service_date', waServiceDate);
       formData.append('termination_date', waTermDate);
       formData.append('generated_by', 'Collections Admin');
+      const propSig = propSettings[selectedProperty] || {};
+      if (propSig.signatory_name) formData.append('signatory_name', propSig.signatory_name);
+      if (propSig.signatory_title) formData.append('signatory_title', propSig.signatory_title);
       waFiles.forEach(f => formData.append('ledgers', f));
       const res = await fetch(`${API_URL}/api/collections/cases/batch-notices-wa`, {
         method: 'POST',
@@ -832,6 +835,22 @@ function AdminTab({ token, initialSection }) {
                           style={inputStyle} placeholder='you@servfixy.com' />
                       </div>
                     </div>
+                        <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AUTHORIZED SIGNATORY NAME</div>
+                            <input type='text' value={propSettings[prop.id]?.signatory_name || ''}
+                              onChange={e => updatePropSetting(prop.id, 'signatory_name', e.target.value)}
+                              placeholder='e.g. Jane Smith'
+                              style={inputStyle} />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>TITLE</div>
+                            <input type='text' value={propSettings[prop.id]?.signatory_title || ''}
+                              onChange={e => updatePropSetting(prop.id, 'signatory_title', e.target.value)}
+                              placeholder='e.g. Property Manager'
+                              style={inputStyle} />
+                          </div>
+                        </div>
                     <button onClick={() => handleSavePropSettings(prop.id)} disabled={savingProp === prop.id}
                       style={{ padding: '8px 20px', backgroundColor: '#1B3A6B', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
                       {savingProp === prop.id ? 'Saving...' : 'Save Settings'}
