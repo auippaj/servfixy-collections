@@ -285,16 +285,16 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
             <div key={group.group} style={{ marginBottom: '4px' }}>
               {/* Clickable group header */}
               <div onClick={() => toggleGroup(group.group)}
-                style={{ padding: '6px 18px', fontSize: '10px', fontWeight: '700', color: '#64748b', letterSpacing: '0.1em', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', userSelect: 'none' }}>
+                style={{ padding: '6px 18px', fontSize: '10px', fontWeight: '700', color: '#cbd5e1', letterSpacing: '0.1em', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', userSelect: 'none' }}>
                 <span>{group.group}</span>
-                <span style={{ fontSize: '9px', color: '#475569' }}>{isCollapsed ? '▶' : '▼'}</span>
+                <span style={{ fontSize: '9px', color: '#94a3b8' }}>{isCollapsed ? '▶' : '▼'}</span>
               </div>
               {/* Items — hidden when collapsed */}
               {!isCollapsed && group.items.map(item => {
                 const active = activeTab === item.tab;
                 return (
                   <div key={item.tab} onClick={() => { setActiveTab(item.tab); if (isMobile) onClose(); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 18px', cursor: 'pointer', borderLeft: active ? '3px solid #14b8a6' : '3px solid transparent', backgroundColor: active ? 'rgba(20,184,166,0.12)' : 'transparent', color: active ? '#ffffff' : '#94a3b8', fontSize: '14px', fontWeight: active ? '600' : '400', transition: 'all 0.15s' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 18px', cursor: 'pointer', borderLeft: active ? '3px solid #14b8a6' : '3px solid transparent', backgroundColor: active ? 'rgba(20,184,166,0.12)' : 'transparent', color: active ? '#ffffff' : '#e2e8f0', fontSize: '14px', fontWeight: active ? '600' : '400', transition: 'all 0.15s' }}>
                     <span style={{ fontSize: '18px' }}>{item.icon}</span>
                     {item.badge > 0 && <span style={{ marginLeft: 'auto', backgroundColor: '#dc2626', color: '#fff', fontSize: '10px', fontWeight: '800', padding: '1px 6px', borderRadius: '10px' }}>{item.badge}</span>}
                     {item.label}
@@ -307,10 +307,10 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
       </div>
       {/* Footer */}
       <div style={{ padding: '14px 18px', borderTop: '1px solid #243f73' }}>
-        <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</div>
+        <div style={{ fontSize: '12px', color: '#cbd5e1', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</div>
         <div style={{ fontSize: '11px', color: '#14b8a6', textTransform: 'capitalize', marginBottom: '10px' }}>{user?.role}</div>
         <button onClick={onLogout}
-          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #243f73', backgroundColor: 'transparent', color: '#94a3b8', fontSize: '12px', cursor: 'pointer' }}>
+          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #243f73', backgroundColor: 'transparent', color: '#cbd5e1', fontSize: '12px', cursor: 'pointer' }}>
           Sign Out
         </button>
       </div>
