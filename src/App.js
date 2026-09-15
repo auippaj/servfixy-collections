@@ -1927,6 +1927,30 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   const [predictions, setPredictions] = useState(null);
   const [predictionsLoading, setPredictionsLoading] = useState(false);
 
+  // Unified alerts
+  const [alerts, setAlerts] = useState([]);
+  const [alertsExpanded, setAlertsExpanded] = useState({});
+  const toggleAlertGroup = (type) => setAlertsExpanded(p => ({ ...p, [type]: !p[type] }));
+  const alertsByType = (type) => alerts.filter(a => a.type === type);
+
+  // PTP analytics
+  const [ptpAnalytics, setPtpAnalytics] = useState(null);
+  const [ptpAnalyticsLoading, setPtpAnalyticsLoading] = useState(false);
+  const [ptpMonths, setPtpMonths] = useState(6);
+
+  const API_URL = 'https://servfixy-production.up.railway.app';
+
+  const fetchPtpAnalytics = async (propId, months = 6) => {
+    setPtpAnalyticsLoading(true);
+    try {
+      const url = `${API_URL}/api/ptp/analytics?months=${months}${propId ? `&property_id=${propId}` : ''}`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      const d = await res.json();
+      if (res.ok) setPtpAnalytics(d);
+    } catch (_) {}
+    finally { setPtpAnalyticsLoading(false); }
+  };
+
   const fetchData = async (propId) => {
     setLoading(true);
     setError('');
