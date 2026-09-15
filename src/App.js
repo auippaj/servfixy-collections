@@ -1436,28 +1436,6 @@ function YardiImportTab({ token }) {
             </div>
           </div>
 
-          {/* Hearing Outcome */}
-          {selectedCase && selectedCase.court_hearing_date && (
-            <div style={{ marginTop: '12px', backgroundColor: selectedCase.hearing_outcome ? '#f0fdf4' : '#fefce8', border: `1px solid ${selectedCase.hearing_outcome ? '#86efac' : '#fde68a'}`, borderRadius: '10px', padding: '14px 18px' }}>
-              <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>Hearing Outcome</div>
-              {selectedCase.hearing_outcome ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: '700', color: '#15803d' }}>
-                    {{possession_granted:'Possession Granted',dismissed:'Dismissed',continued:'Continued',settled:'Settled / Agreed Order',default_judgment:'Default Judgment'}[selectedCase.hearing_outcome] || selectedCase.hearing_outcome}
-                  </span>
-                  {selectedCase.hearing_outcome_date && <span style={{ fontSize: '12px', color: '#64748b' }}>on {new Date(selectedCase.hearing_outcome_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>}
-                  <button onClick={() => { setHearingOutcomeModal({ case_id: selectedCase.id, resident_name: selectedCase.resident_name, unit_number: selectedCase.unit_number }); setHearingOutcomeValue(selectedCase.hearing_outcome); setHearingOutcomeDate(selectedCase.hearing_outcome_date || ''); }}
-                    style={{ fontSize: '11px', padding: '3px 8px', backgroundColor: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '5px', color: '#475569', cursor: 'pointer' }}>Edit</button>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '12px', color: '#92400e' }}>No outcome recorded yet</span>
-                  <button onClick={() => { setHearingOutcomeModal({ case_id: selectedCase.id, resident_name: selectedCase.resident_name, unit_number: selectedCase.unit_number }); setHearingOutcomeDate(new Date().toISOString().split('T')[0]); }}
-                    style={{ fontSize: '11px', padding: '4px 12px', backgroundColor: '#7c3aed', border: 'none', borderRadius: '5px', color: '#fff', fontWeight: '700', cursor: 'pointer' }}>Record Outcome</button>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       )}
     </div>
@@ -6413,6 +6391,27 @@ function CollectionsImportTab({ token }) {
 
 // ── Writ Tracker ──────────────────────────────────────────────────────────────
 function WritTrackerTab({ token }) {
+  const [hearingOutcomeModal, setHearingOutcomeModal] = useState(null);
+  const [hearingOutcomeValue, setHearingOutcomeValue] = useState('possession_granted');
+  const [hearingOutcomeDate, setHearingOutcomeDate] = useState('');
+  const [hearingOutcomeSaving, setHearingOutcomeSaving] = useState(false);
+
+  const saveHearingOutcome = async (apiUrl) => {
+    if (!hearingOutcomeModal) return;
+    setHearingOutcomeSaving(true);
+    try {
+      await fetch(`${apiUrl}/api/collections/cases/${hearingOutcomeModal.case_id}/hearing-outcome`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hearing_outcome: hearingOutcomeValue, hearing_outcome_date: hearingOutcomeDate })
+      });
+      setHearingOutcomeModal(null);
+      // Refresh case data
+      if (typeof fetchCases === 'function') fetchCases();
+    } catch (_) {}
+    finally { setHearingOutcomeSaving(false); }
+  };
+
   const API_URL = 'https://servfixy-production.up.railway.app';
   const [writs, setWrits] = useState([]);
   const [reminders, setReminders] = useState([]);
@@ -6863,9 +6862,68 @@ function WritTrackerTab({ token }) {
               </button>
             </div>
           </div>
+
+          {/* Hearing Outcome */}
+          {selectedCase && selectedCase.court_hearing_date && (
+            <div style={{ marginTop: '12px', backgroundColor: selectedCase.hearing_outcome ? '#f0fdf4' : '#fefce8', border: `1px solid ${selectedCase.hearing_outcome ? '#86efac' : '#fde68a'}`, borderRadius: '10px', padding: '14px 18px' }}>
+              <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>Hearing Outcome</div>
+              {selectedCase.hearing_outcome ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '13px', fontWeight: '700', color: '#15803d' }}>
+                    {{'possession_granted':'Possession Granted','dismissed':'Dismissed','continued':'Continued','settled':'Settled / Agreed Order','default_judgment':'Default Judgment'}[selectedCase.hearing_outcome] || selectedCase.hearing_outcome}
+                  </span>
+                  {selectedCase.hearing_outcome_date && <span style={{ fontSize: '12px', color: '#64748b' }}>on {new Date(selectedCase.hearing_outcome_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>}
+                  <button onClick={() => { setHearingOutcomeModal({ case_id: selectedCase.id, resident_name: selectedCase.resident_name, unit_number: selectedCase.unit_number }); setHearingOutcomeValue(selectedCase.hearing_outcome); setHearingOutcomeDate(selectedCase.hearing_outcome_date || ''); }}
+                    style={{ fontSize: '11px', padding: '3px 8px', backgroundColor: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '5px', color: '#475569', cursor: 'pointer' }}>Edit</button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '12px', color: '#92400e' }}>No outcome recorded yet</span>
+                  <button onClick={() => { setHearingOutcomeModal({ case_id: selectedCase.id, resident_name: selectedCase.resident_name, unit_number: selectedCase.unit_number }); setHearingOutcomeDate(new Date().toISOString().split('T')[0]); setHearingOutcomeValue('possession_granted'); }}
+                    style={{ fontSize: '11px', padding: '4px 12px', backgroundColor: '#7c3aed', border: 'none', borderRadius: '5px', color: '#fff', fontWeight: '700', cursor: 'pointer' }}>Record Outcome</button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
+
+    {/* Hearing Outcome Modal */}
+    {hearingOutcomeModal && (
+      <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+        <div style={{ backgroundColor: '#fff', borderRadius: '14px', padding: '28px', width: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+          <h2 style={{ margin: '0 0 4px', fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>Record Hearing Outcome</h2>
+          <p style={{ margin: '0 0 20px', fontSize: '13px', color: '#64748b' }}>{hearingOutcomeModal.resident_name} · Unit {hearingOutcomeModal.unit_number}</p>
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Outcome</label>
+            <select value={hearingOutcomeValue} onChange={e => setHearingOutcomeValue(e.target.value)}
+              style={{ width: '100%', padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '13px', boxSizing: 'border-box' }}>
+              <option value="possession_granted">Possession Granted</option>
+              <option value="dismissed">Dismissed</option>
+              <option value="continued">Continued</option>
+              <option value="settled">Settled / Agreed Order</option>
+              <option value="default_judgment">Default Judgment</option>
+            </select>
+          </div>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Decision Date</label>
+            <input type="date" value={hearingOutcomeDate} onChange={e => setHearingOutcomeDate(e.target.value)}
+              style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '13px' }} />
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button onClick={() => saveHearingOutcome(API_URL)} disabled={hearingOutcomeSaving}
+              style={{ flex: 1, padding: '10px', backgroundColor: '#1B3A6B', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
+              {hearingOutcomeSaving ? 'Saving…' : 'Save Outcome'}
+            </button>
+            <button onClick={() => setHearingOutcomeModal(null)}
+              style={{ flex: 1, padding: '10px', backgroundColor: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '7px', color: '#475569', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
   );
 }
 // ── End Writ Tracker ──────────────────────────────────────────────────────────
