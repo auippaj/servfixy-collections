@@ -1063,7 +1063,6 @@ function AdminTab({ token, initialSection }) {
                 <div style={{ marginTop: '12px', fontSize: '12px', color: '#475569' }}>Summary email sent to {eligibleData?.property?.notice_recipient_email || 'configured recipient'}.</div>
               </div>
             )}
-          </div>
 
           {/* ── BALANCE DUE LETTERS ── */}
           {activeSection === 'balance-due' && (
@@ -1138,6 +1137,9 @@ function AdminTab({ token, initialSection }) {
                                 <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '4px', fontWeight: '700', backgroundColor: '#fef9c3', color: '#92400e' }}>{c.status}</span>
                               </td>
                             </tr>
+
+          </div>
+
                           );
                         })}
                       </tbody>
