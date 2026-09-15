@@ -1169,8 +1169,6 @@ function AdminTab({ token, initialSection }) {
           </div>
         )}
 
-      </div>
-    </div>
   );
 }
 // ── End Admin Tab ──────────────────────────────────────────────────────────────
