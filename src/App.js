@@ -1895,6 +1895,22 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   const [predictions, setPredictions] = useState(null);
   const [predictionsLoading, setPredictionsLoading] = useState(false);
 
+  // PTP Analytics
+  const [ptpAnalytics, setPtpAnalytics] = useState(null);
+  const [ptpAnalyticsLoading, setPtpAnalyticsLoading] = useState(false);
+  const [ptpMonths, setPtpMonths] = useState(6);
+
+  const fetchPtpAnalytics = async (propId, months = 6) => {
+    setPtpAnalyticsLoading(true);
+    try {
+      const url = `${API_URL}/api/ptp/analytics?months=${months}${propId ? `&property_id=${propId}` : ''}`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      const d = await res.json();
+      if (res.ok) setPtpAnalytics(d);
+    } catch (_) {}
+    finally { setPtpAnalyticsLoading(false); }
+  };
+
   const fetchData = async (propId) => {
     setLoading(true);
     setError('');
@@ -1947,11 +1963,13 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
         }
       }).catch(() => {});
     fetchData('');
+    fetchPtpAnalytics('');
   }, [token]);
 
   const handlePropertyChange = (e) => {
     setSelectedProperty(e.target.value);
     fetchData(e.target.value);
+    fetchPtpAnalytics(e.target.value, ptpMonths);
   };
 
   const AGING_COLORS = { '30-60': '#facc15', '61-90': '#ea580c', '91-120': '#dc2626', '120+': '#dc2626' };
@@ -2362,6 +2380,157 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
           </div>
         </div>
       )}
+
+      {/* ── PTP Analytics Panel ─────────────────────────────────────── */}
+      <div style={{ padding: '0 16px 32px' }}>
+        <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '14px', overflow: 'hidden' }}>
+
+          {/* Panel header */}
+          <div style={{ padding: '18px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <div style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>🤝 Promise to Pay Analytics</div>
+              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>Broken vs. kept rates tracked automatically on every delinquency import</div>
+            </div>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              {[3, 6, 12].map(m => (
+                <button key={m} onClick={() => { setPtpMonths(m); fetchPtpAnalytics(selectedProperty, m); }}
+                  style={{ padding: '5px 12px', fontSize: '12px', fontWeight: ptpMonths === m ? '700' : '400', border: `1px solid ${ptpMonths === m ? '#1B3A6B' : '#e2e8f0'}`, borderRadius: '6px', backgroundColor: ptpMonths === m ? '#1B3A6B' : '#fff', color: ptpMonths === m ? '#fff' : '#64748b', cursor: 'pointer' }}>
+                  {m}mo
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {ptpAnalyticsLoading && (
+            <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>Loading PTP analytics…</div>
+          )}
+
+          {ptpAnalytics && !ptpAnalyticsLoading && (() => {
+            const t = ptpAnalytics.totals || {};
+            const monthly = ptpAnalytics.monthly || [];
+            const byProp = ptpAnalytics.by_property || [];
+            const breakers = ptpAnalytics.top_breakers || [];
+            const totalBroken = parseInt(t.total_broken || 0);
+            const totalKept = parseInt(t.total_kept || 0);
+            const total = totalBroken + totalKept;
+            const brokenPct = total > 0 ? Math.round((totalBroken / total) * 100) : 0;
+            const keptPct = 100 - brokenPct;
+            const fmtAmt = v => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 0 });
+
+            return (
+              <div>
+                {/* Summary KPIs */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0, borderBottom: '1px solid #f1f5f9' }}>
+                  {[
+                    { label: 'PTPs Broken', value: totalBroken, color: '#dc2626', bg: '#fef2f2' },
+                    { label: 'PTPs Kept', value: totalKept, color: '#15803d', bg: '#f0fdf4' },
+                    { label: 'Broken Rate', value: `${brokenPct}%`, color: brokenPct > 50 ? '#dc2626' : brokenPct > 30 ? '#d97706' : '#15803d', bg: '#fff' },
+                    { label: 'Broken Amount', value: fmtAmt(t.total_broken_amount), color: '#b91c1c', bg: '#fff' },
+                  ].map(({ label, value, color, bg }) => (
+                    <div key={label} style={{ padding: '18px 20px', backgroundColor: bg, borderRight: '1px solid #f1f5f9' }}>
+                      <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '4px' }}>{label}</div>
+                      <div style={{ fontSize: '22px', fontWeight: '800', color }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Rate bar */}
+                {total > 0 && (
+                  <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9' }}>
+                    <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px', fontWeight: '600' }}>KEPT vs BROKEN — {ptpMonths}-MONTH WINDOW</div>
+                    <div style={{ display: 'flex', height: '20px', borderRadius: '6px', overflow: 'hidden' }}>
+                      <div style={{ width: `${keptPct}%`, backgroundColor: '#22c55e', transition: 'width .4s' }} />
+                      <div style={{ width: `${brokenPct}%`, backgroundColor: '#ef4444', transition: 'width .4s' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: '16px', marginTop: '6px' }}>
+                      <span style={{ fontSize: '11px', color: '#15803d' }}>■ Kept {keptPct}%</span>
+                      <span style={{ fontSize: '11px', color: '#dc2626' }}>■ Broken {brokenPct}%</span>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
+
+                  {/* Monthly trend */}
+                  <div style={{ padding: '18px 20px', borderRight: '1px solid #f1f5f9' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '12px' }}>Monthly Trend</div>
+                    {monthly.length === 0 ? (
+                      <div style={{ fontSize: '12px', color: '#94a3b8' }}>No events recorded yet. Will populate on next import.</div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {monthly.map((m, i) => {
+                          const max = Math.max(...monthly.map(x => parseInt(x.total) || 0), 1);
+                          const bPct = parseInt(m.broken) || 0;
+                          const kPct = parseInt(m.kept) || 0;
+                          const rowTotal = bPct + kPct;
+                          return (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div style={{ width: '64px', fontSize: '11px', color: '#64748b', flexShrink: 0 }}>{m.month}</div>
+                              <div style={{ flex: 1, height: '16px', borderRadius: '4px', overflow: 'hidden', backgroundColor: '#f1f5f9', display: 'flex' }}>
+                                <div style={{ width: rowTotal > 0 ? `${(kPct / rowTotal) * 100}%` : '0%', backgroundColor: '#22c55e' }} />
+                                <div style={{ width: rowTotal > 0 ? `${(bPct / rowTotal) * 100}%` : '0%', backgroundColor: '#ef4444' }} />
+                              </div>
+                              <div style={{ fontSize: '11px', color: '#dc2626', width: '24px', textAlign: 'right', fontWeight: '600' }}>{bPct}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* By property */}
+                  <div style={{ padding: '18px 20px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '12px' }}>By Property</div>
+                    {byProp.length === 0 ? (
+                      <div style={{ fontSize: '12px', color: '#94a3b8' }}>No property data yet.</div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {byProp.map((p, i) => (
+                          <div key={i}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                              <span style={{ fontSize: '12px', color: '#334155', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%' }}>{p.property_name || 'Unknown'}</span>
+                              <span style={{ fontSize: '11px', color: p.broken_pct > 50 ? '#dc2626' : '#64748b' }}>{p.broken_pct}% broken</span>
+                            </div>
+                            <div style={{ height: '8px', borderRadius: '4px', overflow: 'hidden', backgroundColor: '#f1f5f9', display: 'flex' }}>
+                              <div style={{ width: `${100 - (parseFloat(p.broken_pct) || 0)}%`, backgroundColor: '#22c55e' }} />
+                              <div style={{ width: `${parseFloat(p.broken_pct) || 0}%`, backgroundColor: '#ef4444' }} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Top breakers */}
+                {breakers.length > 0 && (
+                  <div style={{ padding: '18px 20px', borderTop: '1px solid #f1f5f9' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '12px' }}>⚠ Repeat Breakers</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
+                      {breakers.slice(0, 6).map((b, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', backgroundColor: '#fef2f2', borderRadius: '8px', border: '1px solid #fecaca' }}>
+                          <div>
+                            <div style={{ fontSize: '12px', fontWeight: '700', color: '#0f172a' }}>{b.resident_name}</div>
+                            <div style={{ fontSize: '11px', color: '#94a3b8' }}>Unit {b.unit_number} · {fmtAmt(b.total_broken_amount)} broken</div>
+                          </div>
+                          <div style={{ fontSize: '18px', fontWeight: '800', color: '#dc2626' }}>{b.times_broken}×</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {total === 0 && !ptpAnalyticsLoading && (
+                  <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
+                    No PTP events recorded yet. Upload a delinquency report to start tracking.
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+
     </div>
   );
 }
