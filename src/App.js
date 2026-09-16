@@ -1144,7 +1144,6 @@ function AdminTab({ token, initialSection, onNavigate }) {
               </div>
             )}
 
-          {/* ── BALANCE DUE LETTERS ── */}
           </div>
         );
         })()}
