@@ -563,6 +563,8 @@ function AdminTab({ token, initialSection, onNavigate }) {
       const formData = new FormData();
       formData.append('property_id', selectedProperty);
       formData.append('property_name', prop.name);
+      if (prop.address) formData.append('property_address', prop.address);
+      if (prop.phone)   formData.append('property_phone', prop.phone);
       formData.append('service_date', waServiceDate);
       formData.append('termination_date', waTermDate);
       formData.append('generated_by', 'Collections Admin');
