@@ -245,7 +245,7 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
 
 
 // ── Admin Tab ──────────────────────────────────────────────────────────────────
-function AdminTab({ token, initialSection }) {
+function AdminTab({ token, initialSection, onNavigate }) {
   const API_URL = 'https://servfixy-production.up.railway.app';
   const [activeSection, setActiveSection] = useState(initialSection || 'users');
   const [users, setUsers] = useState([]);
@@ -9503,8 +9503,8 @@ function App() {
         {activeTab === 'Owner Summary' && <CollectionsOwnerSummaryTab token={token} />}
         {activeTab === 'Onboarding' && <CollectionsOnboardingTab token={token} />}
         {activeTab === 'Collections Risk' && <CollectionsRiskTab token={token} />}
-        {activeTab === 'Generate Notices' && <AdminTab token={token} initialSection='bulk-notices' />}
-        {activeTab === 'User Management' && <AdminTab token={token} />}
+        {activeTab === 'Generate Notices' && <AdminTab token={token} initialSection='bulk-notices' onNavigate={setActiveTab} />}
+        {activeTab === 'User Management' && <AdminTab token={token} onNavigate={setActiveTab} />}
         {activeTab === 'Yardi Import' && <YardiImportTab token={token} />}
               {activeTab === 'Unit Directory' && <UnitDirectoryTab token={token} />}
         {activeTab === 'Integrations' && <IntegrationsTab token={token} />}
