@@ -1145,118 +1145,120 @@ function AdminTab({ token, initialSection, onNavigate }) {
             )}
 
           {/* ── BALANCE DUE LETTERS ── */}
-          {activeSection === 'balance-due' && (
-            <div>
-              <div style={{ marginBottom: '24px' }}>
-                <h1 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: '700', color: '#0C447C' }}>Balance Due Letters</h1>
-                <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Select a property, choose delinquent residents, and generate demand letters for any region.</p>
-              </div>
-              <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
-                <label style={labelStyle}>Select Property</label>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <select value={bdSelectedProperty} onChange={e => { setBdSelectedProperty(e.target.value); fetchBdEligible(e.target.value); }}
-                    style={{ padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '13px', color: '#0f172a', minWidth: '280px', maxWidth: '480px' }}>
-                    <option value=''>Choose a property...</option>
-                    {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
-                  {bdSelectedProperty && (
-                    <button onClick={() => fetchBdEligible(bdSelectedProperty)} disabled={bdEligibleLoading}
-                      style={{ padding: '9px 16px', backgroundColor: '#EDF6FE', border: '1px solid #C8E4F8', borderRadius: '7px', color: '#475569', fontSize: '13px', cursor: 'pointer' }}>
-                      {bdEligibleLoading ? 'Loading...' : '↻ Refresh'}
-                    </button>
-                  )}
-                </div>
-              </div>
-              {bdEligibleLoading && (
-                <div style={{ color: '#94a3b8', fontSize: '13px', padding: '20px' }}>Loading eligible residents…</div>
-              )}
-              {bdEligibleData && !bdEligibleLoading && (
-                <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: '20px' }}>
-                  <div style={{ padding: '14px 18px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div
-                        onClick={() => { const all = (bdEligibleData.cases || []).every(c => bdSelectedCases.has(c.id)); all ? setBdSelectedCases(new Set()) : setBdSelectedCases(new Set((bdEligibleData.cases || []).map(c => c.id))); }}
-                        style={{ width: '16px', height: '16px', borderRadius: '3px', border: `2px solid ${bdSelectedCases.size > 0 ? '#14B8A6' : '#C8E4F8'}`, backgroundColor: bdSelectedCases.size > 0 ? '#14B8A6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                        {(bdEligibleData.cases || []).every(c => bdSelectedCases.has(c.id)) && <span style={{ color: '#fff', fontSize: '10px', fontWeight: '900' }}>✓</span>}
-                      </div>
-                      <span style={{ fontSize: '13px', color: '#475569' }}>
-                        {bdSelectedCases.size > 0 ? `${bdSelectedCases.size} selected` : `${(bdEligibleData.cases || []).length} delinquent resident(s)`}
-                      </span>
-                    </div>
-                    {bdSelectedCases.size > 0 && (
-                      <button onClick={handleGenerateBalanceDue} disabled={bdGenerating}
-                        style={{ padding: '10px 22px', backgroundColor: bdGenerating ? '#94a3b8' : '#185FA5', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: bdGenerating ? 'not-allowed' : 'pointer' }}>
-                        {bdGenerating ? 'Generating…' : `Generate ${bdSelectedCases.size} Letter${bdSelectedCases.size !== 1 ? 's' : ''}`}
-                      </button>
-                    )}
-                  </div>
-                  {(bdEligibleData.cases || []).length === 0 ? (
-                    <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No delinquent cases for this property.</div>
-                  ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                      <thead>
-                        <tr style={{ backgroundColor: '#EDF6FE', borderBottom: '1px solid #e2e8f0' }}>
-                          <th style={{ padding: '10px 16px', width: '40px' }} />
-                          {['Resident', 'Unit', 'Balance', 'Aging', 'Status'].map(h => (
-                            <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#94a3b8', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(bdEligibleData.cases || []).map((c, i) => {
-                          const isSel = bdSelectedCases.has(c.id);
-                          return (
-                            <tr key={c.id} style={{ borderBottom: '1px solid #EDF6FE', backgroundColor: isSel ? 'rgba(20,184,166,0.06)' : '#fff', cursor: 'pointer' }}
-                              onClick={() => setBdSelectedCases(prev => { const n = new Set(prev); isSel ? n.delete(c.id) : n.add(c.id); return n; })}>
-                              <td style={{ padding: '12px 16px' }}>
-                                <div style={{ width: '16px', height: '16px', borderRadius: '3px', border: `2px solid ${isSel ? '#14B8A6' : '#C8E4F8'}`, backgroundColor: isSel ? '#14B8A6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                  {isSel && <span style={{ color: '#fff', fontSize: '10px', fontWeight: '900' }}>✓</span>}
-                                </div>
-                              </td>
-                              <td style={{ padding: '12px 16px', fontWeight: '600', color: '#0C447C' }}>{c.resident_name}</td>
-                              <td style={{ padding: '12px 16px', color: '#475569' }}>{c.unit_number}</td>
-                              <td style={{ padding: '12px 16px', fontWeight: '700', color: '#dc2626' }}>${Number(c.balance_owed).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                              <td style={{ padding: '12px 16px', color: '#64748b' }}>{c.aging_bucket || '—'}</td>
-                              <td style={{ padding: '12px 16px' }}>
-                                <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '4px', fontWeight: '700', backgroundColor: '#fef9c3', color: '#92400e' }}>{c.status}</span>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              )}
-              {bdResult && (
-                <div style={{ backgroundColor: bdResult.error ? '#fef2f2' : '#f0fdf4', border: `1px solid ${bdResult.error ? '#fca5a5' : '#bbf7d0'}`, borderRadius: '12px', padding: '20px' }}>
-                  {bdResult.error ? (
-                    <div style={{ color: '#dc2626', fontWeight: '700' }}>❌ {bdResult.error}</div>
-                  ) : (
-                    <>
-                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#15803d', marginBottom: '16px' }}>
-                        ✅ {bdResult.letters_generated} balance due letter{bdResult.letters_generated !== 1 ? 's' : ''} generated for {bdResult.property_name}
-                      </div>
-                      <a href={bdResult.zip_url} download style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#185FA5', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: '700', fontSize: '14px', marginBottom: '16px' }}>
-                        ⬇ Download All Letters (ZIP)
-                      </a>
-                      <div style={{ marginTop: '12px' }}>
-                        {(bdResult.residents || []).map((r, i) => (
-                          <div key={i} style={{ fontSize: '13px', color: '#0C447C', padding: '4px 0', borderBottom: '1px solid #EDF6FE' }}>
-                            {r.name} · Unit {r.unit} · <strong style={{ color: '#dc2626' }}>${Number(r.balance).toFixed(2)}</strong>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
           </div>
         );
         })()}
+
+        {activeSection === 'balance-due' && (
+          <div>
+            <div style={{ marginBottom: '24px' }}>
+              <h1 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: '700', color: '#0C447C' }}>Balance Due Letters</h1>
+              <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Select a property, choose delinquent residents, and generate demand letters for any region.</p>
+            </div>
+            <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
+              <label style={labelStyle}>Select Property</label>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <select value={bdSelectedProperty} onChange={e => { setBdSelectedProperty(e.target.value); fetchBdEligible(e.target.value); }}
+                  style={{ padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '13px', color: '#0f172a', minWidth: '280px', maxWidth: '480px' }}>
+                  <option value=''>Choose a property...</option>
+                  {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+                {bdSelectedProperty && (
+                  <button onClick={() => fetchBdEligible(bdSelectedProperty)} disabled={bdEligibleLoading}
+                    style={{ padding: '9px 16px', backgroundColor: '#EDF6FE', border: '1px solid #C8E4F8', borderRadius: '7px', color: '#475569', fontSize: '13px', cursor: 'pointer' }}>
+                    {bdEligibleLoading ? 'Loading...' : '↻ Refresh'}
+                  </button>
+                )}
+              </div>
+            </div>
+            {bdEligibleLoading && (
+              <div style={{ color: '#94a3b8', fontSize: '13px', padding: '20px' }}>Loading eligible residents…</div>
+            )}
+            {bdEligibleData && !bdEligibleLoading && (
+              <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: '20px' }}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div
+                      onClick={() => { const all = (bdEligibleData.cases || []).every(c => bdSelectedCases.has(c.id)); all ? setBdSelectedCases(new Set()) : setBdSelectedCases(new Set((bdEligibleData.cases || []).map(c => c.id))); }}
+                      style={{ width: '16px', height: '16px', borderRadius: '3px', border: `2px solid ${bdSelectedCases.size > 0 ? '#14B8A6' : '#C8E4F8'}`, backgroundColor: bdSelectedCases.size > 0 ? '#14B8A6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                      {(bdEligibleData.cases || []).every(c => bdSelectedCases.has(c.id)) && <span style={{ color: '#fff', fontSize: '10px', fontWeight: '900' }}>✓</span>}
+                    </div>
+                    <span style={{ fontSize: '13px', color: '#475569' }}>
+                      {bdSelectedCases.size > 0 ? `${bdSelectedCases.size} selected` : `${(bdEligibleData.cases || []).length} delinquent resident(s)`}
+                    </span>
+                  </div>
+                  {bdSelectedCases.size > 0 && (
+                    <button onClick={handleGenerateBalanceDue} disabled={bdGenerating}
+                      style={{ padding: '10px 22px', backgroundColor: bdGenerating ? '#94a3b8' : '#185FA5', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: bdGenerating ? 'not-allowed' : 'pointer' }}>
+                      {bdGenerating ? 'Generating…' : `Generate ${bdSelectedCases.size} Letter${bdSelectedCases.size !== 1 ? 's' : ''}`}
+                    </button>
+                  )}
+                </div>
+                {(bdEligibleData.cases || []).length === 0 ? (
+                  <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No delinquent cases for this property.</div>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#EDF6FE', borderBottom: '1px solid #e2e8f0' }}>
+                        <th style={{ padding: '10px 16px', width: '40px' }} />
+                        {['Resident', 'Unit', 'Balance', 'Aging', 'Status'].map(h => (
+                          <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#94a3b8', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(bdEligibleData.cases || []).map((c, i) => {
+                        const isSel = bdSelectedCases.has(c.id);
+                        return (
+                          <tr key={c.id} style={{ borderBottom: '1px solid #EDF6FE', backgroundColor: isSel ? 'rgba(20,184,166,0.06)' : '#fff', cursor: 'pointer' }}
+                            onClick={() => setBdSelectedCases(prev => { const n = new Set(prev); isSel ? n.delete(c.id) : n.add(c.id); return n; })}>
+                            <td style={{ padding: '12px 16px' }}>
+                              <div style={{ width: '16px', height: '16px', borderRadius: '3px', border: `2px solid ${isSel ? '#14B8A6' : '#C8E4F8'}`, backgroundColor: isSel ? '#14B8A6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {isSel && <span style={{ color: '#fff', fontSize: '10px', fontWeight: '900' }}>✓</span>}
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px 16px', fontWeight: '600', color: '#0C447C' }}>{c.resident_name}</td>
+                            <td style={{ padding: '12px 16px', color: '#475569' }}>{c.unit_number}</td>
+                            <td style={{ padding: '12px 16px', fontWeight: '700', color: '#dc2626' }}>${Number(c.balance_owed).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                            <td style={{ padding: '12px 16px', color: '#64748b' }}>{c.aging_bucket || '—'}</td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '4px', fontWeight: '700', backgroundColor: '#fef9c3', color: '#92400e' }}>{c.status}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
+            {bdResult && (
+              <div style={{ backgroundColor: bdResult.error ? '#fef2f2' : '#f0fdf4', border: `1px solid ${bdResult.error ? '#fca5a5' : '#bbf7d0'}`, borderRadius: '12px', padding: '20px' }}>
+                {bdResult.error ? (
+                  <div style={{ color: '#dc2626', fontWeight: '700' }}>❌ {bdResult.error}</div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: '16px', fontWeight: '700', color: '#15803d', marginBottom: '16px' }}>
+                      ✅ {bdResult.letters_generated} balance due letter{bdResult.letters_generated !== 1 ? 's' : ''} generated for {bdResult.property_name}
+                    </div>
+                    <a href={bdResult.zip_url} download style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#185FA5', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: '700', fontSize: '14px', marginBottom: '16px' }}>
+                      ⬇ Download All Letters (ZIP)
+                    </a>
+                    <div style={{ marginTop: '12px' }}>
+                      {(bdResult.residents || []).map((r, i) => (
+                        <div key={i} style={{ fontSize: '13px', color: '#0C447C', padding: '4px 0', borderBottom: '1px solid #EDF6FE' }}>
+                          {r.name} · Unit {r.unit} · <strong style={{ color: '#dc2626' }}>${Number(r.balance).toFixed(2)}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+
       </div>
     </div>
   );
