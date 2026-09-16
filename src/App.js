@@ -246,6 +246,7 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
 
 // ── Admin Tab ──────────────────────────────────────────────────────────────────
 function AdminTab({ token, initialSection }) {
+  const API_URL = 'https://servfixy-production.up.railway.app';
   const [activeSection, setActiveSection] = useState(initialSection || 'users');
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(true);
