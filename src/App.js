@@ -2164,8 +2164,6 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
           });
         }
       }).catch(() => {});
-    fetch(`${API_URL}/api/collections/properties`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json()).then(d => { if (Array.isArray(d)) setProperties(d); else if (d.properties) setProperties(d.properties); }).catch(() => {});
     fetchData('');
     fetchPtpAnalytics('');
     fetch(`${API_URL}/api/collections/alerts`, { headers: { Authorization: `Bearer ${token}` } })
