@@ -1153,10 +1153,11 @@ function AdminTab({ token, initialSection }) {
               <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
                 <label style={labelStyle}>Select Property</label>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <PropertySelector properties={properties} value={bdSelectedProperty}
-                    onChange={v => { setBdSelectedProperty(v); fetchBdEligible(v); }}
-                    placeholder='Choose a property...'
-                    style={{ maxWidth: '480px' }} />
+                  <select value={bdSelectedProperty} onChange={e => { setBdSelectedProperty(e.target.value); fetchBdEligible(e.target.value); }}
+                    style={{ padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '13px', color: '#0f172a', minWidth: '280px', maxWidth: '480px' }}>
+                    <option value=''>Choose a property...</option>
+                    {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
                   {bdSelectedProperty && (
                     <button onClick={() => fetchBdEligible(bdSelectedProperty)} disabled={bdEligibleLoading}
                       style={{ padding: '9px 16px', backgroundColor: '#EDF6FE', border: '1px solid #C8E4F8', borderRadius: '7px', color: '#475569', fontSize: '13px', cursor: 'pointer' }}>
@@ -2162,6 +2163,8 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
           });
         }
       }).catch(() => {});
+    fetch(`${API_URL}/api/collections/properties`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => { if (Array.isArray(d)) setProperties(d); else if (d.properties) setProperties(d.properties); }).catch(() => {});
     fetchData('');
     fetchPtpAnalytics('');
     fetch(`${API_URL}/api/collections/alerts`, { headers: { Authorization: `Bearer ${token}` } })
