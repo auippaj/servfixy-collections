@@ -1246,8 +1246,8 @@ function AdminTab({ token, initialSection, onNavigate }) {
                     <div style={{ fontSize: '16px', fontWeight: '700', color: '#15803d', marginBottom: '16px' }}>
                       ✅ {bdResult.letters_generated} balance due letter{bdResult.letters_generated !== 1 ? 's' : ''} generated for {bdResult.property_name}
                     </div>
-                    <a href={bdResult.zip_url} download style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#185FA5', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: '700', fontSize: '14px', marginBottom: '16px' }}>
-                      ⬇ Download All Letters (ZIP)
+                    <a href={bdResult.pdf_url} download style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#185FA5', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: '700', fontSize: '14px', marginBottom: '16px' }}>
+                      ⬇ Download All Letters (PDF)
                     </a>
                     <div style={{ marginTop: '12px' }}>
                       {(bdResult.residents || []).map((r, i) => (
