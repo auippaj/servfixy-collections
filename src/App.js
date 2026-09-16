@@ -83,7 +83,7 @@ function Login({ onLogin }) {
 
       {/* Left panel — brand */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 80px', position: 'relative', zIndex: 1 }}>
-        <img src="/servfixy-logo.png" alt="Servfixy" style={{ height: '48px', objectFit: 'contain', objectPosition: 'left', marginBottom: '32px' }} />
+        <img src="/servfixy-logo.png" alt="Servfixy" style={{ height: '90px', objectFit: 'contain', objectPosition: 'left', marginBottom: '28px', mixBlendMode: 'screen' }} />
         <div style={{ fontSize: '38px', fontWeight: '800', color: '#ffffff', lineHeight: 1.15, marginBottom: '16px', letterSpacing: '-0.02em' }}>
           Collections<br />
           <span style={{ background: 'linear-gradient(90deg, #14B8A6, #38bdf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Management</span>
