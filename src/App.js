@@ -2551,7 +2551,8 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
                 </div>
               )}
             </div>
-        )}
+          );
+        })()}
 
         {/* Widget 2: Broken / Overdue PTPs */}
         {(() => {
