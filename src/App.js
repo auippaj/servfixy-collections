@@ -89,7 +89,8 @@ function Login({ onLogin }) {
           <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '12px 14px', borderRadius: '8px', marginBottom: '18px', fontSize: '13px' }}>
             {error}
           </div>
-        )}
+          );
+        })()}
 
         <div style={{ marginBottom: '14px' }}>
           <input
@@ -1148,7 +1149,12 @@ function AdminTab({ token, initialSection, onNavigate }) {
         );
         })()}
 
-        {activeSection === 'balance-due' && (
+        {activeSection === 'balance-due' && (() => {
+          // Auto-fetch if property already selected
+          if (bdSelectedProperty && !bdEligibleData && !bdEligibleLoading) {
+            fetchBdEligible(bdSelectedProperty);
+          }
+          return (
           <div>
             <div style={{ marginBottom: '24px' }}>
               <h1 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: '700', color: '#0C447C' }}>Balance Due Letters</h1>
