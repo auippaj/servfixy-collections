@@ -2601,7 +2601,8 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
                 </div>
               )}
             </div>
-        )}
+          );
+        })()}
 
       </div>
 
