@@ -281,6 +281,8 @@ function AdminTab({ token, initialSection, onNavigate }) {
   const [waResult, setWaResult] = useState(null);
   const [waMergeUrls, setWaMergeUrls] = useState([]);
   const [waMerging, setWaMerging] = useState(false);
+  const [labelGenerating, setLabelGenerating] = useState(false);
+  const [labelResult, setLabelResult] = useState(null);
 
   // Unified alert engine
   const [alerts, setAlerts] = useState([]);
@@ -1149,6 +1151,55 @@ function AdminTab({ token, initialSection, onNavigate }) {
                   <div style={{ marginTop: '12px', fontSize: '12px', color: '#dc2626' }}>{genResult.error_details.join(' · ')}</div>
                 )}
                 <div style={{ marginTop: '12px', fontSize: '12px', color: '#475569' }}>Summary email sent to {eligibleData?.property?.notice_recipient_email || 'configured recipient'}.</div>
+              </div>
+            )}
+
+          {/* Mailing Labels */}
+            {selectedProperty && (
+              <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', marginTop: '20px' }}>
+                <div style={{ marginBottom: '12px' }}>
+                  <div style={{ fontSize: '15px', fontWeight: '700', color: '#0C447C', marginBottom: '4px' }}>📬 Download Mailing Labels</div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>Avery 8160 format · One label per occupant (primary + all roommates) · Property address as return label</div>
+                </div>
+                <button
+                  onClick={async () => {
+                    setLabelGenerating(true);
+                    setLabelResult(null);
+                    try {
+                      const res = await fetch(`${API_URL}/api/collections/cases/generate-labels`, {
+                        method: 'POST',
+                        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ property_id: selectedProperty })
+                      });
+                      const d = await res.json();
+                      setLabelResult(d);
+                    } catch(e) {
+                      setLabelResult({ error: e.message });
+                    } finally {
+                      setLabelGenerating(false);
+                    }
+                  }}
+                  disabled={labelGenerating}
+                  style={{ padding: '10px 24px', backgroundColor: labelGenerating ? '#94a3b8' : '#0C447C', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: labelGenerating ? 'not-allowed' : 'pointer' }}>
+                  {labelGenerating ? 'Generating labels…' : 'Generate & Download Labels'}
+                </button>
+                {labelResult && (
+                  <div style={{ marginTop: '14px' }}>
+                    {labelResult.error ? (
+                      <div style={{ color: '#dc2626', fontSize: '13px' }}>❌ {labelResult.error}</div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                        <div style={{ fontSize: '13px', color: '#15803d', fontWeight: '600' }}>
+                          ✅ {labelResult.total_labels} labels generated ({labelResult.residents_labeled} residents)
+                        </div>
+                        <a href={labelResult.pdf_url} download
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 18px', backgroundColor: '#185FA5', color: '#fff', borderRadius: '7px', textDecoration: 'none', fontWeight: '700', fontSize: '13px' }}>
+                          ⬇ Download Labels PDF
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -9523,5 +9574,6 @@ function App() {
 }
 
 export default App;
+
 
 
