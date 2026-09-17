@@ -283,6 +283,10 @@ function AdminTab({ token, initialSection, onNavigate }) {
   const [waMerging, setWaMerging] = useState(false);
   const [labelGenerating, setLabelGenerating] = useState(false);
   const [labelResult, setLabelResult] = useState(null);
+  const [labelDirectory, setLabelDirectory] = useState([]);
+  const [labelDirectoryLoading, setLabelDirectoryLoading] = useState(false);
+  const [labelSelected, setLabelSelected] = useState({});   // { "Name||unit": true }
+  const [labelQtys, setLabelQtys] = useState({});           // { "Name||unit": 1 }
 
   // Unified alert engine
   const [alerts, setAlerts] = useState([]);
@@ -556,6 +560,36 @@ function AdminTab({ token, initialSection, onNavigate }) {
   };
 
   // ── WA Notice Generation ─────────────────────────────────────────────────────
+  const fetchLabelDirectory = async (propId) => {
+    if (!propId) return;
+    setLabelDirectoryLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/collections/properties/${propId}/tenant-directory`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setLabelDirectory(data);
+        // Default: all selected, qty 1
+        const sel = {}, qtys = {};
+        data.forEach(row => {
+          const allOccupants = [row.primary_leaseholder, ...(row.roommates || [])].filter(Boolean);
+          allOccupants.forEach(name => {
+            const key = `${name}||${row.unit}`;
+            sel[key] = true;
+            qtys[key] = 1;
+          });
+        });
+        setLabelSelected(sel);
+        setLabelQtys(qtys);
+      }
+    } catch(e) {
+      console.error('fetchLabelDirectory error:', e.message);
+    } finally {
+      setLabelDirectoryLoading(false);
+    }
+  };
+
   const handleGenerateWA = async () => {
     if (waFiles.length === 0) return;
     const prop = properties.find(p => p.id === selectedProperty);
@@ -853,7 +887,7 @@ function AdminTab({ token, initialSection, onNavigate }) {
               <label style={labelStyle}>Select Property</label>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <PropertySelector properties={properties} value={selectedProperty}
-                  onChange={v => { setSelectedProperty(v); setWaFiles([]); setWaResult(null); setGenResult(null); fetchEligible(v); }}
+                  onChange={v => { setSelectedProperty(v); setWaFiles([]); setWaResult(null); setGenResult(null); setLabelResult(null); setLabelDirectory([]); setLabelSelected({}); setLabelQtys({}); fetchEligible(v); fetchLabelDirectory(v); }}
                   placeholder='Choose a property...'
                   style={{ maxWidth: '480px' }} />
                 {selectedProperty && !isWA && (
@@ -1157,49 +1191,116 @@ function AdminTab({ token, initialSection, onNavigate }) {
           {/* Mailing Labels */}
             {selectedProperty && (
               <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', marginTop: '20px' }}>
-                <div style={{ marginBottom: '12px' }}>
-                  <div style={{ fontSize: '15px', fontWeight: '700', color: '#0C447C', marginBottom: '4px' }}>📬 Download Mailing Labels</div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>Avery 8160 format · One label per occupant (primary + all roommates) · Property address as return label</div>
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{ fontSize: '15px', fontWeight: '700', color: '#0C447C', marginBottom: '4px' }}>📬 Mailing Labels</div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>Avery 8160 · Word (.docx) · Select residents and set quantity per envelope · Property address prints as return label</div>
                 </div>
-                <button
-                  onClick={async () => {
-                    setLabelGenerating(true);
-                    setLabelResult(null);
-                    try {
-                      const res = await fetch(`${API_URL}/api/collections/cases/generate-labels`, {
-                        method: 'POST',
-                        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ property_id: selectedProperty })
-                      });
-                      const d = await res.json();
-                      setLabelResult(d);
-                    } catch(e) {
-                      setLabelResult({ error: e.message });
-                    } finally {
-                      setLabelGenerating(false);
-                    }
-                  }}
-                  disabled={labelGenerating}
-                  style={{ padding: '10px 24px', backgroundColor: labelGenerating ? '#94a3b8' : '#0C447C', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: labelGenerating ? 'not-allowed' : 'pointer' }}>
-                  {labelGenerating ? 'Generating labels…' : 'Generate & Download Labels'}
-                </button>
-                {labelResult && (
-                  <div style={{ marginTop: '14px' }}>
-                    {labelResult.error ? (
-                      <div style={{ color: '#dc2626', fontSize: '13px' }}>❌ {labelResult.error}</div>
-                    ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-                        <div style={{ fontSize: '13px', color: '#15803d', fontWeight: '600' }}>
-                          ✅ {labelResult.total_labels} labels generated ({labelResult.residents_labeled} residents)
-                        </div>
-                        <a href={labelResult.pdf_url} download
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 18px', backgroundColor: '#185FA5', color: '#fff', borderRadius: '7px', textDecoration: 'none', fontWeight: '700', fontSize: '13px' }}>
-                          ⬇ Download Labels PDF
-                        </a>
-                      </div>
-                    )}
-                  </div>
+
+                {labelDirectoryLoading && (
+                  <div style={{ fontSize: '13px', color: '#94a3b8', padding: '12px 0' }}>Loading residents…</div>
                 )}
+
+                {!labelDirectoryLoading && labelDirectory.length === 0 && (
+                  <div style={{ fontSize: '13px', color: '#94a3b8', padding: '12px 0' }}>No tenant directory found for this property. Upload a directory first.</div>
+                )}
+
+                {!labelDirectoryLoading && labelDirectory.length > 0 && (() => {
+                  const allOccupants = [];
+                  labelDirectory.forEach(row => {
+                    [row.primary_leaseholder, ...(row.roommates || [])].filter(Boolean).forEach(name => {
+                      allOccupants.push({ name, unit: row.unit, key: `${name}||${row.unit}` });
+                    });
+                  });
+                  const allSelected = allOccupants.every(o => labelSelected[o.key]);
+                  const selectedCount = allOccupants.filter(o => labelSelected[o.key]).length;
+
+                  return (
+                    <div>
+                      {/* Select All / Clear */}
+                      <div style={{ display: 'flex', gap: '10px', marginBottom: '12px', alignItems: 'center' }}>
+                        <button onClick={() => {
+                          const sel = {}, qtys = {};
+                          allOccupants.forEach(o => { sel[o.key] = true; qtys[o.key] = labelQtys[o.key] || 1; });
+                          setLabelSelected(sel); setLabelQtys(qtys);
+                        }} style={{ fontSize: '11px', padding: '5px 12px', border: '1px solid #C8E4F8', borderRadius: '5px', backgroundColor: '#fff', color: '#475569', cursor: 'pointer' }}>Select All</button>
+                        <button onClick={() => setLabelSelected({})}
+                          style={{ fontSize: '11px', padding: '5px 12px', border: '1px solid #C8E4F8', borderRadius: '5px', backgroundColor: '#fff', color: '#475569', cursor: 'pointer' }}>Clear</button>
+                        <span style={{ fontSize: '12px', color: '#94a3b8' }}>{selectedCount} of {allOccupants.length} selected</span>
+                      </div>
+
+                      {/* Resident rows */}
+                      <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', marginBottom: '16px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 120px 80px', padding: '8px 12px', backgroundColor: '#EDF6FE', borderBottom: '1px solid #e2e8f0', fontSize: '11px', color: '#94a3b8', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          <div></div><div>Resident</div><div>Unit</div><div>Qty</div>
+                        </div>
+                        {allOccupants.map((o, i) => (
+                          <div key={o.key} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 120px 80px', padding: '9px 12px', borderBottom: i < allOccupants.length - 1 ? '1px solid #f1f5f9' : 'none', alignItems: 'center', backgroundColor: labelSelected[o.key] ? 'rgba(20,184,166,0.04)' : '#fff' }}>
+                            <div
+                              onClick={() => setLabelSelected(prev => ({ ...prev, [o.key]: !prev[o.key] }))}
+                              style={{ width: '16px', height: '16px', borderRadius: '3px', border: `2px solid ${labelSelected[o.key] ? '#14B8A6' : '#C8E4F8'}`, backgroundColor: labelSelected[o.key] ? '#14B8A6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                              {labelSelected[o.key] && <span style={{ color: '#fff', fontSize: '10px', fontWeight: '900' }}>✓</span>}
+                            </div>
+                            <div style={{ fontSize: '13px', fontWeight: '600', color: '#0C447C' }}>{o.name}</div>
+                            <div style={{ fontSize: '12px', color: '#64748b' }}>Unit {o.unit}</div>
+                            <select
+                              value={labelQtys[o.key] || 1}
+                              onChange={e => setLabelQtys(prev => ({ ...prev, [o.key]: parseInt(e.target.value) }))}
+                              disabled={!labelSelected[o.key]}
+                              style={{ padding: '4px 6px', border: '1px solid #e2e8f0', borderRadius: '5px', fontSize: '12px', color: labelSelected[o.key] ? '#0f172a' : '#94a3b8', backgroundColor: labelSelected[o.key] ? '#fff' : '#f8fafc', cursor: labelSelected[o.key] ? 'pointer' : 'default' }}>
+                              {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}
+                            </select>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Generate button */}
+                      <button
+                        onClick={async () => {
+                          const residents = allOccupants
+                            .filter(o => labelSelected[o.key])
+                            .map(o => ({ name: o.name, unit: o.unit, quantity: labelQtys[o.key] || 1 }));
+                          if (residents.length === 0) return alert('Select at least one resident.');
+                          setLabelGenerating(true);
+                          setLabelResult(null);
+                          try {
+                            const res = await fetch(`${API_URL}/api/collections/cases/generate-labels`, {
+                              method: 'POST',
+                              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ property_id: selectedProperty, residents })
+                            });
+                            const d = await res.json();
+                            setLabelResult(d);
+                          } catch(e) {
+                            setLabelResult({ error: e.message });
+                          } finally {
+                            setLabelGenerating(false);
+                          }
+                        }}
+                        disabled={labelGenerating || selectedCount === 0}
+                        style={{ padding: '10px 24px', backgroundColor: (labelGenerating || selectedCount === 0) ? '#94a3b8' : '#0C447C', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: (labelGenerating || selectedCount === 0) ? 'not-allowed' : 'pointer', width: '100%' }}>
+                        {labelGenerating ? 'Generating labels…' : `Generate Labels for ${selectedCount} Resident${selectedCount !== 1 ? 's' : ''}`}
+                      </button>
+
+                      {labelResult && (
+                        <div style={{ marginTop: '14px' }}>
+                          {labelResult.error ? (
+                            <div style={{ color: '#dc2626', fontSize: '13px' }}>❌ {labelResult.error}</div>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                              <div style={{ fontSize: '13px', color: '#15803d', fontWeight: '600' }}>
+                                ✅ {labelResult.total_labels} labels generated
+                              </div>
+                              <a href={labelResult.docx_url} download
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 18px', backgroundColor: '#185FA5', color: '#fff', borderRadius: '7px', textDecoration: 'none', fontWeight: '700', fontSize: '13px' }}>
+                                ⬇ Download Labels (.docx)
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
@@ -9574,6 +9675,7 @@ function App() {
 }
 
 export default App;
+
 
 
 
