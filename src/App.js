@@ -3156,6 +3156,12 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
   const [dateSaving, setDateSaving] = useState(false);
   const [dateSaved, setDateSaved] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState({});
+  const [sendingSms, setSendingSms] = useState({});
+  const [sendResult, setSendResult] = useState({});
+  const [bulkSendingEmail, setBulkSendingEmail] = useState(false);
+  const [bulkSendingSms, setBulkSendingSms] = useState(false);
+  const [bulkSendResult, setBulkSendResult] = useState(null);
   const [filterProperty, setFilterProperty] = useState(initialFilters?.property_id || '');
   const [filterStatus, setFilterStatus] = useState(initialFilters?.status || '');
   const [filterAging, setFilterAging] = useState(initialFilters?.aging_bucket || '');
@@ -3598,6 +3604,50 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                 style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: 'rgba(20,184,166,0.12)', border: '1px solid #C8E4F8', borderRadius: '5px', color: '#185FA5', cursor: 'pointer', fontWeight: '600' }}>
                 Export CSV
               </button>
+              <button
+                onClick={async () => {
+                  setBulkSendingEmail(true); setBulkSendResult(null);
+                  try {
+                    const res = await fetch(`${API_URL}/api/collections/cases/bulk-send-email`, {
+                      method: 'POST',
+                      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ case_ids: [...selectedIds], sent_by: 'Collections Admin' })
+                    });
+                    const d = await res.json();
+                    setBulkSendResult({ type: 'email', ...d });
+                  } catch(e) { setBulkSendResult({ type: 'email', error: e.message }); }
+                  finally { setBulkSendingEmail(false); }
+                }}
+                disabled={bulkSendingEmail}
+                style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: bulkSendingEmail ? '#94a3b8' : '#0C447C', border: 'none', borderRadius: '5px', color: '#fff', cursor: bulkSendingEmail ? 'not-allowed' : 'pointer', fontWeight: '700' }}>
+                {bulkSendingEmail ? 'Sending…' : '✉ Bulk Email'}
+              </button>
+              <button
+                onClick={async () => {
+                  setBulkSendingSms(true); setBulkSendResult(null);
+                  try {
+                    const res = await fetch(`${API_URL}/api/collections/cases/bulk-send-sms`, {
+                      method: 'POST',
+                      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ case_ids: [...selectedIds], sent_by: 'Collections Admin' })
+                    });
+                    const d = await res.json();
+                    setBulkSendResult({ type: 'sms', ...d });
+                  } catch(e) { setBulkSendResult({ type: 'sms', error: e.message }); }
+                  finally { setBulkSendingSms(false); }
+                }}
+                disabled={bulkSendingSms}
+                style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: bulkSendingSms ? '#94a3b8' : '#185FA5', border: 'none', borderRadius: '5px', color: '#fff', cursor: bulkSendingSms ? 'not-allowed' : 'pointer', fontWeight: '700' }}>
+                {bulkSendingSms ? 'Logging…' : '💬 Bulk Text'}
+              </button>
+              {bulkSendResult && (
+                <span style={{ fontSize: '11px', fontWeight: '600', color: bulkSendResult.error ? '#dc2626' : '#15803d' }}>
+                  {bulkSendResult.error ? `❌ ${bulkSendResult.error}` :
+                    bulkSendResult.type === 'email'
+                      ? `✅ ${bulkSendResult.sent} emailed · ${bulkSendResult.skipped_no_email || 0} skipped`
+                      : `✅ ${bulkSendResult.sent} logged · ${bulkSendResult.skipped_no_phone || 0} skipped`}
+                </span>
+              )}
               <button onClick={() => setSelectedIds(new Set(cases.map(c => c.id)))}
                 style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: '#ffffff', border: '1px solid #C8E4F8', borderRadius: '5px', color: '#94a3b8', cursor: 'pointer' }}>
                 Select All
@@ -3656,6 +3706,55 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                     {c.payment_probability}% pay prob
                   </span>
                 )}
+              </div>
+              {/* Individual send buttons */}
+              <div style={{ display: 'flex', gap: '5px', marginTop: '7px' }} onClick={e => e.stopPropagation()}>
+                <button
+                  onClick={async e => {
+                    e.stopPropagation();
+                    setSendingEmail(p => ({ ...p, [c.id]: true }));
+                    try {
+                      const res = await fetch(`${API_URL}/api/collections/cases/${c.id}/send-balance-due-email`, {
+                        method: 'POST',
+                        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sent_by: 'Collections Admin' })
+                      });
+                      setSendResult(p => ({ ...p, [c.id]: res.ok ? 'email_ok' : 'email_err' }));
+                      setTimeout(() => setSendResult(p => { const n={...p}; delete n[c.id]; return n; }), 4000);
+                    } catch { setSendResult(p => ({ ...p, [c.id]: 'email_err' })); }
+                    finally { setSendingEmail(p => ({ ...p, [c.id]: false })); }
+                  }}
+                  disabled={sendingEmail[c.id]}
+                  title={c.resident_email ? `Email ${c.resident_email}` : 'No email on file — import contacts first'}
+                  style={{ fontSize: '10px', padding: '2px 9px', borderRadius: '4px', border: 'none', fontWeight: '600',
+                    cursor: c.resident_email ? 'pointer' : 'not-allowed',
+                    backgroundColor: sendResult[c.id] === 'email_ok' ? '#dcfce7' : sendResult[c.id] === 'email_err' ? '#fee2e2' : c.resident_email ? '#EDF6FE' : '#f1f5f9',
+                    color: sendResult[c.id] === 'email_ok' ? '#15803d' : sendResult[c.id] === 'email_err' ? '#dc2626' : c.resident_email ? '#0C447C' : '#cbd5e1' }}>
+                  {sendingEmail[c.id] ? '…' : sendResult[c.id] === 'email_ok' ? '✓ Sent' : sendResult[c.id] === 'email_err' ? '✗ Failed' : '✉ Email'}
+                </button>
+                <button
+                  onClick={async e => {
+                    e.stopPropagation();
+                    setSendingSms(p => ({ ...p, [c.id]: true }));
+                    try {
+                      const res = await fetch(`${API_URL}/api/collections/cases/${c.id}/send-balance-due-sms`, {
+                        method: 'POST',
+                        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sent_by: 'Collections Admin' })
+                      });
+                      setSendResult(p => ({ ...p, [c.id]: res.ok ? 'sms_ok' : 'sms_err' }));
+                      setTimeout(() => setSendResult(p => { const n={...p}; delete n[c.id]; return n; }), 4000);
+                    } catch { setSendResult(p => ({ ...p, [c.id]: 'sms_err' })); }
+                    finally { setSendingSms(p => ({ ...p, [c.id]: false })); }
+                  }}
+                  disabled={sendingSms[c.id]}
+                  title={c.resident_phone ? `Text ${c.resident_phone}` : 'No phone on file — import contacts first'}
+                  style={{ fontSize: '10px', padding: '2px 9px', borderRadius: '4px', border: 'none', fontWeight: '600',
+                    cursor: c.resident_phone ? 'pointer' : 'not-allowed',
+                    backgroundColor: sendResult[c.id] === 'sms_ok' ? '#dcfce7' : sendResult[c.id] === 'sms_err' ? '#fee2e2' : c.resident_phone ? '#EDF6FE' : '#f1f5f9',
+                    color: sendResult[c.id] === 'sms_ok' ? '#15803d' : sendResult[c.id] === 'sms_err' ? '#dc2626' : c.resident_phone ? '#0C447C' : '#cbd5e1' }}>
+                  {sendingSms[c.id] ? '…' : sendResult[c.id] === 'sms_ok' ? '✓ Logged' : sendResult[c.id] === 'sms_err' ? '✗ Failed' : '💬 Text'}
+                </button>
               </div>
             </div>
           ))}
@@ -9823,6 +9922,7 @@ function App() {
 }
 
 export default App;
+
 
 
 
