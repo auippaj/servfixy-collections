@@ -893,6 +893,15 @@ function AdminTab({ token, initialSection, onNavigate }) {
                               style={inputStyle} />
                           </div>
                         </div>
+                        <div style={{ marginTop: '14px' }}>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>RESIDENT PAYMENT PORTAL URL</div>
+                          <input type='url'
+                            value={propSettings[prop.id]?.payment_portal_url || ''}
+                            onChange={e => updatePropSetting(prop.id, 'payment_portal_url', e.target.value)}
+                            placeholder='https://payments.example.com/pay'
+                            style={inputStyle} />
+                          <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px' }}>Included in SMS messages to residents</div>
+                        </div>
                     <button onClick={() => handleSavePropSettings(prop.id)} disabled={savingProp === prop.id}
                       style={{ padding: '8px 20px', backgroundColor: '#185FA5', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
                       {savingProp === prop.id ? 'Saving...' : 'Save Settings'}
@@ -3162,6 +3171,10 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
   const [bulkSendingEmail, setBulkSendingEmail] = useState(false);
   const [bulkSendingSms, setBulkSendingSms] = useState(false);
   const [bulkSendResult, setBulkSendResult] = useState(null);
+  const [smsModal, setSmsModal] = useState(null); // { caseId, residentName, phone, propertyId } or { bulk: true, caseIds: [...] }
+  const [smsMessage, setSmsMessage] = useState('');
+  const [smsSending, setSmsSending] = useState(false);
+  const [smsResult, setSmsResult] = useState(null);
   const [filterProperty, setFilterProperty] = useState(initialFilters?.property_id || '');
   const [filterStatus, setFilterStatus] = useState(initialFilters?.status || '');
   const [filterAging, setFilterAging] = useState(initialFilters?.aging_bucket || '');
@@ -3623,18 +3636,15 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                 {bulkSendingEmail ? 'Sending…' : '✉ Bulk Email'}
               </button>
               <button
-                onClick={async () => {
-                  setBulkSendingSms(true); setBulkSendResult(null);
-                  try {
-                    const res = await fetch(`${API_URL}/api/collections/cases/bulk-send-sms`, {
-                      method: 'POST',
-                      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ case_ids: [...selectedIds], sent_by: 'Collections Admin' })
-                    });
-                    const d = await res.json();
-                    setBulkSendResult({ type: 'sms', ...d });
-                  } catch(e) { setBulkSendResult({ type: 'sms', error: e.message }); }
-                  finally { setBulkSendingSms(false); }
+                onClick={() => {
+                  const ids = [...selectedIds];
+                  const firstCase = cases.find(c => ids.includes(c.id));
+                  const prop = properties.find(p => p.id === firstCase?.property_id);
+                  const portalUrl = prop?.payment_portal_url || '';
+                  const defaultMsg = `Hi [Resident Name], you have an outstanding balance at ${prop?.name || 'your property'}. Please make a payment at: ${portalUrl} or call 281-888-0832.`;
+                  setSmsMessage(defaultMsg);
+                  setSmsResult(null);
+                  setSmsModal({ bulk: true, caseIds: ids, propertyId: firstCase?.property_id });
                 }}
                 disabled={bulkSendingSms}
                 style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: bulkSendingSms ? '#94a3b8' : '#185FA5', border: 'none', borderRadius: '5px', color: '#fff', cursor: bulkSendingSms ? 'not-allowed' : 'pointer', fontWeight: '700' }}>
@@ -3733,19 +3743,14 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                   {sendingEmail[c.id] ? '…' : sendResult[c.id] === 'email_ok' ? '✓ Sent' : sendResult[c.id] === 'email_err' ? '✗ Failed' : '✉ Email'}
                 </button>
                 <button
-                  onClick={async e => {
+                  onClick={e => {
                     e.stopPropagation();
-                    setSendingSms(p => ({ ...p, [c.id]: true }));
-                    try {
-                      const res = await fetch(`${API_URL}/api/collections/cases/${c.id}/send-balance-due-sms`, {
-                        method: 'POST',
-                        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ sent_by: 'Collections Admin' })
-                      });
-                      setSendResult(p => ({ ...p, [c.id]: res.ok ? 'sms_ok' : 'sms_err' }));
-                      setTimeout(() => setSendResult(p => { const n={...p}; delete n[c.id]; return n; }), 4000);
-                    } catch { setSendResult(p => ({ ...p, [c.id]: 'sms_err' })); }
-                    finally { setSendingSms(p => ({ ...p, [c.id]: false })); }
+                    const prop = properties.find(p => p.id === c.property_id);
+                    const portalUrl = prop?.payment_portal_url || '';
+                    const defaultMsg = `Hi ${c.resident_name}, you have an outstanding balance of $${Number(c.balance_owed||0).toFixed(2)} at ${c.property_name} Unit ${c.unit_number}. Please make a payment at: ${portalUrl} or call 281-888-0832.`;
+                    setSmsMessage(defaultMsg);
+                    setSmsResult(null);
+                    setSmsModal({ caseId: c.id, residentName: c.resident_name, phone: c.resident_phone, propertyId: c.property_id });
                   }}
                   disabled={sendingSms[c.id]}
                   title={c.resident_phone ? `Text ${c.resident_phone}` : 'No phone on file — import contacts first'}
@@ -4476,6 +4481,82 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
       )}
 
     </div>
+
+      {/* SMS Composer Modal */}
+      {smsModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '520px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <div style={{ fontSize: '17px', fontWeight: '700', color: '#0C447C' }}>💬 Send Text Message</div>
+                <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
+                  {smsModal.bulk ? `Sending to ${smsModal.caseIds?.length} residents` : `To: ${smsModal.residentName} · ${smsModal.phone}`}
+                </div>
+              </div>
+              <button onClick={() => { setSmsModal(null); setSmsResult(null); }}
+                style={{ background: 'none', border: 'none', fontSize: '20px', color: '#94a3b8', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            <label style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Message</label>
+            <textarea
+              value={smsMessage}
+              onChange={e => setSmsMessage(e.target.value)}
+              rows={6}
+              style={{ width: '100%', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', color: '#0f172a', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'sans-serif', lineHeight: '1.5' }}
+            />
+            <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px', marginBottom: '20px' }}>
+              {smsMessage.length} characters · Edit the message above before sending
+            </div>
+
+            {smsResult && (
+              <div style={{ padding: '10px 14px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', fontWeight: '600',
+                backgroundColor: smsResult.error ? '#fef2f2' : '#f0fdf4',
+                color: smsResult.error ? '#dc2626' : '#15803d',
+                border: `1px solid ${smsResult.error ? '#fca5a5' : '#bbf7d0'}` }}>
+                {smsResult.error ? `❌ ${smsResult.error}` :
+                  smsResult.bulk ? `✅ ${smsResult.sent} logged · ${smsResult.skipped_no_phone || 0} skipped (no phone)` :
+                  `✅ Logged for ${smsModal.residentName}`}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => { setSmsModal(null); setSmsResult(null); }}
+                style={{ flex: 1, padding: '10px', backgroundColor: '#f1f5f9', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', color: '#475569', cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!smsMessage.trim()) return;
+                  setSmsSending(true); setSmsResult(null);
+                  try {
+                    if (smsModal.bulk) {
+                      const res = await fetch(`${API_URL}/api/collections/cases/bulk-send-sms`, {
+                        method: 'POST',
+                        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ case_ids: smsModal.caseIds, sent_by: 'Collections Admin', message: smsMessage })
+                      });
+                      const d = await res.json();
+                      setSmsResult({ ...d, bulk: true });
+                    } else {
+                      const res = await fetch(`${API_URL}/api/collections/cases/${smsModal.caseId}/send-balance-due-sms`, {
+                        method: 'POST',
+                        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sent_by: 'Collections Admin', message: smsMessage })
+                      });
+                      const d = await res.json();
+                      setSmsResult(res.ok ? { success: true } : { error: d.error });
+                    }
+                  } catch(e) { setSmsResult({ error: e.message }); }
+                  finally { setSmsSending(false); }
+                }}
+                disabled={smsSending || !smsMessage.trim()}
+                style={{ flex: 2, padding: '10px', backgroundColor: smsSending ? '#94a3b8' : '#0C447C', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', color: '#fff', cursor: smsSending ? 'not-allowed' : 'pointer' }}>
+                {smsSending ? 'Sending…' : smsModal.bulk ? `Send to ${smsModal.caseIds?.length} Residents` : 'Send Text'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
   );
 }
 // ── End Collections Cases Tab ──────────────────────────────────────────────────
@@ -9922,6 +10003,7 @@ function App() {
 }
 
 export default App;
+
 
 
 
