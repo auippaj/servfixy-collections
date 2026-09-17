@@ -564,25 +564,63 @@ function AdminTab({ token, initialSection, onNavigate }) {
     if (!propId) return;
     setLabelDirectoryLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/collections/cases/properties/${propId}/tenant-directory`, {
+      // 1. Get delinquent cases for this property
+      const casesRes = await fetch(`${API_URL}/api/collections/cases/eligible-balance-due?property_id=${propId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setLabelDirectory(data);
-        // Default: all selected, qty 1
-        const sel = {}, qtys = {};
-        data.forEach(row => {
-          const allOccupants = [row.primary_leaseholder, ...(row.roommates || [])].filter(Boolean);
-          allOccupants.forEach(name => {
-            const key = `${name}||${row.unit}`;
-            sel[key] = true;
-            qtys[key] = 1;
-          });
-        });
-        setLabelSelected(sel);
-        setLabelQtys(qtys);
+      const casesData = await casesRes.json();
+      const delinquentCases = Array.isArray(casesData.cases) ? casesData.cases : [];
+
+      if (delinquentCases.length === 0) {
+        setLabelDirectory([]);
+        setLabelSelected({});
+        setLabelQtys({});
+        return;
       }
+
+      // 2. Get tenant directory to find roommates per unit
+      let dirByUnit = {};
+      try {
+        const dirRes = await fetch(`${API_URL}/api/collections/cases/properties/${propId}/tenant-directory`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const dirData = await dirRes.json();
+        if (Array.isArray(dirData)) {
+          dirData.forEach(row => { dirByUnit[row.unit] = row; });
+        }
+      } catch(e) { /* directory optional — fall back to case name only */ }
+
+      // 3. Build occupant list — one entry per person per delinquent unit
+      const occupants = [];
+      const seenKeys = new Set();
+      delinquentCases.forEach(c => {
+        const unit = c.unit_number || '';
+        const dirRow = dirByUnit[unit] || {};
+        const allNames = [
+          dirRow.primary_leaseholder || c.resident_name,
+          ...(dirRow.roommates || [])
+        ].filter(Boolean);
+
+        allNames.forEach(name => {
+          const key = `${name}||${unit}`;
+          if (!seenKeys.has(key)) {
+            seenKeys.add(key);
+            occupants.push({ name, unit, balance: c.balance_owed });
+          }
+        });
+      });
+
+      setLabelDirectory(occupants);
+
+      // Default: all selected, qty 1
+      const sel = {}, qtys = {};
+      occupants.forEach(o => {
+        sel[o.key || `${o.name}||${o.unit}`] = true;
+        qtys[o.key || `${o.name}||${o.unit}`] = 1;
+      });
+      setLabelSelected(sel);
+      setLabelQtys(qtys);
+
     } catch(e) {
       console.error('fetchLabelDirectory error:', e.message);
     } finally {
@@ -1201,16 +1239,14 @@ function AdminTab({ token, initialSection, onNavigate }) {
                 )}
 
                 {!labelDirectoryLoading && labelDirectory.length === 0 && (
-                  <div style={{ fontSize: '13px', color: '#94a3b8', padding: '12px 0' }}>No tenant directory found for this property. Upload a directory first.</div>
+                  <div style={{ fontSize: '13px', color: '#94a3b8', padding: '12px 0' }}>No delinquent cases found for this property.</div>
                 )}
 
                 {!labelDirectoryLoading && labelDirectory.length > 0 && (() => {
-                  const allOccupants = [];
-                  labelDirectory.forEach(row => {
-                    [row.primary_leaseholder, ...(row.roommates || [])].filter(Boolean).forEach(name => {
-                      allOccupants.push({ name, unit: row.unit, key: `${name}||${row.unit}` });
-                    });
-                  });
+                  const allOccupants = labelDirectory.map(o => ({
+                    ...o,
+                    key: `${o.name}||${o.unit}`
+                  }));
                   const allSelected = allOccupants.every(o => labelSelected[o.key]);
                   const selectedCount = allOccupants.filter(o => labelSelected[o.key]).length;
 
@@ -9675,6 +9711,7 @@ function App() {
 }
 
 export default App;
+
 
 
 
