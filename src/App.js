@@ -1486,6 +1486,15 @@ function YardiImportTab({ token }) {
   useEffect(() => {
     fetch(`${API_URL}/api/properties`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(d => setProperties(Array.isArray(d) ? d : [])).catch(() => {});
+    // Load persisted GPR values from DB
+    fetch(`${API_URL}/api/admin/properties/gpr`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(rows => {
+        if (Array.isArray(rows)) {
+          const gprMap = {};
+          rows.forEach(r => { if (r.monthly_gpr) gprMap[r.id] = Number(r.monthly_gpr); });
+          setGpr(gprMap);
+        }
+      }).catch(() => {});
   }, [token]);
 
   const STATUS_MAP = { 'Current': 'active', 'Notice': 'notice_issued', 'Eviction': 'filed_with_attorney' };
@@ -3037,11 +3046,21 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
                 style={{ width: '100%', padding: '10px 12px', border: '1px solid #C8E4F8', borderRadius: '7px', fontSize: '14px', boxSizing: 'border-box' }} />
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => {
+              <button onClick={async () => {
                 const key = selectedProperty || 'all';
-                const updated = { ...gpr, [key]: Number(gprInput) };
-                setGpr(updated);
+                const val = Number(gprInput);
+                setGpr(prev => ({ ...prev, [key]: val }));
                 setEditingGpr(false); setGprInput('');
+                // Persist to DB if a specific property is selected
+                if (selectedProperty) {
+                  try {
+                    await fetch(`${API_URL}/api/admin/properties/${selectedProperty}/gpr`, {
+                      method: 'PATCH',
+                      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ monthly_gpr: val })
+                    });
+                  } catch(e) { console.error('GPR save error:', e.message); }
+                }
               }} style={{ flex: 1, padding: '10px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
                 Save GPR
               </button>
@@ -3069,8 +3088,21 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
                 style={{ width: '100%', padding: '10px 12px', border: '1px solid #C8E4F8', borderRadius: '7px', fontSize: '14px', boxSizing: 'border-box' }} />
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => { const key = selectedProperty || 'all'; setGpr(prev => ({ ...prev, [key]: Number(gprInput) })); setEditingGpr(false); setGprInput(''); }}
-                style={{ flex: 1, padding: '10px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
+              <button onClick={async () => {
+                const key = selectedProperty || 'all';
+                const val = Number(gprInput);
+                setGpr(prev => ({ ...prev, [key]: val }));
+                setEditingGpr(false); setGprInput('');
+                if (selectedProperty) {
+                  try {
+                    await fetch(`${API_URL}/api/admin/properties/${selectedProperty}/gpr`, {
+                      method: 'PATCH',
+                      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ monthly_gpr: val })
+                    });
+                  } catch(e) { console.error('GPR save error:', e.message); }
+                }
+              }} style={{ flex: 1, padding: '10px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '7px', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
                 Save GPR
               </button>
               <button onClick={() => { setEditingGpr(false); setGprInput(''); }}
@@ -10004,6 +10036,7 @@ function App() {
 }
 
 export default App;
+
 
 
 
