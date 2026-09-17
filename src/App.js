@@ -564,7 +564,7 @@ function AdminTab({ token, initialSection, onNavigate }) {
     if (!propId) return;
     setLabelDirectoryLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/collections/properties/${propId}/tenant-directory`, {
+      const res = await fetch(`${API_URL}/api/collections/cases/properties/${propId}/tenant-directory`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -9675,6 +9675,7 @@ function App() {
 }
 
 export default App;
+
 
 
 
