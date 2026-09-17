@@ -1692,11 +1692,123 @@ function YardiImportTab({ token }) {
 
         </div>
       )}
+
+      {/* ── Contact Import Section ── */}
+      <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '24px', border: '1px solid #e2e8f0', marginTop: '28px' }}>
+        <div style={{ marginBottom: '16px' }}>
+          <h2 style={{ margin: '0 0 4px', fontSize: '17px', fontWeight: '700', color: '#0C447C' }}>📇 Resident Contact Import</h2>
+          <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>Upload a spreadsheet to populate email and phone for delinquent residents. Required columns: <strong>Property · Unit · Resident Name · Email · Phone</strong></p>
+        </div>
+
+        <ContactImportSection token={token} />
+      </div>
+
     </div>
   );
 }
 // ── End Yardi Import Tab ───────────────────────────────────────────────────────
 
+
+// ── Contact Import Section Component ────────────────────────────────────────────
+function ContactImportSection({ token }) {
+  const [contactFile, setContactFile] = useState(null);
+  const [contactImporting, setContactImporting] = useState(false);
+  const [contactResult, setContactResult] = useState(null);
+  const [contactError, setContactError] = useState('');
+
+  const handleContactImport = async () => {
+    if (!contactFile) return;
+    setContactImporting(true);
+    setContactResult(null);
+    setContactError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', contactFile);
+      const res = await fetch(`${API_URL}/api/yardi/import-contacts`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Import failed');
+      setContactResult(d);
+      setContactFile(null);
+    } catch (err) {
+      setContactError(err.message);
+    } finally {
+      setContactImporting(false);
+    }
+  };
+
+  const downloadTemplate = () => {
+    const csv = 'Property,Unit,Resident Name,Email,Phone\nEllyson,A101,Smith John,jsmith@email.com,2535551234\n';
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'servfixy_contact_template.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+        <button onClick={downloadTemplate}
+          style={{ padding: '8px 16px', backgroundColor: '#EDF6FE', border: '1px solid #C8E4F8', borderRadius: '7px', fontSize: '12px', color: '#0C447C', fontWeight: '600', cursor: 'pointer' }}>
+          ⬇ Download Template
+        </button>
+      </div>
+
+      <div
+        onClick={() => document.getElementById('contact-import-input').click()}
+        onDragOver={e => e.preventDefault()}
+        onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) setContactFile(f); }}
+        style={{ border: '2px dashed #C8E4F8', borderRadius: '8px', padding: '24px', textAlign: 'center', cursor: 'pointer', backgroundColor: contactFile ? '#f0fdf4' : '#EDF6FE', marginBottom: '14px' }}>
+        <div style={{ fontSize: '20px', marginBottom: '6px' }}>{contactFile ? '✅' : '📁'}</div>
+        <div style={{ fontSize: '13px', color: '#475569', fontWeight: contactFile ? '600' : '400' }}>
+          {contactFile ? contactFile.name : 'Drop .xlsx or .csv here, or click to browse'}
+        </div>
+        {contactFile && (
+          <button onClick={e => { e.stopPropagation(); setContactFile(null); }}
+            style={{ marginTop: '8px', background: 'none', border: 'none', color: '#94a3b8', fontSize: '12px', cursor: 'pointer' }}>
+            ✕ Remove
+          </button>
+        )}
+      </div>
+      <input id='contact-import-input' type='file' accept='.xlsx,.csv' style={{ display: 'none' }}
+        onChange={e => { setContactFile(e.target.files[0] || null); e.target.value = ''; }} />
+
+      <button onClick={handleContactImport} disabled={!contactFile || contactImporting}
+        style={{ padding: '10px 24px', backgroundColor: (!contactFile || contactImporting) ? '#94a3b8' : '#0C447C', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: (!contactFile || contactImporting) ? 'not-allowed' : 'pointer', width: '100%' }}>
+        {contactImporting ? 'Importing contacts…' : 'Import Contacts'}
+      </button>
+
+      {contactError && (
+        <div style={{ marginTop: '12px', padding: '10px 14px', backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', fontSize: '13px', color: '#dc2626' }}>
+          ❌ {contactError}
+        </div>
+      )}
+
+      {contactResult && (
+        <div style={{ marginTop: '14px', padding: '16px', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px' }}>
+          <div style={{ fontSize: '15px', fontWeight: '700', color: '#15803d', marginBottom: '10px' }}>
+            ✅ Import complete
+          </div>
+          <div style={{ fontSize: '13px', color: '#475569', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+            <div><span style={{ fontWeight: '700', color: '#0C447C' }}>{contactResult.rows_processed}</span> rows processed</div>
+            <div><span style={{ fontWeight: '700', color: '#15803d' }}>{contactResult.cases_updated}</span> cases updated</div>
+            <div><span style={{ fontWeight: '700', color: '#94a3b8' }}>{contactResult.skipped}</span> skipped</div>
+          </div>
+          {contactResult.errors?.length > 0 && (
+            <div style={{ marginTop: '10px', fontSize: '12px', color: '#dc2626' }}>
+              <div style={{ fontWeight: '700', marginBottom: '4px' }}>Warnings:</div>
+              {contactResult.errors.map((e, i) => <div key={i}>• {e}</div>)}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── Property Selector Component ────────────────────────────────────────────────
 function PropertySelector({ properties, value, onChange, placeholder, style }) {
@@ -9711,6 +9823,7 @@ function App() {
 }
 
 export default App;
+
 
 
 
