@@ -3553,6 +3553,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
   const btnSecondary = { padding: '9px 18px', backgroundColor: '#ffffff', border: '1px solid #C8E4F8', borderRadius: '7px', color: '#94a3b8', fontSize: '13px', cursor: 'pointer' };
 
   return (
+    <>
     <div style={{ display: 'flex', height: '100vh', backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif', overflow: 'hidden' }}>
 
       {/* LEFT PANEL — Case List */}
@@ -4482,7 +4483,6 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
 
     </div>
 
-      {/* SMS Composer Modal */}
       {smsModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '520px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
@@ -4557,6 +4557,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
           </div>
         </div>
       )}
+    </>
   );
 }
 // ── End Collections Cases Tab ──────────────────────────────────────────────────
@@ -10003,6 +10004,7 @@ function App() {
 }
 
 export default App;
+
 
 
 
