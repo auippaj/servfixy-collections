@@ -596,8 +596,12 @@ function AdminTab({ token, initialSection, onNavigate }) {
       delinquentCases.forEach(c => {
         const unit = c.unit_number || '';
         const dirRow = dirByUnit[unit] || {};
+        // primary_leaseholder may contain a unit address string (used by notice generator) — skip it if so
+        const primaryName = dirRow.primary_leaseholder && !/\d/.test(dirRow.primary_leaseholder.slice(0,4))
+          ? dirRow.primary_leaseholder
+          : c.resident_name;
         const allNames = [
-          dirRow.primary_leaseholder || c.resident_name,
+          primaryName,
           ...(dirRow.roommates || [])
         ].filter(Boolean);
 
