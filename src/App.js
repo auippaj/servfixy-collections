@@ -81,6 +81,8 @@ function Login({ onLogin }) {
           style={{ width: '420px', maxWidth: '100%', display: 'block', marginBottom: '16px' }}
         />
 
+        <h1 style={{ fontSize: '26px', fontWeight: '700', color: '#111827', marginBottom: '20px', alignSelf: 'flex-start', width: '100%' }}>Collections</h1>
+
 
 
         {error && (
