@@ -78,12 +78,10 @@ function Login({ onLogin }) {
         <img
           src="/servfixy-logo.png"
           alt="Servfixy"
-          style={{ width: '100%', maxWidth: '320px', display: 'block', marginBottom: '36px' }}
+          style={{ width: '420px', maxWidth: '100%', display: 'block', marginBottom: '16px' }}
         />
 
-        <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#0c2a4a', margin: '0 0 28px' }}>
-          Sign in to Collections
-        </h1>
+
 
         {error && (
           <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '12px 14px', borderRadius: '8px', marginBottom: '18px', fontSize: '13px' }}>
@@ -98,7 +96,7 @@ function Login({ onLogin }) {
             onChange={e => setEmail(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleLogin()}
             placeholder="Email"
-            style={{ width: '100%', padding: '14px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#0c2a4a', fontSize: '15px', boxSizing: 'border-box', outline: 'none' }}
+            style={{ width: '100%', padding: '14px 18px', borderRadius: '12px', border: 'none', background: '#EEF2F7', color: '#111827', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
           />
         </div>
 
@@ -109,14 +107,14 @@ function Login({ onLogin }) {
             onChange={e => setPassword(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleLogin()}
             placeholder="Password"
-            style={{ width: '100%', padding: '14px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#0c2a4a', fontSize: '15px', boxSizing: 'border-box', outline: 'none' }}
+            style={{ width: '100%', padding: '14px 18px', borderRadius: '12px', border: 'none', background: '#EEF2F7', color: '#111827', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
           />
         </div>
 
         <button
           onClick={handleLogin}
           disabled={loading}
-          style={{ padding: '14px 32px', borderRadius: '8px', border: 'none', background: loading ? '#94a3b8' : 'linear-gradient(135deg, #14B8A6, #0ea5e9)', color: '#fff', fontSize: '15px', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer', marginRight: '16px' }}
+          style={{ padding: '13px 28px', borderRadius: '50px', border: 'none', backgroundColor: loading ? '#94a3b8' : '#14B8A6', color: '#fff', fontSize: '15px', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer' }}
         >
           {loading ? 'Signing in…' : 'Sign In →'}
         </button>
