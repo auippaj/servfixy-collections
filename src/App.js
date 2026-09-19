@@ -190,7 +190,7 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
         )}
       </div>
       {/* Nav groups */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0', scrollbarWidth: 'thick', scrollbarColor: '#4a7fc1 #185FA5' }}>
         {NAV_ITEMS.map(group => {
           const isCollapsed = collapsed[group.group];
           return (
