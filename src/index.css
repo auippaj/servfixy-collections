@@ -12,3 +12,9 @@ body {
 input, select, textarea {
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Sidebar scrollbar */
+.sidebar-nav::-webkit-scrollbar { width: 8px; }
+.sidebar-nav::-webkit-scrollbar-track { background: #185FA5; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: #4a7fc1; border-radius: 4px; }
+.sidebar-nav::-webkit-scrollbar-thumb:hover { background: #6b9fd4; }
