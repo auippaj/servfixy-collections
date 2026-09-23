@@ -81,7 +81,7 @@ function Login({ onLogin }) {
           style={{ width: '420px', maxWidth: '100%', display: 'block', marginBottom: '16px' }}
         />
 
-        <h1 style={{ fontSize: '26px', fontWeight: '700', color: '#111827', marginBottom: '20px', alignSelf: 'flex-start', width: '100%' }}>Collections</h1>
+        
 
 
 
@@ -113,13 +113,16 @@ function Login({ onLogin }) {
           />
         </div>
 
-        <button
-          onClick={handleLogin}
-          disabled={loading}
-          style={{ padding: '13px 28px', borderRadius: '50px', border: 'none', backgroundColor: loading ? '#94a3b8' : '#14B8A6', color: '#fff', fontSize: '15px', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer' }}
-        >
-          {loading ? 'Signing in…' : 'Sign In →'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <button
+            onClick={handleLogin}
+            disabled={loading}
+            style={{ padding: '13px 28px', borderRadius: '50px', border: 'none', backgroundColor: loading ? '#94a3b8' : '#14B8A6', color: '#fff', fontSize: '15px', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer' }}
+          >
+            {loading ? 'Signing in…' : 'Sign In →'}
+          </button>
+          <span style={{ fontSize: '22px', fontWeight: '700', color: '#0482FD' }}>Collections</span>
+        </div>
 
         <div style={{ marginTop: '28px', paddingTop: '24px', borderTop: '1px solid #f1f5f9' }}>
           <button
