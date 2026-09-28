@@ -76,7 +76,7 @@ function Login({ onLogin }) {
 
         {/* Logo — BIG */}
         <img
-          src="/servfixy-logo.png"
+          src="https://i.imgur.com/OPDKgyD.png"
           alt="Servfixy"
           style={{ width: '420px', maxWidth: '100%', display: 'block', marginBottom: '16px' }}
         />
@@ -186,7 +186,7 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
       {/* Logo */}
       <div style={{ padding: '20px 18px 16px', borderBottom: '1px solid rgba(255,255,255,0.12)', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-          <img src="/servfixy-logo.png" alt="Servfixy" style={{ width: '100%', maxWidth: '160px', height: 'auto', objectFit: 'contain', objectPosition: 'left' }} />
+          <img src="https://i.imgur.com/OPDKgyD.png" alt="Servfixy" style={{ width: '100%', maxWidth: '160px', height: 'auto', objectFit: 'contain', objectPosition: 'left' }} />
         </div>
         {isMobile && (
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '22px', color: '#64748b', cursor: 'pointer', padding: '4px' }}>✕</button>
@@ -9983,7 +9983,7 @@ function App() {
         <div style={{ position: 'sticky', top: 0, zIndex: 30, backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', flexShrink: 0 }}>
           <button onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#0C447C', padding: '4px 8px', borderRadius: '6px' }}>☰</button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <img src="/servfixy-logo.png" alt="Servfixy" style={{ height: '22px', objectFit: 'contain' }} />
+            <img src="https://i.imgur.com/OPDKgyD.png" alt="Servfixy" style={{ height: '22px', objectFit: 'contain' }} />
             <div style={{ background: '#185FA5', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', fontWeight: '700', color: '#fff', letterSpacing: '0.08em' }}>COLLECTIONS</div>
           </div>
           <div style={{ fontSize: '11px', color: '#94a3b8', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeTab.replace('Collections ', '')}</div>
