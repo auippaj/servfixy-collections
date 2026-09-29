@@ -752,6 +752,10 @@ function AdminTab({ token, initialSection, onNavigate }) {
                             style={{ fontSize: '11px', padding: '5px 10px', border: '1px solid #185FA5', borderRadius: '5px', backgroundColor: '#fff', color: '#185FA5', cursor: 'pointer', fontWeight: '600', marginTop: '4px' }}>
                             Resend
                           </button>
+                          <button onClick={() => handleResetPassword(user)}
+                            style={{ fontSize: '11px', padding: '5px 10px', border: '1px solid #7c3aed', borderRadius: '5px', backgroundColor: '#fff', color: '#7c3aed', cursor: 'pointer', fontWeight: '600', marginTop: '4px' }}>
+                            Reset PW
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -10043,6 +10047,7 @@ function App() {
 }
 
 export default App;
+
 
 
 
