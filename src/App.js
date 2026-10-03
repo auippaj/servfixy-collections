@@ -179,6 +179,7 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
   const isMobile = window.innerWidth < 768;
   // Track which groups are collapsed — default all expanded
   const [collapsed, setCollapsed] = React.useState({});
+  const [hidden, setHidden] = React.useState(false);
   const toggleGroup = (group) => setCollapsed(prev => ({ ...prev, [group]: !prev[group] }));
 
   const SidebarInner = () => (
@@ -192,8 +193,9 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '22px', color: '#64748b', cursor: 'pointer', padding: '4px' }}>✕</button>
         )}
       </div>
-      <div style={{ padding: '8px 14px', display: 'flex', justifyContent: 'flex-end', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.12)' }}>
+      <div style={{ padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.12)' }}>
         <button onClick={() => setCollapsed(NAV_ITEMS.every(x => collapsed[x.group]) ? {} : Object.fromEntries(NAV_ITEMS.map(x => [x.group, true])))} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.35)', borderRadius: '6px', color: '#ffffff', cursor: 'pointer', fontSize: '11px', fontWeight: '700', padding: '4px 10px', letterSpacing: '0.04em' }}>{NAV_ITEMS.every(x => collapsed[x.group]) ? '▼ Expand all' : '▲ Collapse all'}</button>
+        {!isMobile && <button onClick={() => setHidden(true)} title='Hide sidebar' style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', fontSize: '14px', fontWeight: '700', padding: '4px 8px', lineHeight: 1, borderRadius: '4px' }}>{'<<'}</button>}
       </div>
       {/* Nav groups */}
       <div className='sidebar-nav' style={{ flex: 1, overflowY: 'auto', padding: '12px 0', scrollbarWidth: 'thick', scrollbarColor: '#4a7fc1 #185FA5' }}>
@@ -246,6 +248,7 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
       </>
     );
   }
+  if (hidden) return <button onClick={() => setHidden(false)} title='Show sidebar' style={{ position: 'fixed', left: 0, top: '14px', zIndex: 200, background: '#185FA5', color: '#ffffff', border: 'none', borderRadius: '0 8px 8px 0', padding: '10px 12px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', boxShadow: '2px 2px 8px rgba(0,0,0,0.25)' }}>{'>>'}</button>;
   return <div style={{ position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}><SidebarInner /></div>;
 }
 
