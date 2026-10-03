@@ -192,6 +192,9 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '22px', color: '#64748b', cursor: 'pointer', padding: '4px' }}>✕</button>
         )}
       </div>
+      <div style={{ padding: '8px 14px', display: 'flex', justifyContent: 'flex-end', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.12)' }}>
+        <button onClick={() => setCollapsed(NAV_ITEMS.every(x => collapsed[x.group]) ? {} : Object.fromEntries(NAV_ITEMS.map(x => [x.group, true])))} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.35)', borderRadius: '6px', color: '#ffffff', cursor: 'pointer', fontSize: '11px', fontWeight: '700', padding: '4px 10px', letterSpacing: '0.04em' }}>{NAV_ITEMS.every(x => collapsed[x.group]) ? '▼ Expand all' : '▲ Collapse all'}</button>
+      </div>
       {/* Nav groups */}
       <div className='sidebar-nav' style={{ flex: 1, overflowY: 'auto', padding: '12px 0', scrollbarWidth: 'thick', scrollbarColor: '#4a7fc1 #185FA5' }}>
         {NAV_ITEMS.map(group => {
