@@ -2590,6 +2590,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
     { label: 'Active Cases', value: s.active_cases || 0, color: '#185FA5', sub: 'Not yet resolved', icon: '\uD83D\uDCC2', onClick: () => navigate('Collections Cases', { status: 'active', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'In Legal Pipeline', value: s.legal_cases || 0, color: '#ea580c', sub: `${legalPct}% of total cases`, icon: '\u2696\uFE0F', onClick: () => navigate('Collections Cases', { status: 'filed_with_attorney', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'Possession Granted', value: s.possession_count || 0, color: '#dc2626', sub: 'Eviction complete', icon: '\uD83D\uDD11', onClick: () => navigate('Collections Cases', { status: 'possession_granted', property_id: selectedProperty, aging_bucket: '' }) },
+    { label: 'Waiting on Set-out', value: s.setout_count || 0, color: '#0d9488', sub: `${fmtCurrency(s.setout_balance)} balance \u00b7 writ issued`, icon: '\uD83D\uDCE6', onClick: () => navigate('Collections Cases', { status: 'waiting_on_setout', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'Avg Balance / Case', value: fmtCurrency(avgBalance), color: '#7c3aed', sub: 'Per active case', icon: '\uD83E\uDDFE', onClick: () => navigate('Collections Reports', null) },
     { label: 'Avg Days Open', value: `${s.avg_days_open || 0}d`, color: '#185FA5', sub: 'Per active case', icon: '\u23F1\uFE0F', onClick: () => navigate('Collections Reports', null) },
     { label: 'Active Payment Plans', value: plans.active_plans || 0, color: '#15803d', sub: `${plans.completed_plans || 0} completed \u00b7 ${plans.broken_plans || 0} broken`, icon: '\uD83D\uDDD3\uFE0F', onClick: () => navigate('Collections Reports', null) },
@@ -3279,6 +3280,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
     { key: 'writ_filed', label: 'Writ Filed', color: '#dc2626' },
     { key: 'hearing_scheduled', label: 'Hearing Scheduled', color: '#7c3aed' },
     { key: 'possession_granted', label: 'Possession Granted', color: '#15803d' },
+    { key: 'waiting_on_setout', label: 'Waiting on Set-out', color: '#0d9488' },
     { key: 'closed_paid', label: 'Closed - Paid', color: '#34d399' },
     { key: 'closed_written_off', label: 'Closed - Written Off', color: '#94a3b8' },
   ];
@@ -3655,7 +3657,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
               <select value={bulkStatus} onChange={e => setBulkStatus(e.target.value)}
                 style={{ fontSize: '11px', padding: '4px 8px', backgroundColor: '#ffffff', border: '1px solid #C8E4F8', borderRadius: '5px', color: '#0C447C' }}>
                 <option value=''>Advance status to...</option>
-                {[{key:'active',label:'Active'},{key:'notice_issued',label:'Notice Issued'},{key:'filed_with_attorney',label:'Filed w/ Attorney'},{key:'fed',label:'FED'},{key:'writ_filed',label:'Writ Filed'},{key:'hearing_scheduled',label:'Hearing Scheduled'},{key:'possession_granted',label:'Possession Granted'},{key:'closed_paid',label:'Closed - Paid'},{key:'closed_written_off',label:'Written Off'}].map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+                {[{key:'active',label:'Active'},{key:'notice_issued',label:'Notice Issued'},{key:'filed_with_attorney',label:'Filed w/ Attorney'},{key:'fed',label:'FED'},{key:'writ_filed',label:'Writ Filed'},{key:'hearing_scheduled',label:'Hearing Scheduled'},{key:'possession_granted',label:'Possession Granted'},{key:'waiting_on_setout',label:'Waiting on Set-out'},{key:'closed_paid',label:'Closed - Paid'},{key:'closed_written_off',label:'Written Off'}].map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
               </select>
               {bulkStatus && (
                 <button onClick={handleBulkAdvanceStatus} disabled={bulkProcessing}
@@ -5285,6 +5287,8 @@ function CollectionsWorkspaceTab({ token }) {
     const daysSince   = lastContact ? Math.floor((Date.now() - lastContact) / 86400000) : 999;
     const balance     = Number(c.balance_owed || 0);
     const bucket      = c.aging_bucket || '';
+    if (c.status === 'waiting_on_setout')
+      return { icon: '📦', label: 'Writ issued: confirm the set-out date', priority: 'high' };
     if (['possession_granted','writ_of_possession'].includes(c.status))
       return { icon: '⚖️', label: 'Coordinate writ execution with attorney', priority: 'critical' };
     if (c.status === 'court_filed' || c.status === 'hearing_scheduled')
@@ -5363,7 +5367,7 @@ function CollectionsWorkspaceTab({ token }) {
       setStats({
         total_active: activeCases.length,
         high_priority: activeCases.filter(c => ['91-120', '120+'].includes(c.aging_bucket)).length,
-        in_legal: activeCases.filter(c => ['filed_with_attorney', 'fed', 'writ_filed', 'hearing_scheduled', 'possession_granted'].includes(c.status)).length,
+        in_legal: activeCases.filter(c => ['filed_with_attorney', 'fed', 'writ_filed', 'hearing_scheduled', 'possession_granted', 'waiting_on_setout'].includes(c.status)).length,
         total_balance: activeCases.reduce((s, c) => s + Number(c.balance_owed || 0), 0),
         notices_pending: activeCases.filter(c => c.status === 'active' && ['91-120', '120+'].includes(c.aging_bucket)).length,
         avg_balance: activeCases.length > 0 ? activeCases.reduce((s, c) => s + Number(c.balance_owed || 0), 0) / activeCases.length : 0,
@@ -5461,6 +5465,7 @@ function CollectionsWorkspaceTab({ token }) {
     { key: 'writ_filed', label: 'Writ Filed', color: '#dc2626' },
     { key: 'hearing_scheduled', label: 'Hearing Scheduled', color: '#7c3aed' },
     { key: 'possession_granted', label: 'Possession Granted', color: '#15803d' },
+    { key: 'waiting_on_setout', label: 'Waiting on Set-out', color: '#0d9488' },
     { key: 'closed_paid', label: 'Closed - Paid', color: '#34d399' },
     { key: 'closed_written_off', label: 'Closed - Written Off', color: '#94a3b8' },
   ];
@@ -6720,7 +6725,7 @@ function CollectionsImportTab({ token }) {
     'fed': 'fed',
     'writ filed': 'writ_filed', 'writ_filed': 'writ_filed', 'writ': 'writ_filed',
     'hearing scheduled': 'hearing_scheduled', 'hearing_scheduled': 'hearing_scheduled', 'hearing': 'hearing_scheduled',
-    'possession granted': 'possession_granted', 'possession_granted': 'possession_granted', 'possession': 'possession_granted',
+    'waiting on set-out': 'waiting_on_setout', 'waiting on setout': 'waiting_on_setout', 'waiting_on_setout': 'waiting_on_setout', 'possession granted': 'possession_granted', 'possession_granted': 'possession_granted', 'possession': 'possession_granted',
     'closed': 'closed_paid', 'paid': 'closed_paid', 'closed paid': 'closed_paid',
     'written off': 'closed_written_off', 'write off': 'closed_written_off',
   };
@@ -8439,7 +8444,7 @@ function CollectionsOwnerSummaryTab({ token }) {
         total_cases: activeCases.length,
         total_balance: activeCases.reduce((s, c) => s + Number(c.balance_owed || 0), 0),
         aging: agingBuckets,
-        in_legal: activeCases.filter(c => ['filed_with_attorney','fed','writ_filed','hearing_scheduled','possession_granted'].includes(c.status)).length,
+        in_legal: activeCases.filter(c => ['filed_with_attorney','fed','writ_filed','hearing_scheduled','possession_granted','waiting_on_setout'].includes(c.status)).length,
         active_plans: 0, // would need payment plans data
         generated_at: new Date().toISOString(),
       });
@@ -8552,6 +8557,7 @@ function CollectionsOwnerSummaryTab({ token }) {
                   { label: 'Filed with Attorney', count: cases.filter(c => c.status === 'filed_with_attorney').length, color: '#ea580c' },
                   { label: 'FED / Writ / Hearing', count: cases.filter(c => ['fed','writ_filed','hearing_scheduled'].includes(c.status)).length, color: '#dc2626' },
                   { label: 'Possession Granted', count: cases.filter(c => c.status === 'possession_granted').length, color: '#15803d' },
+                  { label: 'Waiting on Set-out', count: cases.filter(c => c.status === 'waiting_on_setout').length, color: '#0d9488' },
                 ].map((row, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #ffffff' }}>
                     <span style={{ fontSize: '13px', color: '#94a3b8' }}>{row.label}</span>
