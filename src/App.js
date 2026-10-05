@@ -3278,9 +3278,9 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
     { key: 'filed_with_attorney', label: 'Filed w/ Attorney', color: '#ea580c' },
     { key: 'fed', label: 'FED', color: '#f97316' },
     { key: 'writ_filed', label: 'Writ Filed', color: '#dc2626' },
+    { key: 'waiting_on_setout', label: 'Waiting on Set-out', color: '#0d9488' },
     { key: 'hearing_scheduled', label: 'Hearing Scheduled', color: '#7c3aed' },
     { key: 'possession_granted', label: 'Possession Granted', color: '#15803d' },
-    { key: 'waiting_on_setout', label: 'Waiting on Set-out', color: '#0d9488' },
     { key: 'closed_paid', label: 'Closed - Paid', color: '#34d399' },
     { key: 'closed_written_off', label: 'Closed - Written Off', color: '#94a3b8' },
   ];
@@ -3657,7 +3657,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
               <select value={bulkStatus} onChange={e => setBulkStatus(e.target.value)}
                 style={{ fontSize: '11px', padding: '4px 8px', backgroundColor: '#ffffff', border: '1px solid #C8E4F8', borderRadius: '5px', color: '#0C447C' }}>
                 <option value=''>Advance status to...</option>
-                {[{key:'active',label:'Active'},{key:'notice_issued',label:'Notice Issued'},{key:'filed_with_attorney',label:'Filed w/ Attorney'},{key:'fed',label:'FED'},{key:'writ_filed',label:'Writ Filed'},{key:'hearing_scheduled',label:'Hearing Scheduled'},{key:'possession_granted',label:'Possession Granted'},{key:'waiting_on_setout',label:'Waiting on Set-out'},{key:'closed_paid',label:'Closed - Paid'},{key:'closed_written_off',label:'Written Off'}].map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+                {[{key:'active',label:'Active'},{key:'notice_issued',label:'Notice Issued'},{key:'filed_with_attorney',label:'Filed w/ Attorney'},{key:'fed',label:'FED'},{key:'writ_filed',label:'Writ Filed'},{key:'waiting_on_setout',label:'Waiting on Set-out'},{key:'hearing_scheduled',label:'Hearing Scheduled'},{key:'possession_granted',label:'Possession Granted'},{key:'closed_paid',label:'Closed - Paid'},{key:'closed_written_off',label:'Written Off'}].map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
               </select>
               {bulkStatus && (
                 <button onClick={handleBulkAdvanceStatus} disabled={bulkProcessing}
@@ -5463,9 +5463,9 @@ function CollectionsWorkspaceTab({ token }) {
     { key: 'filed_with_attorney', label: 'Filed w/ Attorney', color: '#ea580c' },
     { key: 'fed', label: 'FED', color: '#f97316' },
     { key: 'writ_filed', label: 'Writ Filed', color: '#dc2626' },
+    { key: 'waiting_on_setout', label: 'Waiting on Set-out', color: '#0d9488' },
     { key: 'hearing_scheduled', label: 'Hearing Scheduled', color: '#7c3aed' },
     { key: 'possession_granted', label: 'Possession Granted', color: '#15803d' },
-    { key: 'waiting_on_setout', label: 'Waiting on Set-out', color: '#0d9488' },
     { key: 'closed_paid', label: 'Closed - Paid', color: '#34d399' },
     { key: 'closed_written_off', label: 'Closed - Written Off', color: '#94a3b8' },
   ];
