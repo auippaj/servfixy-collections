@@ -5341,7 +5341,7 @@ function CollectionsReportsTab({ token, onBack }) {
   const showDateFilter      = activeReport === 'coordinator_activity';
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', color: '#0C447C' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', height: '100vh', overflowY: 'auto', color: '#0C447C' }}>
 
       {/* Header */}
       <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#ffffff', borderBottom: '1px solid #EDF6FE', marginBottom: '0', padding: '20px 24px', display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
@@ -5431,7 +5431,7 @@ function CollectionsReportsTab({ token, onBack }) {
       </div>
 
       {/* Results */}
-      <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', overflow: 'hidden' }}>
+      <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', overflow: 'hidden', flexShrink: 0 }}>
         {/* Report Meta Bar */}
         {reportData && (
           <div style={{ padding: '12px 20px', backgroundColor: '#ffffff', borderBottom: '1px solid #ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
