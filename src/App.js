@@ -2574,7 +2574,10 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   const avgBalance = s.active_cases > 0 ? Math.round(Number(s.total_balance) / Number(s.active_cases)) : 0;
 
   const gprKey = selectedProperty || 'all';
-  const currentGpr = Number(gpr[gprKey] || 0);
+  const isStateGroup = String(selectedProperty || '').startsWith('state:');
+  const currentGpr = isStateGroup
+    ? properties.filter(p => p.state === selectedProperty.slice(6)).reduce((sum, p) => sum + Number(gpr[p.id] || 0), 0)
+    : Number(gpr[gprKey] || 0);
   const delinquencyPct = currentGpr > 0 ? ((Number(s.total_balance) / currentGpr) * 100).toFixed(1) : null;
   const evictionCount = Number(s.eviction_count || 0);
   const totalCasesNum = Number(s.total_cases || 0);
@@ -2585,7 +2588,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
     { label: 'Total Delinquent Balance', value: fmtCurrency(s.total_balance), color: '#dc2626', sub: `${s.total_cases || 0} total cases`, icon: '\uD83D\uDCB8', onClick: () => navigate('Collections Cases', { status: '', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'Amount Recovered', value: fmtCurrency(s.amount_recovered), color: '#15803d', sub: `${s.closed_paid_count || 0} cases closed paid`, icon: '\u2705', onClick: () => navigate('Collections Cases', { status: 'closed_paid', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'Recovery Rate', value: `${recoveryRate}%`, color: '#14B8A6', sub: recoveryRate >= 50 ? '\u2191 On track' : '\u2193 Below target', icon: '\uD83D\uDCCA', onClick: () => navigate('Collections Cases', { status: 'closed_paid', property_id: selectedProperty, aging_bucket: '' }) },
-    { label: 'Delinquency %', value: delinquencyPct !== null ? `${delinquencyPct}%` : 'Set GPR', color: delinquencyPct !== null ? (Number(delinquencyPct) > 10 ? '#dc2626' : Number(delinquencyPct) > 5 ? '#ea580c' : '#15803d') : '#94a3b8', sub: delinquencyPct !== null ? `of $${currentGpr.toLocaleString()} GPR` : 'Click to enter monthly GPR', icon: '\uD83D\uDCC9', onClick: () => setEditingGpr(true) },
+    { label: 'Delinquency %', value: delinquencyPct !== null ? `${delinquencyPct}%` : 'Set GPR', color: delinquencyPct !== null ? (Number(delinquencyPct) > 10 ? '#dc2626' : Number(delinquencyPct) > 5 ? '#ea580c' : '#15803d') : '#94a3b8', sub: delinquencyPct !== null ? `of $${currentGpr.toLocaleString()} GPR` : 'Click to enter monthly GPR', icon: '\uD83D\uDCC9', onClick: () => { if (!isStateGroup) setEditingGpr(true); } },
     { label: 'Eviction %', value: `${evictionPct}%`, color: Number(evictionPct) > 5 ? '#dc2626' : Number(evictionPct) > 2 ? '#ea580c' : '#15803d', sub: currentGpr > 0 ? `${evictionCount} cases · $${evictionBalance.toLocaleString('en-US', {minimumFractionDigits:0})} of GPR` : `${evictionCount} of ${totalCasesNum} cases`, icon: '\u2696\uFE0F', onClick: () => navigate('Collections Cases', { status: 'filed_with_attorney', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'Active Cases', value: s.active_cases || 0, color: '#185FA5', sub: 'Not yet resolved', icon: '\uD83D\uDCC2', onClick: () => navigate('Collections Cases', { status: 'active', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'In Legal Pipeline', value: s.legal_cases || 0, color: '#ea580c', sub: `${legalPct}% of total cases`, icon: '\u2696\uFE0F', onClick: () => navigate('Collections Cases', { status: 'filed_with_attorney', property_id: selectedProperty, aging_bucket: '' }) },
@@ -2807,7 +2810,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
           <select value={selectedProperty} onChange={handlePropertyChange}
             style={{ padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #C8E4F8', borderRadius: '8px', color: '#0C447C', fontSize: '13px' }}>
             <option value=''>All Properties</option>
-            {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} disabled style={{fontWeight:'700',color:'#94a3b8',backgroundColor:'#EDF6FE'}}>── {s} ──</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
+            {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} value={`state:${s}`} style={{fontWeight:'700',color:'#0C447C',backgroundColor:'#EDF6FE'}}>{`${s} \u2014 All Properties`}</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
           </select>
           <button onClick={() => fetchData(selectedProperty)}
             style={{ padding: '8px 16px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '8px', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
@@ -3632,7 +3635,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
           />
           <select value={filterProperty} onChange={e => setFilterProperty(e.target.value)} style={{ ...inputStyle, marginBottom: '8px' }}>
             <option value=''>All Properties</option>
-            {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} disabled style={{fontWeight:'700',color:'#94a3b8',backgroundColor:'#EDF6FE'}}>── {s} ──</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
+            {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} value={`state:${s}`} style={{fontWeight:'700',color:'#0C447C',backgroundColor:'#EDF6FE'}}>{`${s} \u2014 All Properties`}</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
           </select>
           <div style={{ display: 'flex', gap: '8px' }}>
             <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ ...inputStyle }}>
