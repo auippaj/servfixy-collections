@@ -2594,6 +2594,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
     { label: 'In Legal Pipeline', value: s.legal_cases || 0, color: '#ea580c', sub: `${legalPct}% of total cases`, icon: '\u2696\uFE0F', onClick: () => navigate('Collections Cases', { status: 'filed_with_attorney', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'Possession Granted', value: s.possession_count || 0, color: '#dc2626', sub: 'Eviction complete', icon: '\uD83D\uDD11', onClick: () => navigate('Collections Cases', { status: 'possession_granted', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'Waiting on Set-out', value: s.setout_count || 0, color: '#0d9488', sub: `${fmtCurrency(s.setout_balance)} balance \u00b7 writ issued`, icon: '\uD83D\uDCE6', onClick: () => navigate('Collections Cases', { status: 'waiting_on_setout', property_id: selectedProperty, aging_bucket: '' }) },
+    { label: 'Bankruptcy Hold', value: s.bankruptcy_count || 0, color: '#7f1d1d', sub: `${fmtCurrency(s.bankruptcy_balance)} balance \u00b7 collections paused`, icon: '\u2696\uFE0F', onClick: () => navigate('Collections Cases', { status: 'bankruptcy', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'Avg Balance / Case', value: fmtCurrency(avgBalance), color: '#7c3aed', sub: 'Per active case', icon: '\uD83E\uDDFE', onClick: () => navigate('Collections Reports', null) },
     { label: 'Avg Days Open', value: `${s.avg_days_open || 0}d`, color: '#185FA5', sub: 'Per active case', icon: '\u23F1\uFE0F', onClick: () => navigate('Collections Reports', null) },
     { label: 'Active Payment Plans', value: plans.active_plans || 0, color: '#15803d', sub: `${plans.completed_plans || 0} completed \u00b7 ${plans.broken_plans || 0} broken`, icon: '\uD83D\uDDD3\uFE0F', onClick: () => navigate('Collections Reports', null) },
@@ -3207,7 +3208,7 @@ function CoordinatorAssignField({ caseId, currentCoordinator, token, onAssigned 
 // ── End Coordinator Assign Field ───────────────────────────────────────────────
 
 // ── Collections Cases Tab ──────────────────────────────────────────────────────
-function CollectionsCasesTab({ token, initialFilters, onBack }) {
+function CollectionsCasesTab({ token, user, initialFilters, onBack }) {
   const [cases, setCases] = useState([]);
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -3247,6 +3248,12 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
   const [noteSubmitting, setNoteSubmitting] = useState(false);
   const [showNoteForm, setShowNoteForm] = useState(false);
   const [showAttorneyModal, setShowAttorneyModal] = useState(false);
+  const [showBankruptcyModal, setShowBankruptcyModal] = useState(false);
+  const [showLiftModal, setShowLiftModal] = useState(false);
+  const [bkCaseNumber, setBkCaseNumber] = useState('');
+  const [liftChoice, setLiftChoice] = useState('previous');
+  const [bkError, setBkError] = useState('');
+  const [bkBusy, setBkBusy] = useState(false);
   const [attorneySubmitting, setAttorneySubmitting] = useState(false);
   const [attorneyResult, setAttorneyResult] = useState(null);
   const [paymentLogForm, setPaymentLogForm] = useState({ amount: '', due_date: new Date().toISOString().split('T')[0], paid_date: new Date().toISOString().split('T')[0], status: 'paid', notes: '' });
@@ -3284,6 +3291,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
     { key: 'waiting_on_setout', label: 'Waiting on Set-out', color: '#0d9488' },
     { key: 'hearing_scheduled', label: 'Hearing Scheduled', color: '#7c3aed' },
     { key: 'possession_granted', label: 'Possession Granted', color: '#15803d' },
+    { key: 'bankruptcy', label: 'Bankruptcy', color: '#7f1d1d' },
     { key: 'closed_paid', label: 'Closed - Paid', color: '#34d399' },
     { key: 'closed_written_off', label: 'Closed - Written Off', color: '#94a3b8' },
   ];
@@ -3604,6 +3612,43 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
   const inputStyle = { width: '100%', padding: '9px 12px', backgroundColor: '#ffffff', border: '1px solid #C8E4F8', borderRadius: '7px', color: '#0C447C', fontSize: '13px', boxSizing: 'border-box' };
   const labelStyle = { fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' };
   const btnPrimary = { padding: '9px 18px', backgroundColor: '#14B8A6', border: 'none', borderRadius: '7px', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer' };
+  const onHold = !!caseDetail && caseDetail.status === 'bankruptcy';
+  const holdBtn = onHold ? { opacity: 0.4, cursor: 'not-allowed' } : {};
+  const isAdminUser = user?.role === 'admin';
+  const canMarkBk = ['admin', 'coordinator'].includes(user?.role);
+
+  const handleMarkBankruptcy = async () => {
+    if (!bkCaseNumber.trim()) { setBkError('Bankruptcy case number is required.'); return; }
+    setBkBusy(true); setBkError('');
+    try {
+      const res = await fetch(`${API_URL}/api/collections/cases/${caseDetail.id}/bankruptcy`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ case_number: bkCaseNumber.trim() }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Could not place the hold.');
+      setShowBankruptcyModal(false);
+      await fetchCaseDetail(caseDetail.id);
+      fetchCases();
+    } catch (err) { setBkError(err.message); }
+    finally { setBkBusy(false); }
+  };
+
+  const handleLiftBankruptcy = async () => {
+    setBkBusy(true); setBkError('');
+    try {
+      const res = await fetch(`${API_URL}/api/collections/cases/${caseDetail.id}/bankruptcy/lift`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ return_to: liftChoice }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Could not lift the hold.');
+      setShowLiftModal(false);
+      await fetchCaseDetail(caseDetail.id);
+      fetchCases();
+    } catch (err) { setBkError(err.message); }
+    finally { setBkBusy(false); }
+  };
   const btnSecondary = { padding: '9px 18px', backgroundColor: '#ffffff', border: '1px solid #C8E4F8', borderRadius: '7px', color: '#94a3b8', fontSize: '13px', cursor: 'pointer' };
 
   return (
@@ -3791,7 +3836,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                     } catch { setSendResult(p => ({ ...p, [c.id]: 'email_err' })); }
                     finally { setSendingEmail(p => ({ ...p, [c.id]: false })); }
                   }}
-                  disabled={sendingEmail[c.id]}
+                  disabled={sendingEmail[c.id] || c.status === 'bankruptcy'}
                   title={c.resident_email ? `Email ${c.resident_email}` : 'No email on file — import contacts first'}
                   style={{ fontSize: '10px', padding: '2px 9px', borderRadius: '4px', border: 'none', fontWeight: '600',
                     cursor: c.resident_email ? 'pointer' : 'not-allowed',
@@ -3809,7 +3854,7 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                     setSmsResult(null);
                     setSmsModal({ caseId: c.id, residentName: c.resident_name, phone: c.resident_phone, propertyId: c.property_id });
                   }}
-                  disabled={sendingSms[c.id]}
+                  disabled={sendingSms[c.id] || c.status === 'bankruptcy'}
                   title={c.resident_phone ? `Text ${c.resident_phone}` : 'No phone on file — import contacts first'}
                   style={{ fontSize: '10px', padding: '2px 9px', borderRadius: '4px', border: 'none', fontWeight: '600',
                     cursor: c.resident_phone ? 'pointer' : 'not-allowed',
@@ -3970,13 +4015,35 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
               </div>
             </div>
 
+            {onHold && (
+              <div style={{ backgroundColor: '#fef2f2', border: '2px solid #7f1d1d', borderRadius: '10px', padding: '14px 18px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: '800', color: '#7f1d1d', letterSpacing: '0.04em' }}>BANKRUPTCY HOLD</div>
+                    <div style={{ fontSize: '13px', color: '#7f1d1d', marginTop: '4px' }}>
+                      Case # {caseDetail.bankruptcy_case_number || 'n/a'} &middot; placed {caseDetail.bankruptcy_marked_at ? new Date(caseDetail.bankruptcy_marked_at).toLocaleDateString() : ''}{caseDetail.bankruptcy_marked_by ? ` by ${caseDetail.bankruptcy_marked_by}` : ''} &middot; was {fmtStatus(caseDetail.status_before_bankruptcy || 'active')}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#991b1b', marginTop: '4px' }}>
+                      Notices, texts, emails, payment plans, attorney referrals and automated agents are stopped on this case. You can still add internal notes.
+                    </div>
+                  </div>
+                  {isAdminUser
+                    ? <button onClick={() => { setLiftChoice('previous'); setBkError(''); setShowLiftModal(true); }} style={{ ...btnPrimary, backgroundColor: '#7f1d1d' }}>Lift Hold</button>
+                    : <div style={{ fontSize: '12px', color: '#991b1b', fontStyle: 'italic' }}>Only an admin can lift this hold.</div>}
+                </div>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-              <button onClick={() => { setShowTouchpoint(true); setShowPaymentPlan(false); setFormError(''); }} style={btnPrimary}>+ Log Contact</button>
-              <button onClick={() => { setShowPaymentPlan(true); setShowTouchpoint(false); setShowNoticeForm(false); setFormError(''); }} style={{ ...btnPrimary, backgroundColor: '#185FA5' }}>+ Payment Plan</button>
-              <button onClick={() => { setShowNoticeForm(true); setShowTouchpoint(false); setShowPaymentPlan(false); setShowNoteForm(false); setFormError(''); }} style={{ ...btnPrimary, backgroundColor: '#b45309' }}>Generate Notice</button>
+              <button onClick={() => { setShowTouchpoint(true); setShowPaymentPlan(false); setFormError(''); }} disabled={onHold} style={{ ...btnPrimary, ...holdBtn }}>+ Log Contact</button>
+              <button onClick={() => { setShowPaymentPlan(true); setShowTouchpoint(false); setShowNoticeForm(false); setFormError(''); }} disabled={onHold} style={{ ...btnPrimary, backgroundColor: '#185FA5', ...holdBtn }}>+ Payment Plan</button>
+              <button onClick={() => { setShowNoticeForm(true); setShowTouchpoint(false); setShowPaymentPlan(false); setShowNoteForm(false); setFormError(''); }} disabled={onHold} style={{ ...btnPrimary, backgroundColor: '#b45309', ...holdBtn }}>Generate Notice</button>
               <button onClick={() => { setShowNoteForm(true); setShowTouchpoint(false); setShowPaymentPlan(false); setShowNoticeForm(false); setFormError(''); }} style={{ ...btnPrimary, backgroundColor: '#185FA5' }}>+ Internal Note</button>
-              <button onClick={() => setShowAttorneyModal(true)} style={{ ...btnPrimary, backgroundColor: '#7c3aed' }}>⚖️ Send to Attorney</button>
+              <button onClick={() => setShowAttorneyModal(true)} disabled={onHold} style={{ ...btnPrimary, backgroundColor: '#7c3aed', ...holdBtn }}>⚖️ Send to Attorney</button>
+              {canMarkBk && !onHold && (
+                <button onClick={() => { setBkCaseNumber(''); setBkError(''); setShowBankruptcyModal(true); }} style={{ ...btnPrimary, backgroundColor: '#7f1d1d' }}>Bankruptcy</button>
+              )}
             </div>
 
             {/* Log Touchpoint Form */}
@@ -4397,6 +4464,48 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
       )}
 
       {/* Send to Attorney Modal */}
+      {showBankruptcyModal && caseDetail && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(12,68,124,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '24px', width: '460px', maxWidth: '92vw' }}>
+            <h3 style={{ margin: '0 0 8px', fontSize: '16px', color: '#7f1d1d' }}>Place Bankruptcy Hold</h3>
+            <div style={{ fontSize: '13px', color: '#475569', marginBottom: '14px' }}>
+              {caseDetail.resident_name} &middot; Unit {caseDetail.unit_number}. This stops all notices, texts, emails, payment plans, attorney referrals and automated agent activity on this case until an admin lifts the hold.
+            </div>
+            {bkError && <div style={{ color: '#dc2626', fontSize: '13px', marginBottom: '10px' }}>{bkError}</div>}
+            <label style={labelStyle}>Bankruptcy Case Number</label>
+            <input value={bkCaseNumber} onChange={e => setBkCaseNumber(e.target.value)} style={inputStyle} placeholder='e.g. 26-12345' autoFocus />
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '18px' }}>
+              <button onClick={() => setShowBankruptcyModal(false)} style={{ ...btnPrimary, backgroundColor: '#94a3b8' }}>Cancel</button>
+              <button onClick={handleMarkBankruptcy} disabled={bkBusy} style={{ ...btnPrimary, backgroundColor: '#7f1d1d' }}>{bkBusy ? 'Placing...' : 'Place Hold'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showLiftModal && caseDetail && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(12,68,124,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '24px', width: '460px', maxWidth: '92vw' }}>
+            <h3 style={{ margin: '0 0 8px', fontSize: '16px', color: '#7f1d1d' }}>Lift Bankruptcy Hold</h3>
+            <div style={{ fontSize: '13px', color: '#475569', marginBottom: '14px' }}>Choose where this case goes now that the bankruptcy is dismissed or discharged.</div>
+            {bkError && <div style={{ color: '#dc2626', fontSize: '13px', marginBottom: '10px' }}>{bkError}</div>}
+            {[
+              { key: 'previous', label: `Return to previous status (${fmtStatus(caseDetail.status_before_bankruptcy || 'active')})` },
+              { key: 'active', label: 'Go to Active for review' },
+              { key: 'closed_written_off', label: 'Closed - Written Off (discharged)' },
+            ].map(o => (
+              <label key={o.key} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', border: `1px solid ${liftChoice === o.key ? '#7f1d1d' : '#C8E4F8'}`, borderRadius: '8px', marginBottom: '8px', cursor: 'pointer', fontSize: '13px', color: '#0C447C' }}>
+                <input type='radio' name='liftChoice' checked={liftChoice === o.key} onChange={() => setLiftChoice(o.key)} />
+                {o.label}
+              </label>
+            ))}
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '14px' }}>
+              <button onClick={() => setShowLiftModal(false)} style={{ ...btnPrimary, backgroundColor: '#94a3b8' }}>Cancel</button>
+              <button onClick={handleLiftBankruptcy} disabled={bkBusy} style={{ ...btnPrimary, backgroundColor: '#7f1d1d' }}>{bkBusy ? 'Lifting...' : 'Lift Hold'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showAttorneyModal && caseDetail && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           onClick={() => { setShowAttorneyModal(false); setAttorneyResult(null); }}>
@@ -5727,6 +5836,7 @@ function CollectionsWorkspaceTab({ token }) {
     { key: 'waiting_on_setout', label: 'Waiting on Set-out', color: '#0d9488' },
     { key: 'hearing_scheduled', label: 'Hearing Scheduled', color: '#7c3aed' },
     { key: 'possession_granted', label: 'Possession Granted', color: '#15803d' },
+    { key: 'bankruptcy', label: 'Bankruptcy', color: '#7f1d1d' },
     { key: 'closed_paid', label: 'Closed - Paid', color: '#34d399' },
     { key: 'closed_written_off', label: 'Closed - Written Off', color: '#94a3b8' },
   ];
@@ -10297,7 +10407,7 @@ function App() {
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} onLogout={handleLogout} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
         {activeTab === 'Collections Analytics' && <CollectionsAnalyticsTab token={token} onNavigate={(tab, filters) => { if (filters) setCollectionsCaseFilter(f => ({...f, ...filters})); setActiveTab(tab); }} />}
-        {activeTab === 'Collections Cases' && <CollectionsCasesTab token={token} initialFilters={collectionsCaseFilter} onBack={() => { setCollectionsCaseFilter({ status: '', property_id: '', aging_bucket: '' }); setActiveTab('Collections Analytics'); }} />}
+        {activeTab === 'Collections Cases' && <CollectionsCasesTab token={token} user={user} initialFilters={collectionsCaseFilter} onBack={() => { setCollectionsCaseFilter({ status: '', property_id: '', aging_bucket: '' }); setActiveTab('Collections Analytics'); }} />}
         {activeTab === 'Collections Reports' && <CollectionsReportsTab token={token} onBack={() => setActiveTab('Collections Analytics')} />}
         {activeTab === 'Coordinator Workspace' && <CollectionsWorkspaceTab token={token} />}
         {activeTab === 'Escalation Rules' && <CollectionsEscalationTab token={token} />}
