@@ -5089,10 +5089,38 @@ function CollectionsReportsTab({ token, onBack }) {
     const fmtD = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '\u2014';
     const total = rows.reduce((sum, r) => sum + Number(r.balance_owed || 0), 0);
     const flagged = rows.filter(r => r.needs_review).length;
+    const scopeParts = [];
+    if (String(filterProperty).startsWith('state:')) scopeParts.push(`${String(filterProperty).slice(6)} \u2014 all properties`);
+    else if (filterProperty) scopeParts.push((properties.find(p => p.id === filterProperty) || {}).name || 'Selected property');
+    if (filterState) scopeParts.push(`${String(filterState).toUpperCase()} only`);
+    const scopeLabel = scopeParts.length ? scopeParts.join(' \u00b7 ') : 'All states and properties';
+    const asOf = reportData && reportData.generated_at ? new Date(reportData.generated_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : '';
+    const propCount = new Set(rows.map(r => r.property_name)).size;
     const th = { padding: '10px 12px', textAlign: 'left', color: '#94a3b8', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', borderBottom: '1px solid #C8E4F8' };
     const td = { padding: '10px 12px', fontSize: '12px', color: '#94a3b8', whiteSpace: 'nowrap' };
     return (
       <div>
+        <div style={{ background: 'linear-gradient(135deg, #0C447C 0%, #185FA5 100%)', borderBottom: '4px solid #14B8A6', padding: '22px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '16px', flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#14B8A6', marginBottom: '6px' }}>Servfixy Collections</div>
+            <div style={{ fontSize: '26px', fontWeight: '800', color: '#ffffff', lineHeight: 1.1 }}>Eviction Status Report</div>
+            <div style={{ fontSize: '14px', color: '#C8E4F8', marginTop: '8px' }}>{scopeLabel}</div>
+            <div style={{ fontSize: '12px', color: '#9CC4EA', marginTop: '2px' }}>As of {asOf}</div>
+          </div>
+          <div style={{ display: 'flex', gap: '28px' }}>
+            {[
+              { label: 'Cases in eviction', value: rows.length },
+              { label: 'Balance at stake', value: fmtCurrency(total) },
+              { label: 'Properties', value: propCount },
+              { label: 'Need review', value: flagged },
+            ].map(k => (
+              <div key={k.label} style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '22px', fontWeight: '800', color: k.label === 'Need review' && flagged > 0 ? '#FCD34D' : '#ffffff' }}>{k.value}</div>
+                <div style={{ fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9CC4EA' }}>{k.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', padding: '16px 20px', borderBottom: '1px solid #EDF6FE' }}>
           {STAGES.map(st => {
             const group = rows.filter(r => r.status === st.key);
