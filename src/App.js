@@ -3750,14 +3750,16 @@ function CollectionsCasesTab({ token, initialFilters, onBack }) {
                     </div>
                   )}
                   <div>
-                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#0C447C' }}>{c.resident_name}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <div style={{ fontSize: '14px', fontWeight: '600', color: '#0C447C' }}>{c.resident_name}</div>
+                      <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', backgroundColor: 'rgba(20,184,166,0.12)', color: statusColor(c.status), fontWeight: '600', whiteSpace: 'nowrap' }}>{(STATUS_PIPELINE.find(p => p.key === c.status) || {}).label || fmtStatus(c.status)}</span>
+                    </div>
                     <div style={{ fontSize: '12px', color: '#94a3b8' }}>Unit {c.unit_number} &nbsp;·&nbsp; {c.property_name}</div>
                   </div>
                 </div>
                 <div style={{ fontSize: '15px', fontWeight: '700', color: '#dc2626' }}>{fmtCurrency(c.balance_owed)}</div>
               </div>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', backgroundColor: 'rgba(20,184,166,0.12)', color: statusColor(c.status), fontWeight: '600' }}>{fmtStatus(c.status)}</span>
                 <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', backgroundColor: '#ffffff', color: AGING_COLORS[c.aging_bucket] || '#94a3b8', fontWeight: '600' }}>{c.aging_bucket} Days</span>
                 {c.notice_to_vacate && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', fontWeight: '700', backgroundColor: '#EDF6FE', color: '#475569' }}>NTV</span>}
                 {c.payment_probability != null && (
