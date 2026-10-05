@@ -2336,7 +2336,7 @@ function NoticeDeliveryTab({ token }) {
       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', alignItems: 'center' }}>
         <select value={filterProp} onChange={e => setFilterProp(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', color: '#0C447C' }}>
           <option value="">All Properties</option>
-          {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          {[...new Set(properties.map(p => p.state))].filter(Boolean).sort().flatMap(s => [<option key={`state-${s}`} value={`state:${s}`} style={{fontWeight:'700',color:'#0C447C',backgroundColor:'#EDF6FE'}}>{`${s} \u2014 All Properties`}</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
         </select>
         <span style={{ fontSize: '12px', color: '#94a3b8' }}>{deliveries.length} records</span>
       </div>
@@ -5139,7 +5139,7 @@ function CollectionsReportsTab({ token, onBack }) {
             <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Property</div>
             <select value={filterProperty} onChange={e => setFilterProperty(e.target.value)} style={{ ...inputStyle, minWidth: '160px' }}>
               <option value=''>All Properties</option>
-              {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} disabled style={{fontWeight:'700',color:'#94a3b8',backgroundColor:'#EDF6FE'}}>── {s} ──</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
+              {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} value={`state:${s}`} style={{fontWeight:'700',color:'#0C447C',backgroundColor:'#EDF6FE'}}>{`${s} \u2014 All Properties`}</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
             </select>
           </div>
         )}
@@ -5216,6 +5216,7 @@ function CollectionsWorkspaceTab({ token }) {
   const [stats, setStats] = useState(null);
   const [propertyList, setPropertyList] = useState([]);
   const [propertyFilter, setPropertyFilter] = useState('all');
+  const [stateList, setStateList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedCase, setSelectedCase] = useState(null);
   const [caseDetail, setCaseDetail] = useState(null);
@@ -5323,7 +5324,7 @@ function CollectionsWorkspaceTab({ token }) {
     const activeFilter = filterOverride !== undefined ? filterOverride : propertyFilter;
     try {
       // Pull all cases assigned to or last touched by this coordinator
-      const res = await fetch(`${API_URL}/api/collections/cases`, {
+      const res = await fetch(`${API_URL}/api/collections/cases?limit=5000`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const allCases = await res.json();
@@ -5343,10 +5344,13 @@ function CollectionsWorkspaceTab({ token }) {
       // Unique properties for filter
       const uniqueProps = [...new Set(activeCases.map(c => c.property_name).filter(Boolean))];
       setPropertyList(uniqueProps);
+      setStateList([...new Set(activeCases.map(c => c.property_state).filter(Boolean))].sort());
 
       // Apply property filter
       const filteredCases = activeFilter && activeFilter !== 'all'
-        ? activeCases.filter(c => c.property_name === activeFilter)
+        ? (String(activeFilter).startsWith('state:')
+            ? activeCases.filter(c => c.property_state === String(activeFilter).slice(6))
+            : activeCases.filter(c => c.property_name === activeFilter))
         : activeCases;
 
       // Build task queue — cases needing attention (no recent contact)
@@ -5733,6 +5737,7 @@ function CollectionsWorkspaceTab({ token }) {
                 onChange={e => { const v = e.target.value; setPropertyFilter(v); fetchWorkspace(coordinator, v); }}
                 style={{ width: '100%', padding: '6px 10px', border: '1px solid #C8E4F8', borderRadius: '7px', fontSize: '11px', color: '#0C447C', backgroundColor: '#ffffff', cursor: 'pointer' }}>
                 <option value="all">All Properties ({propertyList.length})</option>
+                {stateList.map(st => <option key={`state-${st}`} value={`state:${st}`} style={{fontWeight:'700'}}>{`${st} \u2014 All Properties`}</option>)}
                 {propertyList.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
@@ -6417,7 +6422,7 @@ function CollectionsDocumentVault({ token }) {
     setLoading(true);
     try {
       const [caseRes, propRes] = await Promise.all([
-        fetch(`${API_URL}/api/collections/cases${filterProp ? `?property_id=${filterProp}` : ''}`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_URL}/api/collections/cases?limit=5000${filterProp ? `&property_id=${filterProp}` : ''}`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_URL}/api/properties`, { headers: { Authorization: `Bearer ${token}` } }),
       ]);
       const casesData = await caseRes.json();
@@ -6536,7 +6541,7 @@ function CollectionsDocumentVault({ token }) {
           <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder='Search resident or unit...' style={{ ...inputStyle, marginBottom: '8px' }} />
           <select value={filterProp} onChange={e => setFilterProp(e.target.value)} style={inputStyle}>
             <option value=''>All Properties</option>
-            {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} disabled style={{fontWeight:'700',color:'#94a3b8',backgroundColor:'#EDF6FE'}}>── {s} ──</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
+            {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} value={`state:${s}`} style={{fontWeight:'700',color:'#0C447C',backgroundColor:'#EDF6FE'}}>{`${s} \u2014 All Properties`}</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
           </select>
         </div>
 
@@ -7825,7 +7830,7 @@ function PromisesToPayTab({ token }) {
           <select value={filterProp} onChange={e => setFilterProp(e.target.value)}
             style={{ padding: '8px 12px', border: '1px solid #C8E4F8', borderRadius: '7px', fontSize: '13px', color: '#0C447C', backgroundColor: '#fff' }}>
             <option value="">All Properties</option>
-            {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} disabled style={{fontWeight:'700',color:'#94a3b8',backgroundColor:'#EDF6FE'}}>── {s} ──</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
+            {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} value={`state:${s}`} style={{fontWeight:'700',color:'#0C447C',backgroundColor:'#EDF6FE'}}>{`${s} \u2014 All Properties`}</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
           </select>
           <div style={{ display: 'flex', border: '1px solid #C8E4F8', borderRadius: '7px', overflow: 'hidden' }}>
             {['calendar', 'list'].map(v => (
@@ -8434,7 +8439,7 @@ function CollectionsOwnerSummaryTab({ token }) {
     try {
       const [propRes, caseRes] = await Promise.all([
         fetch(`${API_URL}/api/properties`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/collections/cases${propId && propId !== 'all' ? `?property_id=${propId}` : ''}`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_URL}/api/collections/cases?limit=5000${propId && propId !== 'all' ? `&property_id=${propId}` : ''}`, { headers: { Authorization: `Bearer ${token}` } }),
       ]);
       const propsData = await propRes.json();
       const casesData = await caseRes.json();
@@ -8466,7 +8471,9 @@ function CollectionsOwnerSummaryTab({ token }) {
 
   const selectedPropName = selectedProperty === 'all'
     ? 'All Properties'
-    : (properties.find(p => p.id === selectedProperty)?.name || '');
+    : String(selectedProperty).startsWith('state:')
+      ? `${String(selectedProperty).slice(6)} Properties`
+      : (properties.find(p => p.id === selectedProperty)?.name || '');
 
   // Share / print function
   const handlePrint = () => window.print();
@@ -8486,7 +8493,7 @@ function CollectionsOwnerSummaryTab({ token }) {
             <select value={selectedProperty} onChange={handlePropertyChange}
               style={{ padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #C8E4F8', borderRadius: '7px', color: '#0C447C', fontSize: '13px' }}>
               <option value='all'>All Properties</option>
-              {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} disabled style={{fontWeight:'700',color:'#94a3b8',backgroundColor:'#EDF6FE'}}>── {s} ──</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
+              {['all', ...new Set(properties.map(p => p.state))].filter(Boolean).flatMap((s, i) => i === 0 ? [] : [<option key={`state-${s}`} value={`state:${s}`} style={{fontWeight:'700',color:'#0C447C',backgroundColor:'#EDF6FE'}}>{`${s} \u2014 All Properties`}</option>, ...properties.filter(p => p.state === s).map(p => <option key={p.id} value={p.id}>{p.name}</option>)])}
             </select>
             <input value={ownerName} onChange={e => setOwnerName(e.target.value)}
               placeholder='Owner name (optional)'
