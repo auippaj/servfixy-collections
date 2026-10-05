@@ -4677,6 +4677,7 @@ function CollectionsReportsTab({ token, onBack }) {
 
   const handleExportCSV = () => {
     if (!reportData || !reportData.rows || reportData.rows.length === 0) return;
+    if (activeReport === 'eviction_status') { handleExportEvictionCSV(); return; }
     const headers = Object.keys(reportData.rows[0]);
     const csvRows = [
       headers.join(','),
@@ -5174,6 +5175,146 @@ function CollectionsReportsTab({ token, onBack }) {
     );
   };
 
+  // ---- Eviction Status report: friendly CSV, Print and PDF ----
+  const EVICTION_STAGES = [
+    { key: 'filed_with_attorney', label: 'Filed w/ Attorney' },
+    { key: 'fed', label: 'FED' },
+    { key: 'hearing_scheduled', label: 'Hearing Scheduled' },
+    { key: 'writ_filed', label: 'Writ Filed' },
+    { key: 'waiting_on_setout', label: 'Waiting on Set-out' },
+    { key: 'possession_granted', label: 'Possession Granted' },
+  ];
+  const mdy = (d) => d ? `${d.slice(5, 7)}/${d.slice(8, 10)}/${d.slice(0, 4)}` : '';
+  const money = (v) => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const escHtml = (v) => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  const evictionModel = () => {
+    const rows = (reportData && reportData.rows) || [];
+    const parts = [];
+    if (String(filterProperty).startsWith('state:')) parts.push(`${String(filterProperty).slice(6)} - all properties`);
+    else if (filterProperty) parts.push((properties.find(p => p.id === filterProperty) || {}).name || 'Selected property');
+    if (filterState) parts.push(`${String(filterState).toUpperCase()} only`);
+    const scopeLabel = parts.length ? parts.join(' / ') : 'All states and properties';
+    const asOf = new Date(reportData && reportData.generated_at ? reportData.generated_at : Date.now()).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    const sum = (list) => list.reduce((t, r) => t + Number(r.balance_owed || 0), 0);
+    const groups = EVICTION_STAGES.map(st => { const list = rows.filter(r => r.status === st.key); return { ...st, rows: list, total: sum(list) }; }).filter(g => g.rows.length);
+    return { rows, scopeLabel, asOf, groups, total: sum(rows), flagged: rows.filter(r => r.needs_review).length };
+  };
+
+  const handleExportEvictionCSV = () => {
+    const m = evictionModel();
+    const q = (v) => { const t = v == null ? '' : String(v); return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+    const head = ['Status', 'Resident', 'Unit', 'Property', 'State', 'Balance Owed', 'Aging', 'FED Date', 'Court Hearing', 'Writ Eligible', 'Writ Filed', 'Set-out Date', 'Possession Granted', 'Hearing Outcome', 'Needs Review'];
+    const lines = [head.join(',')];
+    m.groups.forEach(g => g.rows.forEach(r => lines.push([g.label, r.resident_name, r.unit_number, r.property_name, r.state, Number(r.balance_owed || 0).toFixed(2), r.aging_bucket, mdy(r.fed_date), mdy(r.court_hearing_date), mdy(r.writ_eligible_date), mdy(r.writ_filed_date), mdy(r.writ_execution_date), mdy(r.possession_granted_date), r.hearing_outcome ? String(r.hearing_outcome).replace(/_/g, ' ') : '', r.needs_review || ''].map(q).join(','))));
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `Eviction_Status_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const handlePrintEviction = () => {
+    const m = evictionModel();
+    const w = window.open('', '_blank');
+    if (!w) { alert('Please allow pop-ups to print this report.'); return; }
+    const cols = ['Resident', 'Unit', 'Property', 'Balance', 'FED', 'Hearing', 'Writ Filed', 'Set-out', 'Possession', 'Needs Review'];
+    const summaryRows = m.groups.map(g => `<tr><td>${escHtml(g.label)}</td><td class="num">${g.rows.length}</td><td class="num">${money(g.total)}</td></tr>`).join('');
+    const body = m.groups.map(g =>
+      `<tr class="grp"><td colspan="10">${escHtml(g.label)} &mdash; ${g.rows.length} case${g.rows.length === 1 ? '' : 's'} &mdash; ${money(g.total)}</td></tr>` +
+      g.rows.map(r => `<tr><td><b>${escHtml(r.resident_name)}</b></td><td>${escHtml(r.unit_number)}</td><td>${escHtml(r.property_name)}</td><td class="num">${money(r.balance_owed)}</td><td>${mdy(r.fed_date)}</td><td>${mdy(r.court_hearing_date)}</td><td>${mdy(r.writ_filed_date)}</td><td>${mdy(r.writ_execution_date)}</td><td>${mdy(r.possession_granted_date)}</td><td class="flag">${escHtml(r.needs_review)}</td></tr>`).join('')
+    ).join('');
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Eviction Status Report</title><style>
+      @page { size: landscape; margin: 0.45in; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body { font-family: Arial, sans-serif; color: #0C447C; margin: 0; font-size: 10px; }
+      .hdr { background: #0C447C; border-bottom: 4px solid #14B8A6; color: #fff; padding: 16px 20px; display: flex; justify-content: space-between; align-items: flex-end; }
+      .brand { color: #14B8A6; font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+      .title { font-size: 22px; font-weight: 800; margin-top: 4px; }
+      .sub { color: #C8E4F8; font-size: 11px; margin-top: 6px; }
+      .kpis { display: flex; gap: 24px; text-align: right; }
+      .kpis b { display: block; font-size: 17px; }
+      .kpis span { font-size: 8px; letter-spacing: .08em; text-transform: uppercase; color: #9CC4EA; }
+      table { border-collapse: collapse; width: 100%; }
+      .sum { width: 340px; margin: 14px 0; }
+      .sum th, .sum td { padding: 4px 8px; border-bottom: 1px solid #C8E4F8; text-align: left; font-size: 10px; }
+      .sum th { background: #EDF6FE; }
+      thead { display: table-header-group; }
+      .main th { background: #0C447C; color: #fff; padding: 6px 6px; font-size: 8.5px; text-align: left; }
+      .main td { padding: 4px 6px; border-bottom: 1px solid #E2ECF5; font-size: 9px; vertical-align: top; }
+      .num { text-align: right; white-space: nowrap; }
+      .grp td { background: #EDF6FE; color: #0C447C; font-weight: 700; font-size: 10px; padding: 6px; }
+      .flag { color: #B45309; }
+      tr { page-break-inside: avoid; }
+      .foot { margin-top: 10px; color: #94a3b8; font-size: 8px; }
+    </style></head><body>
+      <div class="hdr"><div><div class="brand">Servfixy Collections</div><div class="title">Eviction Status Report</div><div class="sub">${escHtml(m.scopeLabel)} &nbsp;|&nbsp; As of ${escHtml(m.asOf)}</div></div>
+      <div class="kpis"><div><b>${m.rows.length}</b><span>Cases</span></div><div><b>${money(m.total)}</b><span>Balance</span></div><div><b>${m.flagged}</b><span>Need review</span></div></div></div>
+      <table class="sum"><thead><tr><th>Status</th><th class="num">Cases</th><th class="num">Balance</th></tr></thead><tbody>${summaryRows}<tr><td><b>Total</b></td><td class="num"><b>${m.rows.length}</b></td><td class="num"><b>${money(m.total)}</b></td></tr></tbody></table>
+      <table class="main"><thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>
+      <div class="foot">Servfixy Collections &middot; Generated ${escHtml(new Date().toLocaleString())}</div>
+    </body></html>`);
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 400);
+  };
+
+  const loadScript = (src) => new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) return resolve();
+    const el = document.createElement('script');
+    el.src = src; el.onload = resolve; el.onerror = () => reject(new Error('Could not load ' + src));
+    document.head.appendChild(el);
+  });
+
+  const handlePdfEviction = async () => {
+    try {
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js');
+      const { jsPDF } = window.jspdf;
+      const m = evictionModel();
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'letter' });
+      const W = doc.internal.pageSize.getWidth();
+      doc.setFillColor(12, 68, 124); doc.rect(0, 0, W, 72, 'F');
+      doc.setFillColor(20, 184, 166); doc.rect(0, 72, W, 3, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(20, 184, 166); doc.text('SERVFIXY COLLECTIONS', 36, 22);
+      doc.setFontSize(20); doc.setTextColor(255, 255, 255); doc.text('Eviction Status Report', 36, 46);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(200, 228, 248); doc.text(`${m.scopeLabel}  |  As of ${m.asOf}`, 36, 63);
+      let x = W - 36;
+      [[String(m.flagged), 'NEED REVIEW'], [money(m.total), 'BALANCE'], [String(m.rows.length), 'CASES']].forEach(([v, l]) => {
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(255, 255, 255); doc.text(v, x, 40, { align: 'right' });
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(156, 196, 234); doc.text(l, x, 54, { align: 'right' });
+        x -= 115;
+      });
+      doc.autoTable({
+        startY: 90, tableWidth: 300, margin: { left: 36 },
+        head: [['Status', 'Cases', 'Balance']],
+        body: [...m.groups.map(g => [g.label, String(g.rows.length), money(g.total)]), [{ content: 'Total', styles: { fontStyle: 'bold' } }, { content: String(m.rows.length), styles: { fontStyle: 'bold' } }, { content: money(m.total), styles: { fontStyle: 'bold' } }]],
+        styles: { fontSize: 8, cellPadding: 3 }, headStyles: { fillColor: [237, 246, 254], textColor: [12, 68, 124] },
+        columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } }, theme: 'plain',
+      });
+      const body = [];
+      m.groups.forEach(g => {
+        body.push([{ content: `${g.label} - ${g.rows.length} case${g.rows.length === 1 ? '' : 's'} - ${money(g.total)}`, colSpan: 10, styles: { fillColor: [237, 246, 254], textColor: [12, 68, 124], fontStyle: 'bold' } }]);
+        g.rows.forEach(r => body.push([r.resident_name, r.unit_number, r.property_name, money(r.balance_owed), mdy(r.fed_date), mdy(r.court_hearing_date), mdy(r.writ_filed_date), mdy(r.writ_execution_date), mdy(r.possession_granted_date), r.needs_review || '']));
+      });
+      doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 16,
+        head: [['Resident', 'Unit', 'Property', 'Balance', 'FED', 'Hearing', 'Writ Filed', 'Set-out', 'Possession', 'Needs Review']],
+        body,
+        styles: { font: 'helvetica', fontSize: 7.5, cellPadding: 3, overflow: 'linebreak' },
+        headStyles: { fillColor: [12, 68, 124], textColor: 255 },
+        columnStyles: { 3: { halign: 'right' }, 9: { cellWidth: 150, textColor: [180, 83, 9] } },
+        margin: { left: 36, right: 36, bottom: 40 },
+        didDrawPage: (d) => { doc.setFontSize(7); doc.setTextColor(148, 163, 184); doc.text(`Servfixy Collections  |  Page ${d.pageNumber}`, W - 36, doc.internal.pageSize.getHeight() - 20, { align: 'right' }); },
+      });
+      doc.save(`Eviction_Status_${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (err) {
+      alert('Could not build the PDF (' + err.message + '). Opening the print view instead: choose "Save as PDF" as the destination.');
+      handlePrintEviction();
+    }
+  };
+
   const renderReport = () => {
     if (!reportData || !reportData.rows) return null;
     const rows = reportData.rows;
@@ -5273,6 +5414,18 @@ function CollectionsReportsTab({ token, onBack }) {
               style={{ padding: '9px 16px', backgroundColor: 'rgba(20,184,166,0.12)', border: '1px solid #C8E4F8', borderRadius: '7px', color: '#185FA5', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
               Export CSV
             </button>
+          )}
+          {activeReport === 'eviction_status' && reportData && reportData.rows && reportData.rows.length > 0 && (
+            <>
+              <button onClick={handlePrintEviction}
+                style={{ padding: '9px 16px', backgroundColor: 'rgba(20,184,166,0.12)', border: '1px solid #C8E4F8', borderRadius: '7px', color: '#185FA5', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                Print
+              </button>
+              <button onClick={handlePdfEviction}
+                style={{ padding: '9px 16px', backgroundColor: '#185FA5', border: 'none', borderRadius: '7px', color: 'white', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+                Download PDF
+              </button>
+            </>
           )}
         </div>
       </div>
