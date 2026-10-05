@@ -4634,6 +4634,7 @@ function CollectionsReportsTab({ token, onBack }) {
     { key: 'portfolio_summary',     label: 'Portfolio Summary',       endpoint: '/reports/portfolio-summary',     description: 'All properties with case counts and balance by aging bucket' },
     { key: 'aging',                 label: 'Delinquency Aging',       endpoint: '/reports/aging',                 description: 'All residents by 30/60/90/120+ day aging bucket' },
     { key: 'pipeline',              label: 'Collections Pipeline',    endpoint: '/reports/pipeline',              description: 'Active cases by legal stage with days in system' },
+    { key: 'eviction_status',       label: 'Eviction Status',          endpoint: '/reports/eviction-status',       description: 'Every case in the eviction pipeline by status, with balances, key dates and data checks' },
     { key: 'attorney_referrals',    label: 'Attorney Referrals',      endpoint: '/reports/attorney-referrals',    description: 'Cases in legal pipeline with all key dates' },
     { key: 'payment_plans',         label: 'Payment Plan Performance',endpoint: '/reports/payment-plans',         description: 'All plans with payments made, missed, and amount collected' },
     { key: 'coordinator_activity',  label: 'Coordinator Activity',    endpoint: '/reports/coordinator-activity',  description: 'Touchpoints per coordinator with method and outcome breakdown' },
@@ -5076,6 +5077,75 @@ function CollectionsReportsTab({ token, onBack }) {
     </div>
   );
 
+  const renderEvictionStatus = (rows) => {
+    const STAGES = [
+      { key: 'filed_with_attorney', label: 'Filed w/ Attorney', color: '#ea580c' },
+      { key: 'fed', label: 'FED', color: '#f97316' },
+      { key: 'hearing_scheduled', label: 'Hearing Scheduled', color: '#7c3aed' },
+      { key: 'writ_filed', label: 'Writ Filed', color: '#dc2626' },
+      { key: 'waiting_on_setout', label: 'Waiting on Set-out', color: '#0d9488' },
+      { key: 'possession_granted', label: 'Possession Granted', color: '#15803d' },
+    ];
+    const fmtD = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '\u2014';
+    const total = rows.reduce((sum, r) => sum + Number(r.balance_owed || 0), 0);
+    const flagged = rows.filter(r => r.needs_review).length;
+    const th = { padding: '10px 12px', textAlign: 'left', color: '#94a3b8', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', borderBottom: '1px solid #C8E4F8' };
+    const td = { padding: '10px 12px', fontSize: '12px', color: '#94a3b8', whiteSpace: 'nowrap' };
+    return (
+      <div>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', padding: '16px 20px', borderBottom: '1px solid #EDF6FE' }}>
+          {STAGES.map(st => {
+            const group = rows.filter(r => r.status === st.key);
+            return (
+              <div key={st.key} style={{ flex: '1 1 140px', padding: '12px 14px', backgroundColor: '#EDF6FE', borderRadius: '10px', borderLeft: `4px solid ${st.color}` }}>
+                <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{st.label}</div>
+                <div style={{ fontSize: '22px', fontWeight: '800', color: st.color }}>{group.length}</div>
+                <div style={{ fontSize: '12px', color: '#475569' }}>{fmtCurrency(group.reduce((sum, r) => sum + Number(r.balance_owed || 0), 0))}</div>
+              </div>
+            );
+          })}
+          <div style={{ flex: '1 1 140px', padding: '12px 14px', backgroundColor: '#0C447C', borderRadius: '10px' }}>
+            <div style={{ fontSize: '11px', color: '#C8E4F8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total</div>
+            <div style={{ fontSize: '22px', fontWeight: '800', color: '#ffffff' }}>{rows.length}</div>
+            <div style={{ fontSize: '12px', color: '#C8E4F8' }}>{fmtCurrency(total)}{flagged > 0 ? ` \u00b7 ${flagged} need review` : ''}</div>
+          </div>
+        </div>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#ffffff' }}>
+                {['Status', 'Resident', 'Unit', 'Property', 'State', 'Balance', 'Aging', 'FED', 'Hearing', 'Writ Eligible', 'Writ Filed', 'Set-out', 'Possession', 'Needs Review'].map(h => <th key={h} style={th}>{h}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => {
+                const st = STAGES.find(x => x.key === row.status) || { label: fmtStatus(row.status), color: '#94a3b8' };
+                return (
+                  <tr key={row.id || i} style={{ borderBottom: '1px solid #EDF6FE' }}>
+                    <td style={td}><span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', backgroundColor: 'rgba(20,184,166,0.12)', color: st.color, fontWeight: '700' }}>{st.label}</span></td>
+                    <td style={{ ...td, color: '#0C447C', fontWeight: '600', fontSize: '13px' }}>{row.resident_name}</td>
+                    <td style={td}>{row.unit_number}</td>
+                    <td style={td}>{row.property_name}</td>
+                    <td style={td}>{row.state}</td>
+                    <td style={{ ...td, color: '#dc2626', fontWeight: '700' }}>{fmtCurrency(row.balance_owed)}</td>
+                    <td style={td}>{row.aging_bucket}</td>
+                    <td style={td}>{fmtD(row.fed_date)}</td>
+                    <td style={{ ...td, color: '#7c3aed' }}>{fmtD(row.court_hearing_date)}</td>
+                    <td style={td}>{fmtD(row.writ_eligible_date)}</td>
+                    <td style={td}>{fmtD(row.writ_filed_date)}</td>
+                    <td style={{ ...td, color: '#0d9488' }}>{fmtD(row.writ_execution_date)}</td>
+                    <td style={{ ...td, color: '#15803d' }}>{fmtD(row.possession_granted_date)}</td>
+                    <td style={{ ...td, whiteSpace: 'normal', minWidth: '220px', color: '#b45309' }}>{row.needs_review || ''}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   const renderReport = () => {
     if (!reportData || !reportData.rows) return null;
     const rows = reportData.rows;
@@ -5084,6 +5154,7 @@ function CollectionsReportsTab({ token, onBack }) {
       case 'portfolio_summary':    return renderPortfolioSummary(rows);
       case 'aging':                return renderAging(rows);
       case 'pipeline':             return renderPipeline(rows);
+      case 'eviction_status':      return renderEvictionStatus(rows);
       case 'attorney_referrals':   return renderAttorneyReferrals(rows);
       case 'payment_plans':        return renderPaymentPlans(rows);
       case 'coordinator_activity': return renderCoordinatorActivity(rows);
@@ -5096,8 +5167,8 @@ function CollectionsReportsTab({ token, onBack }) {
   };
 
   const activeReportMeta = REPORTS.find(r => r.key === activeReport);
-  const showPropertyFilter  = ['aging', 'pipeline', 'portfolio_summary', 'high_risk'].includes(activeReport);
-  const showStateFilter     = ['aging', 'property_ranking'].includes(activeReport);
+  const showPropertyFilter  = ['aging', 'pipeline', 'portfolio_summary', 'high_risk', 'eviction_status'].includes(activeReport);
+  const showStateFilter     = ['aging', 'property_ranking', 'eviction_status'].includes(activeReport);
   const showDateFilter      = activeReport === 'coordinator_activity';
 
   return (
