@@ -8165,7 +8165,7 @@ function CollectionsCalendarTab({ token }) {
   ];
 
   useEffect(() => {
-    fetch(`${API_URL}/api/collections/cases`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${API_URL}/api/collections/cases?limit=5000`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) setCases(data.filter(c => !['closed_paid','closed_written_off'].includes(c.status)));
