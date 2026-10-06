@@ -167,6 +167,7 @@ const NAV_ITEMS = [
   ]},
   { group: 'ADMIN', items: [
     { label: 'Generate Notices',     icon: '📄', tab: 'Generate Notices' },
+    { label: 'Mailing Labels',       icon: '🏷️', tab: 'Mailing Labels' },
     { label: 'User Management',      icon: '👥', tab: 'User Management' },
     { label: 'Yardi Import',         icon: '📊', tab: 'Yardi Import' },
     { label: 'Onboarding',           icon: '🚀', tab: 'Onboarding' },
@@ -679,10 +680,17 @@ function AdminTab({ token, initialSection, onNavigate }) {
     }
   }, [activeSection]);
 
+  // Load residents for the Mailing Labels section whenever a property is chosen there
+  useEffect(() => {
+    if (activeSection === 'mailing-labels' && selectedProperty) fetchLabelDirectory(selectedProperty);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection, selectedProperty]);
+
   const SECTIONS = [
     { key: 'users', label: 'Users', icon: '👥' },
     { key: 'notice-settings', label: 'Notice Settings', icon: '⚙️' },
     { key: 'bulk-notices', label: 'Generate Notices', icon: '📄' },
+    { key: 'mailing-labels', label: 'Mailing Labels', icon: '🏷️' },
     { key: 'balance-due', label: 'Balance Due Letters', icon: '💸' },
   ];
 
@@ -951,7 +959,7 @@ function AdminTab({ token, initialSection, onNavigate }) {
               <label style={labelStyle}>Select Property</label>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <PropertySelector properties={properties} value={selectedProperty}
-                  onChange={v => { setSelectedProperty(v); setWaFiles([]); setWaResult(null); setGenResult(null); setLabelResult(null); setLabelDirectory([]); setLabelSelected({}); setLabelQtys({}); fetchEligible(v); fetchLabelDirectory(v); }}
+                  onChange={v => { setSelectedProperty(v); setWaFiles([]); setWaResult(null); setGenResult(null); fetchEligible(v); }}
                   placeholder='Choose a property...'
                   style={{ maxWidth: '480px' }} />
                 {selectedProperty && !isWA && (
@@ -1252,7 +1260,33 @@ function AdminTab({ token, initialSection, onNavigate }) {
               </div>
             )}
 
-          {/* Mailing Labels */}
+
+          </div>
+        );
+        })()}
+
+        {activeSection === 'mailing-labels' && (() => {
+          const labelProp = properties.find(p => p.id === selectedProperty);
+          const labelsOff = !!labelProp && labelProp.state === 'OH';
+          return (
+          <div>
+            <div style={{ marginBottom: '24px' }}>
+              <h1 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: '700', color: '#0C447C' }}>Mailing Labels</h1>
+              <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Optional. Print mailing labels for a property's delinquent residents. Labels are separate from notices.</p>
+            </div>
+            <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
+              <label style={labelStyle}>Select Property</label>
+              <PropertySelector properties={properties} value={selectedProperty}
+                onChange={v => { setSelectedProperty(v); setLabelResult(null); setLabelDirectory([]); setLabelSelected({}); setLabelQtys({}); }}
+                placeholder='Choose a property...'
+                style={{ maxWidth: '480px' }} />
+            </div>
+            {labelsOff && (
+              <div style={{ backgroundColor: '#fefce8', border: '1px solid #fde68a', borderRadius: '10px', padding: '12px 16px', fontSize: '13px', color: '#92400e' }}>
+                Mailing labels are turned off for Ohio properties.
+              </div>
+            )}
+            {!labelsOff && (
             {selectedProperty && (
               <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', marginTop: '20px' }}>
                 <div style={{ marginBottom: '16px' }}>
@@ -1365,9 +1399,9 @@ function AdminTab({ token, initialSection, onNavigate }) {
                 })()}
               </div>
             )}
-
+            )}
           </div>
-        );
+          );
         })()}
 
         {activeSection === 'balance-due' && (
@@ -10421,6 +10455,7 @@ function App() {
         {activeTab === 'Onboarding' && <CollectionsOnboardingTab token={token} />}
         {activeTab === 'Collections Risk' && <CollectionsRiskTab token={token} />}
         {activeTab === 'Generate Notices' && <AdminTab token={token} initialSection='bulk-notices' onNavigate={setActiveTab} />}
+        {activeTab === 'Mailing Labels' && <AdminTab token={token} initialSection='mailing-labels' onNavigate={setActiveTab} />}
         {activeTab === 'User Management' && <AdminTab token={token} onNavigate={setActiveTab} />}
         {activeTab === 'Yardi Import' && <YardiImportTab token={token} />}
               {activeTab === 'Unit Directory' && <UnitDirectoryTab token={token} />}
