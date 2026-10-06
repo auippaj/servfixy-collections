@@ -1286,8 +1286,7 @@ function AdminTab({ token, initialSection, onNavigate }) {
                 Mailing labels are turned off for Ohio properties.
               </div>
             )}
-            {!labelsOff && (
-            {selectedProperty && (
+            {!labelsOff && selectedProperty && (
               <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', marginTop: '20px' }}>
                 <div style={{ marginBottom: '16px' }}>
                   <div style={{ fontSize: '15px', fontWeight: '700', color: '#0C447C', marginBottom: '4px' }}>📬 Mailing Labels</div>
@@ -1398,7 +1397,6 @@ function AdminTab({ token, initialSection, onNavigate }) {
                   );
                 })()}
               </div>
-            )}
             )}
           </div>
           );
