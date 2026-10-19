@@ -168,6 +168,7 @@ const NAV_ITEMS = [
   { group: 'ADMIN', items: [
     { label: 'Generate Notices',     icon: '📄', tab: 'Generate Notices' },
     { label: 'Final Notice',         icon: '⚠️', tab: 'Final Notice' },
+    { label: 'Housing Notice',       icon: '🏠', tab: 'Housing Notice' },
     { label: 'Mailing Labels',       icon: '🏷️', tab: 'Mailing Labels' },
     { label: 'User Management',      icon: '👥', tab: 'User Management' },
     { label: 'Yardi Import',         icon: '📊', tab: 'Yardi Import' },
@@ -434,6 +435,90 @@ function AdminTab({ token, initialSection, onNavigate }) {
       setFnResult(d);
     } catch (err) { setFnResult({ error: err.message }); }
     finally { setFnGenerating(false); }
+  };
+
+  // Housing Notice (Past-Due Notice of Attorney Referral) — select residents on housing, edit amounts per resident
+  const [hnEligibleData, setHnEligibleData] = useState(null);
+  const [hnEligibleLoading, setHnEligibleLoading] = useState(false);
+  const [hnSelectedCases, setHnSelectedCases] = useState(new Set());
+  const [hnAmounts, setHnAmounts] = useState({}); // { [caseId]: { portion: '123.45', utilities: '0.00' } }
+  const [hnGenerating, setHnGenerating] = useState(false);
+  const [hnResult, setHnResult] = useState(null);
+  const [hnSelectedProperty, setHnSelectedProperty] = useState('');
+  const [hnPaymentDeadline, setHnPaymentDeadline] = useState('');
+  const [hnReferralDate, setHnReferralDate] = useState('');
+  const [hnConfirmed, setHnConfirmed] = useState(false);
+
+  const fetchHnEligible = async (propId) => {
+    if (!propId) return;
+    setHnEligibleLoading(true); setHnEligibleData(null); setHnSelectedCases(new Set()); setHnAmounts({}); setHnResult(null); setHnConfirmed(false);
+    try {
+      const res = await fetch(`${API_URL}/api/collections/cases/eligible-balance-due?property_id=${propId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error);
+      setHnEligibleData(d);
+    } catch (err) { console.error(err); }
+    finally { setHnEligibleLoading(false); }
+  };
+
+  const hnToggleCase = (c) => {
+    setHnSelectedCases(prev => { const n = new Set(prev); n.has(c.id) ? n.delete(c.id) : n.add(c.id); return n; });
+    setHnAmounts(prev => prev[c.id] ? prev : { ...prev, [c.id]: { portion: Number(c.balance_owed || 0).toFixed(2), utilities: '0.00' } });
+    setHnConfirmed(false);
+  };
+  const hnSetAmount = (id, field, value) => {
+    setHnAmounts(prev => ({ ...prev, [id]: { ...(prev[id] || { portion: '0.00', utilities: '0.00' }), [field]: value } }));
+    setHnConfirmed(false);
+  };
+  const hnRowTotal = (id) => {
+    const a = hnAmounts[id] || {};
+    return Math.round(((parseFloat(a.portion) || 0) + (parseFloat(a.utilities) || 0)) * 100) / 100;
+  };
+  const hnAmountsValid = [...hnSelectedCases].every(id => {
+    const a = hnAmounts[id] || {};
+    const p = parseFloat(a.portion), u = parseFloat(a.utilities);
+    return Number.isFinite(p) && Number.isFinite(u) && p >= 0 && u >= 0 && p + u > 0;
+  });
+
+  const hnTodayIso = new Date().toLocaleDateString('en-CA');
+  const hnDateError = !hnPaymentDeadline || !hnReferralDate
+    ? 'Enter both the payment deadline and the attorney referral date.'
+    : hnPaymentDeadline < hnTodayIso
+      ? 'Payment deadline cannot be in the past.'
+      : hnReferralDate <= hnPaymentDeadline
+        ? 'Attorney referral date must be after the payment deadline.'
+        : '';
+  const hnBlock = hnDateError
+    || (!hnAmountsValid ? 'Each selected resident needs valid amounts (not negative, total above $0).' : '')
+    || (!hnConfirmed ? 'Confirm the amounts exclude the housing agency\'s share.' : '');
+
+  const handleGenerateHousingNotice = async () => {
+    if (hnSelectedCases.size === 0 || hnBlock) return;
+    setHnGenerating(true); setHnResult(null);
+    try {
+      const res = await fetch(`${API_URL}/api/collections/cases/batch-housing-notice`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          property_id: hnSelectedProperty,
+          generated_by: 'Collections Admin',
+          payment_deadline: hnPaymentDeadline,
+          attorney_referral_date: hnReferralDate,
+          amounts_confirmed: true,
+          items: [...hnSelectedCases].map(id => ({
+            case_id: id,
+            resident_portion: parseFloat((hnAmounts[id] || {}).portion) || 0,
+            utilities: parseFloat((hnAmounts[id] || {}).utilities) || 0,
+          })),
+        })
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Generation failed');
+      setHnResult(d);
+    } catch (err) { setHnResult({ error: err.message }); }
+    finally { setHnGenerating(false); }
   };
 
   const ROLES = ['admin', 'dispatcher', 'coordinator', 'read_only'];
@@ -749,6 +834,7 @@ function AdminTab({ token, initialSection, onNavigate }) {
     { key: 'mailing-labels', label: 'Mailing Labels', icon: '🏷️' },
     { key: 'balance-due', label: 'Balance Due Letters', icon: '💸' },
     { key: 'final-notice', label: 'Final Notice', icon: '⚠️' },
+    { key: 'housing-notice', label: 'Housing Notice', icon: '🏠' },
   ];
 
   return (
@@ -1685,6 +1771,140 @@ function AdminTab({ token, initialSection, onNavigate }) {
                     </a>
                     <div style={{ marginTop: '12px' }}>
                       {(fnResult.residents || []).map((r, i) => (
+                        <div key={i} style={{ fontSize: '13px', color: '#0C447C', padding: '4px 0', borderBottom: '1px solid #EDF6FE' }}>
+                          {r.name} · Unit {r.unit} · <strong style={{ color: '#dc2626' }}>${Number(r.balance).toFixed(2)}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── HOUSING NOTICE (Past-Due Rent and Utilities — Notice of Attorney Referral) ── */}
+        {activeSection === 'housing-notice' && (
+          <div>
+            <div style={{ marginBottom: '24px' }}>
+              <h1 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: '700', color: '#0C447C' }}>Housing Notice</h1>
+              <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Past-due rent and utilities notice of attorney referral for residents on housing assistance. All delinquent residents are listed; check the ones on housing and confirm their resident-only amounts.</p>
+            </div>
+            <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                <div>
+                  <label style={labelStyle}>Select Property</label>
+                  <select value={hnSelectedProperty} onChange={e => { setHnSelectedProperty(e.target.value); fetchHnEligible(e.target.value); }}
+                    style={{ padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '13px', color: '#0f172a', minWidth: '280px', maxWidth: '480px' }}>
+                    <option value=''>Choose a property...</option>
+                    {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Payment Deadline</label>
+                  <input type='date' value={hnPaymentDeadline} min={hnTodayIso} onChange={e => setHnPaymentDeadline(e.target.value)}
+                    style={{ padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '13px', color: '#0f172a' }} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Attorney Referral Date</label>
+                  <input type='date' value={hnReferralDate} min={hnPaymentDeadline || hnTodayIso} onChange={e => setHnReferralDate(e.target.value)}
+                    style={{ padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '13px', color: '#0f172a' }} />
+                </div>
+                {hnSelectedProperty && (
+                  <button onClick={() => fetchHnEligible(hnSelectedProperty)} disabled={hnEligibleLoading}
+                    style={{ padding: '9px 16px', backgroundColor: '#EDF6FE', border: '1px solid #C8E4F8', borderRadius: '7px', color: '#475569', fontSize: '13px', cursor: 'pointer' }}>
+                    {hnEligibleLoading ? 'Loading...' : '↻ Refresh'}
+                  </button>
+                )}
+              </div>
+              {(hnPaymentDeadline || hnReferralDate) && hnDateError && (
+                <div style={{ marginTop: '10px', fontSize: '12px', color: '#b45309' }}>{hnDateError}</div>
+              )}
+            </div>
+            {hnEligibleLoading && (
+              <div style={{ color: '#94a3b8', fontSize: '13px', padding: '20px' }}>Loading delinquent residents…</div>
+            )}
+            {hnEligibleData && !hnEligibleLoading && (
+              <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: '20px' }}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '13px', color: '#475569' }}>
+                    {hnSelectedCases.size > 0 ? `${hnSelectedCases.size} on housing selected` : `${(hnEligibleData.cases || []).length} delinquent resident(s) · check the residents on housing`}
+                  </span>
+                  {hnSelectedCases.size > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#475569', cursor: 'pointer' }}>
+                        <input type='checkbox' checked={hnConfirmed} onChange={e => setHnConfirmed(e.target.checked)} />
+                        These amounts exclude the housing agency's share of rent
+                      </label>
+                      <button onClick={handleGenerateHousingNotice} disabled={hnGenerating || !!hnBlock}
+                        title={hnBlock || ''}
+                        style={{ padding: '10px 22px', backgroundColor: (hnGenerating || hnBlock) ? '#94a3b8' : '#185FA5', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: (hnGenerating || hnBlock) ? 'not-allowed' : 'pointer' }}>
+                        {hnGenerating ? 'Generating…' : `Generate ${hnSelectedCases.size} Housing Notice${hnSelectedCases.size !== 1 ? 's' : ''}`}
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {(hnEligibleData.cases || []).length === 0 ? (
+                  <div style={{ padding: '32px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>No delinquent cases for this property.</div>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#EDF6FE', borderBottom: '1px solid #e2e8f0' }}>
+                        <th style={{ padding: '10px 16px', width: '40px' }} />
+                        {['Resident', 'Unit', 'Case Balance', 'Resident Portion', 'Utilities', 'Total'].map(h => (
+                          <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#64748b', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(hnEligibleData.cases || []).map(c => {
+                        const isSel = hnSelectedCases.has(c.id);
+                        const a = hnAmounts[c.id] || { portion: '', utilities: '' };
+                        const inputCss = { width: '96px', padding: '6px 8px', border: '1px solid #C8E4F8', borderRadius: '6px', fontSize: '13px', color: '#0f172a' };
+                        return (
+                          <tr key={c.id} style={{ borderBottom: '1px solid #EDF6FE', backgroundColor: isSel ? 'rgba(20,184,166,0.06)' : '#fff' }}>
+                            <td style={{ padding: '12px 16px', cursor: 'pointer' }} onClick={() => hnToggleCase(c)}>
+                              <div style={{ width: '16px', height: '16px', borderRadius: '3px', border: `2px solid ${isSel ? '#14B8A6' : '#C8E4F8'}`, backgroundColor: isSel ? '#14B8A6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {isSel && <span style={{ color: '#fff', fontSize: '10px', fontWeight: '900' }}>✓</span>}
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px 16px', fontWeight: '600', color: '#0C447C', cursor: 'pointer' }} onClick={() => hnToggleCase(c)}>{c.resident_name}</td>
+                            <td style={{ padding: '12px 16px', color: '#475569' }}>{c.unit_number}</td>
+                            <td style={{ padding: '12px 16px', color: '#64748b' }}>${Number(c.balance_owed).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                            <td style={{ padding: '8px 16px' }}>
+                              {isSel ? <input type='number' min='0' step='0.01' value={a.portion} onChange={e => hnSetAmount(c.id, 'portion', e.target.value)} style={inputCss} /> : <span style={{ color: '#cbd5e1' }}>—</span>}
+                            </td>
+                            <td style={{ padding: '8px 16px' }}>
+                              {isSel ? <input type='number' min='0' step='0.01' value={a.utilities} onChange={e => hnSetAmount(c.id, 'utilities', e.target.value)} style={inputCss} /> : <span style={{ color: '#cbd5e1' }}>—</span>}
+                            </td>
+                            <td style={{ padding: '12px 16px', fontWeight: '700', color: '#dc2626' }}>
+                              {isSel ? `$${hnRowTotal(c.id).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
+            {hnResult && (
+              <div style={{ backgroundColor: hnResult.error ? '#fef2f2' : '#f0fdf4', border: `1px solid ${hnResult.error ? '#fca5a5' : '#bbf7d0'}`, borderRadius: '12px', padding: '20px' }}>
+                {hnResult.error ? (
+                  <div style={{ color: '#dc2626', fontWeight: '700' }}>❌ {hnResult.error}</div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: '16px', fontWeight: '700', color: '#15803d', marginBottom: '6px' }}>
+                      ✅ {hnResult.letters_generated} housing notice{hnResult.letters_generated !== 1 ? 's' : ''} generated for {hnResult.property_name}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#475569', marginBottom: '14px' }}>
+                      Payment deadline {hnResult.payment_deadline} · Attorney referral {hnResult.attorney_referral_date}
+                    </div>
+                    <a href={hnResult.pdf_url} download style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#185FA5', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: '700', fontSize: '14px', marginBottom: '16px' }}>
+                      ⬇ Download All Notices (PDF)
+                    </a>
+                    <div style={{ marginTop: '12px' }}>
+                      {(hnResult.residents || []).map((r, i) => (
                         <div key={i} style={{ fontSize: '13px', color: '#0C447C', padding: '4px 0', borderBottom: '1px solid #EDF6FE' }}>
                           {r.name} · Unit {r.unit} · <strong style={{ color: '#dc2626' }}>${Number(r.balance).toFixed(2)}</strong>
                         </div>
@@ -10639,6 +10859,7 @@ function App() {
         {activeTab === 'Collections Risk' && <CollectionsRiskTab token={token} />}
         {activeTab === 'Generate Notices' && <AdminTab token={token} initialSection='bulk-notices' onNavigate={setActiveTab} />}
         {activeTab === 'Final Notice' && <AdminTab token={token} initialSection='final-notice' onNavigate={setActiveTab} />}
+        {activeTab === 'Housing Notice' && <AdminTab token={token} initialSection='housing-notice' onNavigate={setActiveTab} />}
         {activeTab === 'Mailing Labels' && <AdminTab token={token} initialSection='mailing-labels' onNavigate={setActiveTab} />}
         {activeTab === 'User Management' && <AdminTab token={token} onNavigate={setActiveTab} />}
         {activeTab === 'Yardi Import' && <YardiImportTab token={token} />}
