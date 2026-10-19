@@ -167,6 +167,7 @@ const NAV_ITEMS = [
   ]},
   { group: 'ADMIN', items: [
     { label: 'Generate Notices',     icon: '📄', tab: 'Generate Notices' },
+    { label: 'Final Notice',         icon: '⚠️', tab: 'Final Notice' },
     { label: 'Mailing Labels',       icon: '🏷️', tab: 'Mailing Labels' },
     { label: 'User Management',      icon: '👥', tab: 'User Management' },
     { label: 'Yardi Import',         icon: '📊', tab: 'Yardi Import' },
@@ -378,6 +379,61 @@ function AdminTab({ token, initialSection, onNavigate }) {
       setBdResult(d);
     } catch (err) { setBdResult({ error: err.message }); }
     finally { setBdGenerating(false); }
+  };
+
+  // Final Notice (Final Balance Due) — same flow as Balance Due Letters, plus two dates
+  const [fnEligibleData, setFnEligibleData] = useState(null);
+  const [fnEligibleLoading, setFnEligibleLoading] = useState(false);
+  const [fnSelectedCases, setFnSelectedCases] = useState(new Set());
+  const [fnGenerating, setFnGenerating] = useState(false);
+  const [fnResult, setFnResult] = useState(null);
+  const [fnSelectedProperty, setFnSelectedProperty] = useState('');
+  const [fnPaymentDeadline, setFnPaymentDeadline] = useState('');
+  const [fnReferralDate, setFnReferralDate] = useState('');
+
+  const fetchFnEligible = async (propId) => {
+    if (!propId) return;
+    setFnEligibleLoading(true); setFnEligibleData(null); setFnSelectedCases(new Set()); setFnResult(null);
+    try {
+      const res = await fetch(`${API_URL}/api/collections/cases/eligible-balance-due?property_id=${propId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error);
+      setFnEligibleData(d);
+    } catch (err) { console.error(err); }
+    finally { setFnEligibleLoading(false); }
+  };
+
+  const fnTodayIso = new Date().toLocaleDateString('en-CA');
+  const fnDateError = !fnPaymentDeadline || !fnReferralDate
+    ? 'Enter both the payment deadline and the attorney referral date.'
+    : fnPaymentDeadline < fnTodayIso
+      ? 'Payment deadline cannot be in the past.'
+      : fnReferralDate <= fnPaymentDeadline
+        ? 'Attorney referral date must be after the payment deadline.'
+        : '';
+
+  const handleGenerateFinalNotice = async () => {
+    if (fnSelectedCases.size === 0 || fnDateError) return;
+    setFnGenerating(true); setFnResult(null);
+    try {
+      const res = await fetch(`${API_URL}/api/collections/cases/batch-final-notice`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          property_id: fnSelectedProperty,
+          generated_by: 'Collections Admin',
+          case_ids: [...fnSelectedCases],
+          payment_deadline: fnPaymentDeadline,
+          attorney_referral_date: fnReferralDate,
+        })
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Generation failed');
+      setFnResult(d);
+    } catch (err) { setFnResult({ error: err.message }); }
+    finally { setFnGenerating(false); }
   };
 
   const ROLES = ['admin', 'dispatcher', 'coordinator', 'read_only'];
@@ -692,6 +748,7 @@ function AdminTab({ token, initialSection, onNavigate }) {
     { key: 'bulk-notices', label: 'Generate Notices', icon: '📄' },
     { key: 'mailing-labels', label: 'Mailing Labels', icon: '🏷️' },
     { key: 'balance-due', label: 'Balance Due Letters', icon: '💸' },
+    { key: 'final-notice', label: 'Final Notice', icon: '⚠️' },
   ];
 
   return (
@@ -1511,6 +1568,134 @@ function AdminTab({ token, initialSection, onNavigate }) {
           </div>
         )}
 
+        {/* ── FINAL NOTICE (Final Balance Due) ── */}
+        {activeSection === 'final-notice' && (
+          <div>
+            <div style={{ marginBottom: '24px' }}>
+              <h1 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: '700', color: '#0C447C' }}>Final Notice</h1>
+              <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Final balance due letter for any property. The property name is added automatically. Set the two dates, choose residents, and generate.</p>
+            </div>
+            <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                <div>
+                  <label style={labelStyle}>Select Property</label>
+                  <select value={fnSelectedProperty} onChange={e => { setFnSelectedProperty(e.target.value); fetchFnEligible(e.target.value); }}
+                    style={{ padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '13px', color: '#0f172a', minWidth: '280px', maxWidth: '480px' }}>
+                    <option value=''>Choose a property...</option>
+                    {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Payment Deadline</label>
+                  <input type='date' value={fnPaymentDeadline} min={fnTodayIso} onChange={e => setFnPaymentDeadline(e.target.value)}
+                    style={{ padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '13px', color: '#0f172a' }} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Attorney Referral Date</label>
+                  <input type='date' value={fnReferralDate} min={fnPaymentDeadline || fnTodayIso} onChange={e => setFnReferralDate(e.target.value)}
+                    style={{ padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '13px', color: '#0f172a' }} />
+                </div>
+                {fnSelectedProperty && (
+                  <button onClick={() => fetchFnEligible(fnSelectedProperty)} disabled={fnEligibleLoading}
+                    style={{ padding: '9px 16px', backgroundColor: '#EDF6FE', border: '1px solid #C8E4F8', borderRadius: '7px', color: '#475569', fontSize: '13px', cursor: 'pointer' }}>
+                    {fnEligibleLoading ? 'Loading...' : '↻ Refresh'}
+                  </button>
+                )}
+              </div>
+              {(fnPaymentDeadline || fnReferralDate) && fnDateError && (
+                <div style={{ marginTop: '10px', fontSize: '12px', color: '#b45309' }}>{fnDateError}</div>
+              )}
+            </div>
+            {fnEligibleLoading && (
+              <div style={{ color: '#94a3b8', fontSize: '13px', padding: '20px' }}>Loading eligible residents…</div>
+            )}
+            {fnEligibleData && !fnEligibleLoading && (
+              <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: '20px' }}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div
+                      onClick={() => { const all = (fnEligibleData.cases || []).every(c => fnSelectedCases.has(c.id)); all ? setFnSelectedCases(new Set()) : setFnSelectedCases(new Set((fnEligibleData.cases || []).map(c => c.id))); }}
+                      style={{ width: '16px', height: '16px', borderRadius: '3px', border: `2px solid ${fnSelectedCases.size > 0 ? '#14B8A6' : '#C8E4F8'}`, backgroundColor: fnSelectedCases.size > 0 ? '#14B8A6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                      {(fnEligibleData.cases || []).length > 0 && (fnEligibleData.cases || []).every(c => fnSelectedCases.has(c.id)) && <span style={{ color: '#fff', fontSize: '10px', fontWeight: '900' }}>✓</span>}
+                    </div>
+                    <span style={{ fontSize: '13px', color: '#475569' }}>
+                      {fnSelectedCases.size > 0 ? `${fnSelectedCases.size} selected` : `${(fnEligibleData.cases || []).length} delinquent resident(s)`}
+                    </span>
+                  </div>
+                  {fnSelectedCases.size > 0 && (
+                    <button onClick={handleGenerateFinalNotice} disabled={fnGenerating || !!fnDateError}
+                      title={fnDateError || ''}
+                      style={{ padding: '10px 22px', backgroundColor: (fnGenerating || fnDateError) ? '#94a3b8' : '#185FA5', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: (fnGenerating || fnDateError) ? 'not-allowed' : 'pointer' }}>
+                      {fnGenerating ? 'Generating…' : `Generate ${fnSelectedCases.size} Final Notice${fnSelectedCases.size !== 1 ? 's' : ''}`}
+                    </button>
+                  )}
+                </div>
+                {(fnEligibleData.cases || []).length === 0 ? (
+                  <div style={{ padding: '32px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>No delinquent cases for this property.</div>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#EDF6FE', borderBottom: '1px solid #e2e8f0' }}>
+                        <th style={{ padding: '10px 16px', width: '40px' }} />
+                        {['Resident', 'Unit', 'Balance', 'Aging', 'Status'].map(h => (
+                          <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#64748b', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(fnEligibleData.cases || []).map(c => {
+                        const isSel = fnSelectedCases.has(c.id);
+                        return (
+                          <tr key={c.id} style={{ borderBottom: '1px solid #EDF6FE', backgroundColor: isSel ? 'rgba(20,184,166,0.06)' : '#fff', cursor: 'pointer' }}
+                            onClick={() => setFnSelectedCases(prev => { const n = new Set(prev); isSel ? n.delete(c.id) : n.add(c.id); return n; })}>
+                            <td style={{ padding: '12px 16px' }}>
+                              <div style={{ width: '16px', height: '16px', borderRadius: '3px', border: `2px solid ${isSel ? '#14B8A6' : '#C8E4F8'}`, backgroundColor: isSel ? '#14B8A6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {isSel && <span style={{ color: '#fff', fontSize: '10px', fontWeight: '900' }}>✓</span>}
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px 16px', fontWeight: '600', color: '#0C447C' }}>{c.resident_name}</td>
+                            <td style={{ padding: '12px 16px', color: '#475569' }}>{c.unit_number}</td>
+                            <td style={{ padding: '12px 16px', fontWeight: '700', color: '#dc2626' }}>${Number(c.balance_owed).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                            <td style={{ padding: '12px 16px', color: '#64748b' }}>{c.aging_bucket || '—'}</td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '4px', fontWeight: '700', backgroundColor: '#fef9c3', color: '#92400e' }}>{c.status}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
+            {fnResult && (
+              <div style={{ backgroundColor: fnResult.error ? '#fef2f2' : '#f0fdf4', border: `1px solid ${fnResult.error ? '#fca5a5' : '#bbf7d0'}`, borderRadius: '12px', padding: '20px' }}>
+                {fnResult.error ? (
+                  <div style={{ color: '#dc2626', fontWeight: '700' }}>❌ {fnResult.error}</div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: '16px', fontWeight: '700', color: '#15803d', marginBottom: '6px' }}>
+                      ✅ {fnResult.letters_generated} final notice{fnResult.letters_generated !== 1 ? 's' : ''} generated for {fnResult.property_name}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#475569', marginBottom: '14px' }}>
+                      Payment deadline {fnResult.payment_deadline} · Attorney referral {fnResult.attorney_referral_date}
+                    </div>
+                    <a href={fnResult.pdf_url} download style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#185FA5', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: '700', fontSize: '14px', marginBottom: '16px' }}>
+                      ⬇ Download All Notices (PDF)
+                    </a>
+                    <div style={{ marginTop: '12px' }}>
+                      {(fnResult.residents || []).map((r, i) => (
+                        <div key={i} style={{ fontSize: '13px', color: '#0C447C', padding: '4px 0', borderBottom: '1px solid #EDF6FE' }}>
+                          {r.name} · Unit {r.unit} · <strong style={{ color: '#dc2626' }}>${Number(r.balance).toFixed(2)}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
       </div>
     </div>
@@ -10453,6 +10638,7 @@ function App() {
         {activeTab === 'Onboarding' && <CollectionsOnboardingTab token={token} />}
         {activeTab === 'Collections Risk' && <CollectionsRiskTab token={token} />}
         {activeTab === 'Generate Notices' && <AdminTab token={token} initialSection='bulk-notices' onNavigate={setActiveTab} />}
+        {activeTab === 'Final Notice' && <AdminTab token={token} initialSection='final-notice' onNavigate={setActiveTab} />}
         {activeTab === 'Mailing Labels' && <AdminTab token={token} initialSection='mailing-labels' onNavigate={setActiveTab} />}
         {activeTab === 'User Management' && <AdminTab token={token} onNavigate={setActiveTab} />}
         {activeTab === 'Yardi Import' && <YardiImportTab token={token} />}
