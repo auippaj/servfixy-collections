@@ -9,6 +9,54 @@ function Login({ onLogin }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [seedingDemo, setSeedingDemo] = useState(false);
+  const [resetToken] = useState(() => new URLSearchParams(window.location.search).get('reset_token') || '');
+  const [mode, setMode] = useState(resetToken ? 'reset' : 'login'); // login | forgot | reset
+  const [notice, setNotice] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const sendResetLink = async () => {
+    setError(''); setNotice('');
+    if (!email.trim()) { setError('Enter your email address.'); return; }
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not send the reset link. Please try again.');
+      setNotice(data.message || 'If that email has a Collections account, a reset link is on its way.');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitNewPassword = async () => {
+    setError('');
+    if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return; }
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: resetToken, new_password: newPassword })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not reset your password. Please request a new link.');
+      window.history.replaceState({}, '', window.location.pathname);
+      setNewPassword(''); setConfirmPassword('');
+      setMode('login');
+      setNotice('Your password has been updated. Please sign in.');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const doLogin = async (emailVal, passwordVal, isDemo = false) => {
     setError('');
@@ -63,6 +111,58 @@ function Login({ onLogin }) {
     doLogin(demoEmail, demoPass, true);
   };
 
+  const authInputStyle = { width: '100%', padding: '14px 18px', borderRadius: '12px', border: 'none', background: '#EEF2F7', color: '#111827', fontSize: '14px', boxSizing: 'border-box', outline: 'none' };
+  const authButtonStyle = { padding: '13px 28px', borderRadius: '50px', border: 'none', backgroundColor: loading ? '#94a3b8' : '#14B8A6', color: '#fff', fontSize: '15px', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer' };
+  const linkButtonStyle = { background: 'none', border: 'none', color: '#0ea5e9', fontSize: '14px', fontWeight: '600', cursor: 'pointer', padding: 0 };
+
+  if (mode === 'forgot' || mode === 'reset') {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', 'Segoe UI', Arial, sans-serif", background: '#ffffff' }}>
+        <div style={{ width: '100%', maxWidth: '420px', padding: '40px 24px', boxSizing: 'border-box' }}>
+          <img src="https://i.imgur.com/OPDKgyD.png" alt="Servfixy" style={{ width: '420px', maxWidth: '100%', display: 'block', marginBottom: '16px' }} />
+          <div style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', marginBottom: '6px' }}>
+            {mode === 'forgot' ? 'Forgot your password?' : 'Choose a new password'}
+          </div>
+          <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px' }}>
+            {mode === 'forgot'
+              ? 'Enter your email and we will send you a link to reset it.'
+              : 'At least 8 characters, with one number and one uppercase letter.'}
+          </div>
+          {error && (
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '12px 14px', borderRadius: '8px', marginBottom: '18px', fontSize: '13px' }}>{error}</div>
+          )}
+          {notice && (
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', padding: '12px 14px', borderRadius: '8px', marginBottom: '18px', fontSize: '13px' }}>{notice}</div>
+          )}
+          {mode === 'forgot' ? (
+            <>
+              <div style={{ marginBottom: '20px' }}>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendResetLink()} placeholder="Email" style={authInputStyle} />
+              </div>
+              <button onClick={sendResetLink} disabled={loading} style={authButtonStyle}>{loading ? 'Sending…' : 'Send Reset Link'}</button>
+            </>
+          ) : (
+            <>
+              <div style={{ marginBottom: '14px' }}>
+                <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="New password" style={authInputStyle} />
+              </div>
+              <div style={{ marginBottom: '20px' }}>
+                <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && submitNewPassword()} placeholder="Confirm new password" style={authInputStyle} />
+              </div>
+              <button onClick={submitNewPassword} disabled={loading} style={authButtonStyle}>{loading ? 'Saving…' : 'Set New Password'}</button>
+            </>
+          )}
+          <div style={{ marginTop: '24px' }}>
+            <button
+              onClick={() => { setError(''); setNotice(''); if (mode === 'reset') window.history.replaceState({}, '', window.location.pathname); setMode('login'); }}
+              style={linkButtonStyle}
+            >← Back to sign in</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -84,6 +184,12 @@ function Login({ onLogin }) {
         
 
 
+
+        {notice && (
+          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', padding: '12px 14px', borderRadius: '8px', marginBottom: '18px', fontSize: '13px' }}>
+            {notice}
+          </div>
+        )}
 
         {error && (
           <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '12px 14px', borderRadius: '8px', marginBottom: '18px', fontSize: '13px' }}>
@@ -122,6 +228,10 @@ function Login({ onLogin }) {
             {loading ? 'Signing in…' : 'Sign In →'}
           </button>
           <span style={{ fontSize: '22px', fontWeight: '700', color: '#0482FD' }}>Collections</span>
+        </div>
+
+        <div style={{ marginTop: '16px' }}>
+          <button onClick={() => { setError(''); setNotice(''); setMode('forgot'); }} style={linkButtonStyle}>Forgot password?</button>
         </div>
 
         <div style={{ marginTop: '28px', paddingTop: '24px', borderTop: '1px solid #f1f5f9' }}>
