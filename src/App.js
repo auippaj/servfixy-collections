@@ -3133,7 +3133,7 @@ function CollectionsAnalyticsTab({ token, onNavigate }) {
   const legalPct = s.total_cases > 0 ? Math.round((Number(s.legal_cases) / Number(s.total_cases)) * 100) : 0;
   const kpis = [
     { label: 'Total Delinquent Balance', value: fmtCurrency(s.total_balance), color: '#dc2626', sub: `${s.total_cases || 0} total cases`, icon: '\uD83D\uDCB8', onClick: () => navigate('Collections Cases', { status: '', property_id: selectedProperty, aging_bucket: '' }) },
-    { label: 'Cases Closed Paid', value: Number(s.closed_paid_count || 0).toLocaleString(), color: '#15803d', sub: 'Dollar recovery is not tracked yet', icon: '\u2705', onClick: () => navigate('Collections Cases', { status: 'closed_paid', property_id: selectedProperty, aging_bucket: '' }) },
+    { label: 'Amount Recovered', value: Number(s.recovered_tracked_count || 0) > 0 ? fmtCurrency(s.amount_recovered) : 'Tracking started', color: '#15803d', sub: `${Number(s.recovered_tracked_count || 0).toLocaleString()} of ${Number(s.closed_paid_count || 0).toLocaleString()} paid cases tracked`, icon: '\u2705', onClick: () => navigate('Collections Cases', { status: 'closed_paid', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'Closed as Paid', value: `${recoveryRate}%`, color: '#14B8A6', sub: `of ${Number(s.total_cases || 0).toLocaleString()} cases (${Number(s.closed_written_off_count || 0)} written off)`, icon: '\uD83D\uDCCA', onClick: () => navigate('Collections Cases', { status: 'closed_paid', property_id: selectedProperty, aging_bucket: '' }) },
     { label: 'Delinquency %', value: delinquencyPct !== null ? `${delinquencyPct}%` : 'Set GPR', color: delinquencyPct !== null ? (Number(delinquencyPct) > 10 ? '#dc2626' : Number(delinquencyPct) > 5 ? '#ea580c' : '#15803d') : '#94a3b8', sub: delinquencyPct !== null ? `of $${currentGpr.toLocaleString()} GPR` : 'Click to enter monthly GPR', icon: '\uD83D\uDCC9', onClick: () => { if (!isStateGroup) setEditingGpr(true); } },
     { label: 'Eviction %', value: `${evictionPct}%`, color: Number(evictionPct) > 5 ? '#dc2626' : Number(evictionPct) > 2 ? '#ea580c' : '#15803d', sub: currentGpr > 0 ? `${evictionCount} cases · $${evictionBalance.toLocaleString('en-US', {minimumFractionDigits:0})} of GPR` : `${evictionCount} of ${totalCasesNum} cases`, icon: '\u2696\uFE0F', onClick: () => navigate('Collections Cases', { status: 'filed_with_attorney', property_id: selectedProperty, aging_bucket: '' }) },
@@ -5642,10 +5642,14 @@ function CollectionsReportsTab({ token, onBack }) {
               <td style={{ padding: '10px 12px', color: '#185FA5', textAlign: 'center', fontWeight: '600' }}>{fmtNum(row.cases_opened)}</td>
               <td style={{ padding: '10px 12px', color: '#dc2626', fontWeight: '700' }}>{fmtCurrency(row.balance_opened)}</td>
               <td style={{ padding: '10px 12px', color: '#15803d', textAlign: 'center', fontWeight: '600' }}>{fmtNum(row.cases_recovered)}</td>
-              <td style={{ padding: '10px 12px', color: '#15803d', fontWeight: '700' }}><span title="Dollar recovery is not tracked yet">n/a</span></td>
+              <td style={{ padding: '10px 12px', color: '#15803d', fontWeight: '700' }}>{row.amount_recovered === null || row.amount_recovered === undefined ? <span title="Dollar recovery is tracked from Oct 2026 onward">n/a</span> : fmtCurrency(row.amount_recovered)}</td>
               <td style={{ padding: '10px 12px', color: '#94a3b8', textAlign: 'center' }}>{fmtNum(row.cases_written_off)}</td>
               <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                <span title="Dollar recovery is not tracked yet" style={{ color: '#94a3b8' }}>n/a</span>
+                {row.recovery_rate_pct === null || row.recovery_rate_pct === undefined ? <span style={{ color: '#94a3b8' }}>n/a</span> : (
+                  <span style={{ fontSize: '12px', fontWeight: '700', padding: '2px 8px', borderRadius: '4px',
+                    backgroundColor: Number(row.recovery_rate_pct) >= 50 ? '#dcfce7' : Number(row.recovery_rate_pct) >= 20 ? '#fef9c3' : '#fee2e2',
+                    color: Number(row.recovery_rate_pct) >= 50 ? '#15803d' : Number(row.recovery_rate_pct) >= 20 ? '#854d0e' : '#dc2626'
+                  }}>{row.recovery_rate_pct}%</span>)}
               </td>
             </tr>
           ))}
@@ -5679,7 +5683,7 @@ function CollectionsReportsTab({ token, onBack }) {
                   {Math.round(Number(row.avg_pay_prob))}%
                 </span>
               </td>
-              <td style={{ padding: '10px 12px', color: '#15803d', fontWeight: '600' }}><span title="Dollar recovery is not tracked yet">n/a</span></td>
+              <td style={{ padding: '10px 12px', color: '#15803d', fontWeight: '600' }}>{row.amount_recovered === null || row.amount_recovered === undefined ? <span title="Dollar recovery is tracked from Oct 2026 onward">n/a</span> : fmtCurrency(row.amount_recovered)}</td>
             </tr>
           ))}
         </tbody>
