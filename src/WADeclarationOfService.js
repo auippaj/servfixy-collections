@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import fontkit from '@pdf-lib/fontkit';
 
 // Declaration of Service of Notice (Washington only).
 // The original firm form (public/forms/wa-declaration-of-service.pdf) is never redrawn or edited:
@@ -7,6 +8,7 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 // Coordinates are PDF points measured from the TOP-left of the page.
 const TEMPLATE_URL = '/forms/wa-declaration-of-service.pdf';
 const PAGE_H = 792;
+const SCRIPT_FONT_URL = '/fonts/dancing-script-latin-700-normal.ttf';
 
 const BOXES = {
   personal:      { x: 106, top: 319 },
@@ -27,6 +29,12 @@ export async function buildDeclarationPdf(v) {
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const [p1, p2] = doc.getPages();
+  let script = null;
+  if (v.applySignature && v.managerName) {
+    doc.registerFontkit(fontkit);
+    const fb = await fetch(SCRIPT_FONT_URL).then(r => r.arrayBuffer());
+    script = await doc.embedFont(fb);
+  }
   const ink = rgb(0, 0, 0);
   const text = (page, s, x, top, size = 11, f = font) => {
     if (s) page.drawText(String(s), { x, y: PAGE_H - top, size, font: f, color: ink });
@@ -47,6 +55,9 @@ export async function buildDeclarationPdf(v) {
   // Page 2
   text(p2, v.signDate, 155, 125);
   text(p2, v.signCity, 342, 125);
+  // Printed name always shows; the signature appears only when 'Apply signature' is ticked
+  text(p2, v.managerName, 297, 214);
+  if (script) text(p2, v.managerName, 300, 174, 20, script);
 
   return doc.save();
 }
@@ -63,6 +74,7 @@ export default function WADeclarationOfService({ token, properties = [] }) {
     serviceDate: '', propertyAddress: '', tenantNames: '',
     personal: false, suitable: false, mailed: false, mailTo: '', mailOtherAddress: '',
     posted: false, emailed: false, signDate: '', signCity: '',
+    managerName: '', applySignature: false,
   };
   const [propId, setPropId] = useState('');
   const [residents, setResidents] = useState([]);
@@ -74,7 +86,7 @@ export default function WADeclarationOfService({ token, properties = [] }) {
   const choosePropertyHandler = async (id) => {
     setPropId(id); setResidents([]);
     const prop = waProps.find(p => String(p.id) === String(id));
-    setV(prev => ({ ...prev, propertyAddress: prop?.address || '' }));
+    setV(prev => ({ ...prev, propertyAddress: prop?.address || '', managerName: prop?.signatory_name || prev.managerName }));
     if (!id) return;
     try {
       const res = await fetch(`${API_URL}/api/collections/cases/eligible-balance-due?property_id=${id}`, { headers: { Authorization: `Bearer ${token}` } });
@@ -184,6 +196,16 @@ export default function WADeclarationOfService({ token, properties = [] }) {
           <div>
             <label style={labelStyle}>City Signed In</label>
             <input value={v.signCity} onChange={e => set('signCity', e.target.value)} style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>Property Manager Name (printed name)</label>
+            <input value={v.managerName} onChange={e => set('managerName', e.target.value)} style={inputStyle} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#0C447C', cursor: 'pointer', paddingBottom: '9px' }}>
+              <input type='checkbox' checked={v.applySignature} onChange={e => set('applySignature', e.target.checked)} />
+              Apply manager's signature (script) on the Signed name line
+            </label>
           </div>
         </div>
       </div>
