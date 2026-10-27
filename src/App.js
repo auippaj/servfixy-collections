@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import WADeclarationOfService from './WADeclarationOfService';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://servfixy-production.up.railway.app';
 
@@ -279,6 +280,7 @@ const NAV_ITEMS = [
     { label: 'Generate Notices',     icon: '📄', tab: 'Generate Notices' },
     { label: 'Final Notice',         icon: '⚠️', tab: 'Final Notice' },
     { label: 'Housing Notice',       icon: '🏠', tab: 'Housing Notice' },
+    { label: 'Declaration of Service', icon: '⚖️', tab: 'Declaration of Service' },
     { label: 'Mailing Labels',       icon: '🏷️', tab: 'Mailing Labels' },
     { label: 'User Management',      icon: '👥', tab: 'User Management' },
     { label: 'Yardi Import',         icon: '📊', tab: 'Yardi Import' },
@@ -945,6 +947,7 @@ function AdminTab({ token, initialSection, onNavigate }) {
     { key: 'balance-due', label: 'Balance Due Letters', icon: '💸' },
     { key: 'final-notice', label: 'Final Notice', icon: '⚠️' },
     { key: 'housing-notice', label: 'Housing Notice', icon: '🏠' },
+    { key: 'wa-declaration', label: 'Declaration of Service', icon: '⚖️' },
   ];
 
   return (
@@ -1892,6 +1895,9 @@ function AdminTab({ token, initialSection, onNavigate }) {
             )}
           </div>
         )}
+
+        {/* ── WA DECLARATION OF SERVICE (Washington eviction filing form) ── */}
+        {activeSection === 'wa-declaration' && <WADeclarationOfService token={token} properties={properties} />}
 
         {/* ── HOUSING NOTICE (Past-Due Rent and Utilities — Notice of Attorney Referral) ── */}
         {activeSection === 'housing-notice' && (
@@ -10971,6 +10977,7 @@ function App() {
         {activeTab === 'Generate Notices' && <AdminTab token={token} initialSection='bulk-notices' onNavigate={setActiveTab} />}
         {activeTab === 'Final Notice' && <AdminTab token={token} initialSection='final-notice' onNavigate={setActiveTab} />}
         {activeTab === 'Housing Notice' && <AdminTab token={token} initialSection='housing-notice' onNavigate={setActiveTab} />}
+        {activeTab === 'Declaration of Service' && <AdminTab token={token} initialSection='wa-declaration' onNavigate={setActiveTab} />}
         {activeTab === 'Mailing Labels' && <AdminTab token={token} initialSection='mailing-labels' onNavigate={setActiveTab} />}
         {activeTab === 'User Management' && <AdminTab token={token} onNavigate={setActiveTab} />}
         {activeTab === 'Yardi Import' && <YardiImportTab token={token} />}
