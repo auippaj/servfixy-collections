@@ -1302,7 +1302,12 @@ function AdminTab({ token, initialSection, onNavigate }) {
                 {waResult && (
                   <div style={{ backgroundColor: waResult.error ? '#fef2f2' : '#f0fdf4', border: `1px solid ${waResult.error ? '#fca5a5' : '#bbf7d0'}`, borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
                     {waResult.error ? (
-                      <div style={{ color: '#dc2626', fontWeight: '700' }}>❌ {waResult.error}</div>
+                      <div>
+                        <div style={{ color: '#dc2626', fontWeight: '700' }}>❌ {waResult.error}</div>
+                        {Array.isArray(waResult.details) && waResult.details.map((d, i) => (
+                          <div key={i} style={{ fontSize: '12px', color: '#dc2626', marginTop: '6px' }}>{d.filename || d.resident}: {d.error}</div>
+                        ))}
+                      </div>
                     ) : (
                       <>
                         <div style={{ fontSize: '16px', fontWeight: '700', color: '#15803d', marginBottom: '16px' }}>
@@ -1343,6 +1348,22 @@ function AdminTab({ token, initialSection, onNavigate }) {
                             <div style={{ fontSize: '12px', fontWeight: '700', color: '#dc2626', marginBottom: '6px' }}>Failed:</div>
                             {(waResult.failed_cases || []).map((f, i) => (
                               <div key={i} style={{ fontSize: '12px', color: '#dc2626' }}>{f.resident} — {f.error}</div>
+                            ))}
+                          </div>
+                        )}
+                        {(waResult.parse_errors || []).length > 0 && (
+                          <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#fef2f2', borderRadius: '8px', border: '1px solid #fca5a5' }}>
+                            <div style={{ fontSize: '12px', fontWeight: '700', color: '#dc2626', marginBottom: '6px' }}>Ledgers that could not be read (no notice was made):</div>
+                            {waResult.parse_errors.map((f, i) => (
+                              <div key={i} style={{ fontSize: '12px', color: '#dc2626' }}>{f.filename} — {f.error}</div>
+                            ))}
+                          </div>
+                        )}
+                        {(waResult.warnings || []).length > 0 && (
+                          <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#fffbeb', borderRadius: '8px', border: '1px solid #fcd34d' }}>
+                            <div style={{ fontSize: '12px', fontWeight: '700', color: '#b45309', marginBottom: '6px' }}>Review before serving:</div>
+                            {waResult.warnings.map((w, i) => (
+                              <div key={i} style={{ fontSize: '12px', color: '#92400e' }}>{w.name} — {(w.warnings || []).join(' ')}</div>
                             ))}
                           </div>
                         )}
