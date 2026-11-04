@@ -368,6 +368,55 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, isOpen, onClose }) {
 }
 
 
+// ── Ohio notice date helpers ───────────────────────────────────────────────────
+// US federal holiday name for a 'YYYY-MM-DD' date (weekend-observed rule applied), or '' if none.
+function federalHolidayName(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+  if (!m) return '';
+  const y = Number(m[1]);
+  const nth = (month, weekday, n) => {          // nth weekday of a month (n = -1 for last)
+    if (n > 0) {
+      const first = new Date(y, month, 1);
+      return new Date(y, month, 1 + ((7 + weekday - first.getDay()) % 7) + (n - 1) * 7);
+    }
+    const last = new Date(y, month + 1, 0);
+    return new Date(y, month + 1, 0 - ((7 + last.getDay() - weekday) % 7));
+  };
+  const observed = (month, day) => {            // Sat -> Fri, Sun -> Mon
+    const d = new Date(y, month, day);
+    if (d.getDay() === 6) d.setDate(d.getDate() - 1);
+    if (d.getDay() === 0) d.setDate(d.getDate() + 1);
+    return d;
+  };
+  const list = [
+    ["New Year's Day", observed(0, 1)],
+    ['Martin Luther King Jr. Day', nth(0, 1, 3)],
+    ["Presidents' Day", nth(1, 1, 3)],
+    ['Memorial Day', nth(4, 1, -1)],
+    ['Juneteenth', observed(5, 19)],
+    ['Independence Day', observed(6, 4)],
+    ['Labor Day', nth(8, 1, 1)],
+    ['Columbus Day', nth(9, 1, 2)],
+    ['Veterans Day', observed(10, 11)],
+    ['Thanksgiving', nth(10, 4, 4)],
+    ['Christmas Day', observed(11, 25)],
+  ];
+  const target = new Date(y, Number(m[2]) - 1, Number(m[3])).toDateString();
+  const hit = list.find(([, d]) => d.toDateString() === target);
+  return hit ? hit[0] : '';
+}
+
+// Warning text if a 'YYYY-MM-DD' date falls on a weekend or federal holiday, else ''.
+function ohDateWarning(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+  if (!m) return '';
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const day = d.toLocaleDateString('en-US', { weekday: 'long' });
+  if (d.getDay() === 0 || d.getDay() === 6) return `${day} — weekend, office is likely closed.`;
+  const hol = federalHolidayName(iso);
+  return hol ? `${day} — ${hol} (federal holiday).` : '';
+}
+
 // ── Admin Tab ──────────────────────────────────────────────────────────────────
 function AdminTab({ token, initialSection, onNavigate }) {
   const API_URL = 'https://servfixy-production.up.railway.app';
@@ -393,6 +442,8 @@ function AdminTab({ token, initialSection, onNavigate }) {
   const [selectedCases, setSelectedCases] = useState(new Set());
   const [generating, setGenerating] = useState(false);
   const [genResult, setGenResult] = useState(null);
+  // Ohio notice date overrides ('YYYY-MM-DD'); blank = use the automatic date
+  const [ohDates, setOhDates] = useState({ moneyOrderFrom: '', paymentDue: '', lateFee: '', evictionFile: '' });
 
   // WA notice state
   const WA_BATCH_LIMIT = 15;
@@ -802,10 +853,24 @@ function AdminTab({ token, initialSection, onNavigate }) {
     finally { setEligibleLoading(false); }
   };
 
+  // Blocking errors for the Ohio date overrides (weekend/holiday dates only warn — they never block)
+  const ohTodayIso = new Date().toLocaleDateString('en-CA');
+  const ohDateError =
+    ohDates.paymentDue && ohDates.paymentDue < ohTodayIso
+      ? 'Pay-by date cannot be in the past.'
+      : ohDates.paymentDue && ohDates.evictionFile && ohDates.evictionFile <= ohDates.paymentDue
+        ? 'Filing date must be after the pay-by date.'
+        : '';
+
   const handleGenerate = async () => {
-    if (selectedCases.size === 0) return;
+    if (selectedCases.size === 0 || ohDateError) return;
     setGenerating(true); setGenResult(null);
     try {
+      const noticeDates = {};
+      if (ohDates.moneyOrderFrom) noticeDates.money_order_from = ohDates.moneyOrderFrom;
+      if (ohDates.paymentDue) noticeDates.payment_due = ohDates.paymentDue;
+      if (ohDates.lateFee) noticeDates.late_fee = ohDates.lateFee;
+      if (ohDates.evictionFile) noticeDates.eviction_file = ohDates.evictionFile;
       const res = await fetch(`${API_URL}/api/collections/cases/batch-notices`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -813,6 +878,7 @@ function AdminTab({ token, initialSection, onNavigate }) {
           property_id: selectedProperty,
           generated_by: 'Collections Admin',
           case_ids: [...selectedCases],
+          ...(Object.keys(noticeDates).length ? { notice_dates: noticeDates } : {}),
         })
       });
       const d = await res.json();
@@ -1203,6 +1269,13 @@ function AdminTab({ token, initialSection, onNavigate }) {
         {activeSection === 'bulk-notices' && (() => {
           const selectedPropObj = properties.find(p => p.id === selectedProperty);
           const isWA = selectedPropObj?.state === 'WA' || selectedPropObj?.notice_jurisdiction === 'WA';
+          const isOH = selectedPropObj?.state === 'OH' || selectedPropObj?.notice_jurisdiction === 'OH';
+          const ohFields = [
+            { key: 'moneyOrderFrom', label: 'Money orders accepted from', hint: 'Prints as "on or after the 7th of every month" (day only)' },
+            { key: 'paymentDue',     label: 'Pay by (5 pm)',              hint: 'Cashier\'s check or money order due' },
+            { key: 'lateFee',        label: 'Late fee date',              hint: '$75.00 added if not paid in full' },
+            { key: 'evictionFile',   label: 'Eviction filing date',       hint: 'Must be after the pay-by date' },
+          ];
           return (
           <div>
             <div style={{ marginBottom: '24px' }}>
@@ -1215,7 +1288,7 @@ function AdminTab({ token, initialSection, onNavigate }) {
               <label style={labelStyle}>Select Property</label>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <PropertySelector properties={properties} value={selectedProperty}
-                  onChange={v => { setSelectedProperty(v); setWaFiles([]); setWaResult(null); setGenResult(null); fetchEligible(v); }}
+                  onChange={v => { setSelectedProperty(v); setWaFiles([]); setWaResult(null); setGenResult(null); setOhDates({ moneyOrderFrom: '', paymentDue: '', lateFee: '', evictionFile: '' }); fetchEligible(v); }}
                   placeholder='Choose a property...'
                   style={{ maxWidth: '480px' }} />
                 {selectedProperty && !isWA && (
@@ -1404,6 +1477,38 @@ function AdminTab({ token, initialSection, onNavigate }) {
               </div>
             )}
 
+            {/* Ohio: adjustable notice dates */}
+            {isOH && eligibleData && (
+              <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: '700', color: '#0C447C' }}>Notice Dates</div>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Leave a date blank to use the automatic date. Set dates here when a weekend or holiday gets in the way.</div>
+                  </div>
+                  {Object.values(ohDates).some(Boolean) && (
+                    <button onClick={() => setOhDates({ moneyOrderFrom: '', paymentDue: '', lateFee: '', evictionFile: '' })}
+                      style={{ fontSize: '11px', padding: '5px 12px', border: '1px solid #C8E4F8', borderRadius: '5px', backgroundColor: '#fff', color: '#475569', cursor: 'pointer' }}>Reset to automatic</button>
+                  )}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '14px' }}>
+                  {ohFields.map(f => {
+                    const warn = ohDateWarning(ohDates[f.key]);
+                    return (
+                      <div key={f.key}>
+                        <label style={labelStyle}>{f.label}</label>
+                        <input type='date' value={ohDates[f.key]}
+                          onChange={e => setOhDates(prev => ({ ...prev, [f.key]: e.target.value }))}
+                          style={{ ...inputStyle, borderColor: warn ? '#f59e0b' : '#C8E4F8' }} />
+                        <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px' }}>{f.hint}</div>
+                        {warn && <div style={{ fontSize: '11px', color: '#b45309', marginTop: '3px', fontWeight: '600' }}>⚠ {warn}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+                {ohDateError && <div style={{ marginTop: '12px', fontSize: '12px', color: '#dc2626', fontWeight: '600' }}>❌ {ohDateError}</div>}
+              </div>
+            )}
+
             {/* Non-WA: Eligible cases */}
             {!isWA && eligibleData && (
               <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: '20px' }}>
@@ -1419,8 +1524,8 @@ function AdminTab({ token, initialSection, onNavigate }) {
                       style={{ fontSize: '11px', padding: '5px 12px', border: '1px solid #C8E4F8', borderRadius: '5px', backgroundColor: '#fff', color: '#475569', cursor: 'pointer' }}>Select All</button>
                     <button onClick={() => setSelectedCases(new Set())}
                       style={{ fontSize: '11px', padding: '5px 12px', border: '1px solid #C8E4F8', borderRadius: '5px', backgroundColor: '#fff', color: '#475569', cursor: 'pointer' }}>Clear</button>
-                    <button onClick={handleGenerate} disabled={generating || selectedCases.size === 0}
-                      style={{ padding: '10px 22px', backgroundColor: selectedCases.size === 0 ? '#94a3b8' : '#dc2626', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: selectedCases.size === 0 ? 'not-allowed' : 'pointer' }}>
+                    <button onClick={handleGenerate} disabled={generating || selectedCases.size === 0 || !!ohDateError}
+                      style={{ padding: '10px 22px', backgroundColor: (selectedCases.size === 0 || ohDateError) ? '#94a3b8' : '#dc2626', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: (selectedCases.size === 0 || ohDateError) ? 'not-allowed' : 'pointer' }}>
                       {generating ? 'Generating...' : `Generate ${selectedCases.size} Notice${selectedCases.size !== 1 ? 's' : ''}`}
                     </button>
                   </div>
