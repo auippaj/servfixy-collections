@@ -462,6 +462,8 @@ function AdminTab({ token, initialSection, onNavigate }) {
   const [labelDirectoryLoading, setLabelDirectoryLoading] = useState(false);
   const [labelSelected, setLabelSelected] = useState({});   // { "Name||unit": true }
   const [labelQtys, setLabelQtys] = useState({});           // { "Name||unit": 1 }
+  const [labelPropSelected, setLabelPropSelected] = useState(true); // property label on/off
+  const [labelPropQty, setLabelPropQty] = useState(1);              // property label quantity
 
   // Unified alert engine
   const [alerts, setAlerts] = useState([]);
@@ -1710,6 +1712,25 @@ function AdminTab({ token, initialSection, onNavigate }) {
                         <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 120px 80px', padding: '8px 12px', backgroundColor: '#EDF6FE', borderBottom: '1px solid #e2e8f0', fontSize: '11px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                           <div></div><div>Resident</div><div>Unit</div><div>Qty</div>
                         </div>
+                        {/* Property label row */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 120px 80px', padding: '9px 12px', borderBottom: '1px solid #e2e8f0', alignItems: 'center', backgroundColor: labelPropSelected ? 'rgba(20,184,166,0.04)' : '#fff' }}>
+                          <div
+                            onClick={() => setLabelPropSelected(v => !v)}
+                            style={{ width: '16px', height: '16px', borderRadius: '3px', border: `2px solid ${labelPropSelected ? '#14B8A6' : '#C8E4F8'}`, backgroundColor: labelPropSelected ? '#14B8A6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                            {labelPropSelected && <span style={{ color: '#fff', fontSize: '10px', fontWeight: '900' }}>✓</span>}
+                          </div>
+                          <div style={{ fontSize: '13px', fontWeight: '700', color: '#0C447C' }}>
+                            {(properties.find(p => String(p.id) === String(selectedProperty)) || {}).name || 'Property'} (property label)
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#64748b' }}>Return address</div>
+                          <select
+                            value={labelPropQty}
+                            onChange={e => setLabelPropQty(parseInt(e.target.value))}
+                            disabled={!labelPropSelected}
+                            style={{ padding: '4px 6px', border: '1px solid #e2e8f0', borderRadius: '5px', fontSize: '12px', color: labelPropSelected ? '#0f172a' : '#94a3b8', backgroundColor: labelPropSelected ? '#fff' : '#f8fafc', cursor: labelPropSelected ? 'pointer' : 'default' }}>
+                            {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}
+                          </select>
+                        </div>
                         {allOccupants.map((o, i) => (
                           <div key={o.key} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 120px 80px', padding: '9px 12px', borderBottom: i < allOccupants.length - 1 ? '1px solid #f1f5f9' : 'none', alignItems: 'center', backgroundColor: labelSelected[o.key] ? 'rgba(20,184,166,0.04)' : '#fff' }}>
                             <div
@@ -1743,7 +1764,7 @@ function AdminTab({ token, initialSection, onNavigate }) {
                             const res = await fetch(`${API_URL}/api/collections/cases/generate-labels`, {
                               method: 'POST',
                               headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ property_id: selectedProperty, residents })
+                              body: JSON.stringify({ property_id: selectedProperty, residents, property_quantity: labelPropSelected ? labelPropQty : 0 })
                             });
                             const d = await res.json();
                             setLabelResult(d);
